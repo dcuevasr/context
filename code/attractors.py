@@ -10,7 +10,7 @@ import pandas as pd
 
 
 class Attractor(object):
-    """Base class for attractor dynamics. Not mean to be used directly
+    """Base class for attractor dynamics. Not meant to be used directly
 
     Subclasses should define the following methods:
 
@@ -43,7 +43,8 @@ class Attractor(object):
         Parameters
         ----------
         x_init : ndarray
-        Initial condition. Must have size of self.N
+        Initial condition. Must have size of self.N. If not provided,
+        set_initial_conditions() is called.
 
         t_end/ini float
         Final/initial time for integration. t_init defaults to whatever it was
@@ -120,6 +121,13 @@ class PointAttractor(Attractor):
 
         """
         return self.eta * (x - self.pos)
+
+    def set_pos(self, new_pos):
+        """Changes the position of the equilibrium point."""
+        if self.pos.shape != new_pos.shape:
+            raise ValueError('New equilibrium point is of a different size '
+                             'as the old one.')
+        self.pos = new_pos
 
 
 class Shs(Attractor):
@@ -228,12 +236,12 @@ class Shs(Attractor):
         if ret_rho:
             return rho
 
-    def set_initial_conditions(self, ):
+    def set_initial_conditions(self, background_noise=0.01):
         """Returns a set of good initial conditions (i.e. around the first equilibrium
         point, and already going towards the second one).
 
         """
-        x_init = 0.01 * np.ones(self.N)
+        x_init = background_noise * np.ones(self.N)
         x_init[self.sequence[0]] = 0.8 * self.sigma[self.sequence[0]]
         x_init[self.sequence[1]] = 0.2 * self.sigma[self.sequence[1]]
         return x_init
