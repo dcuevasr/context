@@ -3,7 +3,6 @@
 
 
 """Everything hand gesture-related goes here. Not sure what that will be."""
-import time
 
 import numpy as np
 import pandas as pd
@@ -136,10 +135,28 @@ def plot_one_hand(positions, fignum=1, axis=None, offset=np.zeros(3)):
     3x5 array (ValueError if not) with a single time point to plot. If 2darray,
     it is assumed to be the (5, 3) array of positions for all fingers.
 
+    fignum : int
+    Number of the figure to create. Defaults to 1. If --axis-- is provided, this
+    is ignored.
+
+    axis : Axis class from matplotlib
+    Axis to draw the hand. If None, a new figure is created.
+
+    offset : 1darray
+    x, y, z coordinates of the offset. Used to draw the hand anywhere
+    other than the center of the axis.
+
+    Returns
+    -------
+    fig, axis
+    Only if --axis-- was not provided (None).
+
     """
     positions = positions.reshape((5, 3))
     palm_center = np.array([0.5, 0.5, 0]) + offset
+    flag_return_axis = False
     if axis is None:
+        flag_return_axis = True
         fig = plt.figure(num=fignum, clear=True)
         axis = fig.add_subplot(111, projection='3d')
         plt.show(block=False)
@@ -147,3 +164,6 @@ def plot_one_hand(positions, fignum=1, axis=None, offset=np.zeros(3)):
     for finger in positions:
         values = list(zip(palm_center, finger))
         axis.plot(*values)
+
+    if flag_return_axis:
+        return fig, axis
