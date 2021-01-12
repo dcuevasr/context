@@ -7,20 +7,21 @@ import itertools as it
 
 import numpy as np
 from scipy.stats import multivariate_normal
-from scipy.integrate import solve_bvp
+from scipy.integrate import solve_bvp, solve_ivp
 import matplotlib.pyplot as plt
 
 
 class PriorArm(object):
     """Prior-based control for an N-Dimensional arm."""
+
     def __init__(self, prior_fun=None):
         """Well..."""
         self.ndim = 2  # Dimensions of the movement (2D/3D)
         self.deg_free = 2  # Degrees of freedom
         self.default_smoothness = 1  # Default value of the second deriv. of
-                                     # position
+        # position
         self.default_velocity = None  # Default velocity. "None" starts all
-                                      # movements in the direction of the goal.
+        # movements in the direction of the goal.
         self.flag_changed_priors = False
         self._comfort = self._create_priors()
         self.priors_fun, self.priors_diff_fun = self._comfort
@@ -115,7 +116,8 @@ class PriorArm(object):
         mesh = np.zeros([num_points, num_points])
 
         for idx, idy in it.product(range(num_points), range(num_points)):
-            mesh[idx, idy] = self.priors_fun([idx / num_points, idy / num_points])
+            mesh[idx, idy] = self.priors_fun(
+                [idx / num_points, idy / num_points])
 
         plt.figure(num=fignum, clear=True)
         plt.imshow(mesh, cmap='gray')
@@ -155,7 +157,7 @@ class PriorArm(object):
         self.priors = self._comfort
         self.flag_changed_priors = False
 
-    def _ode(self, time, x, m=1):
+    def _ode(self, time, x, m=(1,)):
         r"""Defines the differential equation to follow, of the form:
         \[
         \dot x = c(x, g) + f(x)
@@ -176,13 +178,14 @@ class PriorArm(object):
         it's just something people do sometimes)
 
         """
-
+        if x.ndim == 1:
+            x = x[:, None]
         from_priors = np.array([self.priors_diff_fun(x[0:2, idx])
                                 for idx in range(x.shape[-1])])
-        return np.vstack((x[2:4, :],
-                          (m[0] * (self.x_end - x[0:2, :].T) + from_priors).T))
+        out = (x[2:4, :], (m[0] * (self.x_end - x[0:2, :].T) + from_priors).T)
+        return np.squeeze(np.vstack((out)))
 
-    def solve_boundary_value(self, x_ini, velocity_ini, goal):
+    def solve_boundary_value(self,):
         r"""Simulates a run given the initial parameters.
 
         The system to solve is the following:
@@ -215,8 +218,8 @@ class PriorArm(object):
 
     def _residuals(self, x_ini, x_end, m=0):
         """Residuals for the boundary-conditions-problem."""
-        return np.hstack(((self.x_ini - x_ini[:2]) + (self.x_end - x_end[:2]),
-                          np.zeros(2), 0))
+        return np.hstack((np.abs(self.x_ini - x_ini[:2]) + np.abs(self.x_end - x_end[:2]),
+                          np.abs(x_end[2:]), 1 - m))
 
     def solve_initial_value(self, initial_speed=None):
         r"""Given initial conditions for x and x', solves the following system:
@@ -250,7 +253,9 @@ class PriorArm(object):
             initial_speed = self.x_end - self.x_ini
             initial_speed /= np.linalg.norm(initial_speed)
         x0 = np.concatenate((self.x_ini, initial_speed))
-        x0p = None  # Unfinished
+        t_interval = (0, 1)
+        integrated = solve_ivp(self._ode, t_interval, x0)
+        return integrated
 
 
 def visualize_multivariate(mean=(0, 0), cov=None, num_points=100, fignum=3):
