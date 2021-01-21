@@ -148,7 +148,7 @@ class Shs(Attractor):
       1123–29. https://doi.org/10.1063/1.1819625.
 
     """
-    def __init__(self, num_neurons, sequence):
+    def __init__(self, num_neurons, sequence, tau=1):
         """Initializes the parameters of the LV equations.
 
         Parameters
@@ -167,6 +167,7 @@ class Shs(Attractor):
         self.sequence = sequence
         self._set_sigmas()
         self._set_rhos()
+        self.tau = tau
 
     def _set_sigmas(self,):
         """Sets random values for sigma, ensuring that the sigma[0] >= sigma[j]
@@ -254,4 +255,4 @@ class Shs(Attractor):
         t : float
         Does nothing. Included only for scipy's ODE integrator compatibility
         """
-        return x * (self.sigma - self.rho.dot(x))
+        return self.tau * x * (self.sigma - self.rho.dot(x))

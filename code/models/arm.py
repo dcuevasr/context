@@ -4,17 +4,20 @@
 """Functions regarding the simulation of the arm as an attractor."""
 
 import itertools as it
+import ipdb
 
 import numpy as np
 from scipy.stats import multivariate_normal
 from scipy.integrate import solve_bvp, solve_ivp
 import matplotlib.pyplot as plt
+import pymc3 as pm
+import theano.tensor as tt
 
 
 class PriorArm(object):
     """Prior-based control for an N-Dimensional arm."""
 
-    def __init__(self, prior_fun=None):
+    def __init__(self, x_ini=None, x_end=None, prior_fun=None):
         """Well..."""
         self.ndim = 2  # Dimensions of the movement (2D/3D)
         self.deg_free = 2  # Degrees of freedom
@@ -24,11 +27,17 @@ class PriorArm(object):
         # movements in the direction of the goal.
         self.flag_changed_priors = False
         self._comfort = self._create_priors()
-        self.priors_fun, self.priors_diff_fun = self._comfort
-        self.x_ini = np.zeros(self.ndim)
-        self.x_ini[0] = 0.5
-        self.x_end = np.zeros(self.ndim)
-        self.x_end[1] = 0.5
+        self.priors_fun = self._comfort
+        if x_ini is None:
+            self.x_ini = np.zeros(self.ndim)
+            self.x_ini[0] = 0.5
+        else:
+            self.x_ini = x_ini
+        if x_end is None:
+            self.x_end = np.zeros(self.ndim)
+            self.x_end[1] = 0.5
+        else:
+            self.x_end = x_end
 
     def _curr_distance(self, curr_pos, goal):
         """Calculates the Euclidean distance between the current position (--curr_pos--)
@@ -103,7 +112,7 @@ class PriorArm(object):
         def prior_diff_fun(x):
             return -np.sum([one_fun(x) for one_fun in prior_diffs], axis=0)
 
-        return prior_fun, prior_diff_fun
+        return prior_diff_fun
 
     def visualize_priors(self, num_points=100, fignum=1):
         """If self.ndim == 2, plots a heat map of the priors for visualization.
@@ -135,7 +144,7 @@ class PriorArm(object):
         coords = np.zeros_like(mesh)
         for trial, (idx, idy) in enumerate(it.product(range(num_points), range(num_points))):
             coords[trial, :] = [idx / num_points, idy / num_points]
-            mesh[trial, :] = self.priors_diff_fun(coords[trial, :])
+            mesh[trial, :] = self.priors_fun(coords[trial, :])
         plt.figure(num=fignum, clear=True)
         plt.quiver(*coords.T, *mesh.T)
         plt.show(block=False)
@@ -157,7 +166,7 @@ class PriorArm(object):
         self.priors = self._comfort
         self.flag_changed_priors = False
 
-    def _ode(self, time, x, m=(1,)):
+    def _ode(self, time, x, m=(3,)):
         r"""Defines the differential equation to follow, of the form:
         \[
         \dot x = c(x, g) + f(x)
@@ -178,11 +187,12 @@ class PriorArm(object):
         it's just something people do sometimes)
 
         """
+        ndim = self.ndim
         if x.ndim == 1:
             x = x[:, None]
-        from_priors = np.array([self.priors_diff_fun(x[0:2, idx])
+        from_priors = np.array([self.priors_fun(x[:ndim, idx])
                                 for idx in range(x.shape[-1])])
-        out = (x[2:4, :], (m[0] * (self.x_end - x[0:2, :].T) + from_priors).T)
+        out = (x[ndim:, :], (m[0] * (self.x_end - x[:ndim, :].T) + from_priors).T)
         return np.squeeze(np.vstack((out)))
 
     def solve_boundary_value(self,):
@@ -205,6 +215,7 @@ class PriorArm(object):
         \[
         y_1(0) &= 0 \\
         y_1(T) &= g
+        \]
         Note that y_1, y_2 \in R^2, which makes this a 4d system, although the
         last two dimensions are of no use to us.
         """
@@ -212,16 +223,19 @@ class PriorArm(object):
         y_mesh = 0.5 * np.ones((2 * self.ndim, time_mesh.size))
         p_mesh = (1,)  # np.zeros(time_mesh.size)
         integrated = solve_bvp(self._ode, self._residuals,
-                               time_mesh, y_mesh, p_mesh,
+                               time_mesh, y_mesh,  # p_mesh,
                                tol=0.001, bc_tol=0.0001)
         return integrated
 
-    def _residuals(self, x_ini, x_end, m=0):
+    def _residuals(self, x_ini, x_end, m=None):
         """Residuals for the boundary-conditions-problem."""
-        return np.hstack((np.abs(self.x_ini - x_ini[:2]) + np.abs(self.x_end - x_end[:2]),
-                          np.abs(x_end[2:]), 1 - m))
+        whys = np.hstack((np.abs(self.x_ini - x_ini[:2]) + np.abs(self.x_end - x_end[:2]),
+                          np.abs(x_end[2:])))
+        if m is not None:
+            whys = np.hstack(whys, 1 - m)
+        return whys
 
-    def solve_initial_value(self, initial_speed=None):
+    def solve_initial_value(self, initial_speed=None, t_interval=None):
         r"""Given initial conditions for x and x', solves the following system:
         \[
         \ddot{x} - m(g - x) - p(x) = 0
@@ -249,12 +263,59 @@ class PriorArm(object):
         Vector with 2 elements representing the initial speed of the system.
         Defaults to a unit vector pointing towards the goal.
         """
+        if t_interval is None:
+            t_interval = (0, 1)
         if initial_speed is None:
             initial_speed = self.x_end - self.x_ini
             initial_speed /= np.linalg.norm(initial_speed)
         x0 = np.concatenate((self.x_ini, initial_speed))
-        t_interval = (0, 1)
-        integrated = solve_ivp(self._ode, t_interval, x0)
+        integrated = solve_ivp(self._ode, t_interval, x0)  # rtol=1e90, atol=1e90, max_step=0.01)
+        return integrated
+
+
+class FirstOrderArm(PriorArm):
+    """Version of the PriorArm with a 1st degree ODE."""
+    def _ode(self, time, x, m=(3, (1, 1), 0.2)):
+        r"""Defines the 1st order ODE:
+        \[
+        \dot x = m (g - x) + f(x) + h(t)
+        \]
+        where f(x) are the priors (self.prior_fun), $g$ the goal and $h(t)$
+        a boost in the direction specified by --m--[1].
+
+        Parameters
+        ----------
+        m : 3-tuple
+        The first element is the strenght of the control. The second element
+        should be a 1darray (or iterable) which is the initial speed of the
+        problem to solve. This will be applied as a boost that lasts m[-1]
+        seconds after the start of the solution. The third element (duh) is
+        the duration of the boost.
+
+        """
+        ndim = self.ndim
+        if x.ndim == 1:
+            x = x[:, None]
+        if time < m[-1]:
+            pulse = np.array(m[1])
+        else:
+            pulse = 0
+
+        from_priors = np.array([self.priors_fun(x[:, idx])
+                                for idx in range(x.shape[-1])])
+        out = m[0] * (self.x_end - x.T) + from_priors + pulse
+        return out
+
+    def solve_initial_value(self, initial_speed=None, t_interval=None):
+        """Solves the _ode with the initial conditions."""
+        if t_interval is None:
+            t_interval = np.array([0, 1])
+        if initial_speed is None:
+            initial_speed = np.array([0.2, 0.2])
+        x0 = self.x_ini
+        integrated = solve_ivp(self._ode, t_interval,
+                               args=((3, initial_speed, 0.2),),
+                               y0=x0, dense_output=True)
         return integrated
 
 
@@ -275,3 +336,248 @@ def visualize_multivariate(mean=(0, 0), cov=None, num_points=100, fignum=3):
     plt.draw()
     plt.colorbar()
     plt.show(block=False)
+
+
+def model_best_path(arm=None, prior_mu=None):
+    """Sets up a pymc3 model for finding the best initial speed
+
+    Parameters
+    ----------
+    arm : PriorArm instance or children
+    Arm to use for simulations. The dimensions of the space (arm.ndim)
+    must match the number of elements of --x_ini/end--. If no arm is
+    provided, the default one is created (for testing).
+
+    prior_mu : 1darray
+    Vector with as many elements as spatial dimensions (arm.ndim) that
+    determines the mean of the bounded Gaussian used for priors over
+    the initial angle of movement. If None, a vector pointing from
+    arm.x_ini to arm.x_end is used.
+
+    Returns
+    -------
+    model : pm.Model instance
+    Model with the required variables. Ready to do sampling. Low on
+    sugar and vegan.
+    """
+    if arm is None:
+        arm = PriorArm()
+    x_end = arm.x_end
+    x_ini = arm.x_ini
+    if prior_mu is None:
+        prior_mu = x_end - x_ini
+    prior_angle_mean = np.arccos(prior_mu[0] / np.linalg.norm(prior_mu))
+    prior_angle_sd = 0.5
+    circle_normal = pm.Bound(pm.Normal, lower=0, upper=2 * np.pi)
+
+    with pm.Model() as mamo:
+        angle_ini = circle_normal('angle_ini', mu=prior_angle_mean,
+                                  sd=prior_angle_sd,
+                                  testval=np.pi / 4)
+        x_ini = tt.stack([tt.cos(angle_ini), tt.sin(angle_ini)])
+        pm.DensityDist('logp', arm_logli(arm), observed=arm.x_ini)
+    return mamo
+
+
+def _log_likelihood(arm, initial_speed):
+    r"""Likelihood function to be used for inference. Solves the ODE
+    with the initial conditions and checks whether the solution went
+    near the goal. Returns a number that is higher the closer the
+    solution gets to the goal, and the faster it does so, following
+    the formula:
+    \[
+    L &= t_g - |g - x(t_g)| \\
+    t_g &= min_{t \in (0, 1]}d(g, x(t))
+    \]
+    where $d()$ is the Euclidean distance.
+    \]
+
+    """
+    epsi = 0.1
+    times = np.linspace(0, 1, 30)
+    # initial_speed = x_ini[arm.ndim:]
+    integrated = arm.solve_initial_value(initial_speed=initial_speed)
+    x_t = integrated.sol(times).T  # integrated.y[:arm.ndim, :].T
+    ydiff = np.diff(x_t, axis=0)
+    jerk = np.sum(np.abs(np.diff(ydiff[:, 0] / ydiff[:, 1])))
+    distances = np.linalg.norm(arm.x_end - x_t, axis=1)
+    ix_min = np.array(np.where(distances <= epsi)[0])
+    if ix_min.size == 0:
+        return -np.inf
+    ix_min = ix_min[0]
+    t_g = times[ix_min]  # integrated.t[ix_min]
+    likelihood = - 0.1 * t_g - distances[ix_min] - 100 * jerk
+    # ipdb.set_trace()
+    return likelihood
+
+
+class arm_logli(tt.Op):
+    """Theano Op for the log-likelihood for inference in model_best_path()."""
+    __props__ = ()
+    itypes = [tt.dvector]
+    otypes = [tt.dscalar]
+
+    def __init__(self, arm):
+        self.arm = arm
+
+    def perform(self, node, inputs, output_storage):
+        epsi = 0.1
+        arm = self.arm
+        initial_speed = inputs[0]
+        # integrated = arm.solve_initial_value(initial_speed=initial_speed)
+        # x_t = integrated.sol(np.linspace(0, 10, 20)).T  # integrated.y[:arm.ndim, :].T
+        # distances = np.linalg.norm(arm.x_end - x_t, axis=1)
+        # ix_min = np.array(np.where(distances <= epsi)[0])
+        # if ix_min.size == 0:
+        #     output_storage[0][0] = -np.inf
+        #     return
+        # ix_min = ix_min[0]
+        #     # ix_min = np.argmin(distances)
+        # t_g = integrated.t[ix_min]
+        # likelihood = -10 * t_g - distances[ix_min]
+        likelihood = _log_likelihood(arm, initial_speed)
+        output_storage[0][0] = likelihood
+
+
+def infer_best_path(x_ini=None, x_end=None, arm=None, **model_kwargs):
+    """Infers the best path from --x_ini-- to --x_end-- using
+    Metropolis sampling.
+
+    Parameters
+    ----------
+    x_ini : 1darray
+    Initial position. If None, its value is taken from the arm.
+
+    x_end : 1darray
+    Goal position. If None, its value is taken from the arm.
+
+    arm : PriorArm instance
+    Arm to use for the simulations. If None, the arm is created
+    using PriorArm. If x_end or x_ini are provided, they are used
+    to create the arm.
+
+    **model_kwargs are those sent to model_best_path() (other than
+    --arm--)
+
+    """
+    if arm is None:
+        return_arm = True
+        arm = PriorArm(x_ini=x_ini, x_end=x_end)
+    else:
+        return_arm = False
+        if x_ini is None:
+            x_ini = arm.x_ini
+        else:
+            arm.x_ini = x_ini
+        if x_end is None:
+            x_end = arm.x_end
+        else:
+            arm.x_end = x_end
+
+    model = model_best_path(arm)
+    with model:
+        samples = pm.sample(200, step=pm.Metropolis())
+    if return_arm:
+        return samples, arm
+    return samples
+
+
+def plot_infer_best_path(samples, arm, fignum=3):
+    """Plots the results from infer_best_path(). It takes as inputs
+    the outputs of infer_best_path().
+    """
+    mean_angle = samples.get_values('angle_ini').mean()
+    best_x_ini = np.array([np.cos(mean_angle), np.sin(mean_angle)])
+    integrated = arm.solve_initial_value(initial_speed=best_x_ini)
+
+    fig, axes = plt.subplots(1, 2, num=fignum, clear=True)
+
+    axes[0].plot(*integrated.y[:2], marker='o')
+    axes[0].set_xlim([0, 1])
+    axes[0].set_ylim([0, 1])
+    axes[1].hist(samples.get_values('angle_ini'))
+    plt.show(block=False)
+
+
+def simulate_well_arm():
+    """Runs simulations for motion planning for an arm in which there
+    is an obstacle in the middle in the form of an unpassable ring.
+
+    """
+    arm = FirstOrderArm()
+    well_fun_1 = _well_function(radius=0.1,
+                                center=np.array((0.5, 0.3)),
+                                slope=-15 / 0.05, alpha=25)
+
+    well_fun_2 = _well_function(radius=0.1,
+                                center=np.array([0.6, 0.7]),
+                                slope=-15 / 0.05, alpha=25)
+
+    def funny(x, le_fun=arm.priors_fun, well_fun_1=well_fun_1,
+              well_fun_2=well_fun_2):
+        return le_fun(x) + well_fun_1(x) + well_fun_2(x)
+    arm.priors_fun = funny
+
+    arm.visualize_prior_vector_field(num_points=50)
+
+    samples = infer_best_path(arm=arm, x_end=np.array((0.2, 0.3)),
+                              prior_mu=None)#np.array([-0.1, 0.1]))
+
+    plot_infer_best_path(samples=samples, arm=arm)
+    return arm, samples
+
+
+def _well_function(radius=0.02, slope=-30, alpha=5, center=(0, 0)):
+    r"""Returns a function for the well used in simulate_well_arm().
+
+    The well is centered at --center--, and is angle-invariant. Its
+    height (that is, the strength with which it repells) depends on
+    the distance from the center:
+    \[
+    f(r) = \alpha               for  r < r_0
+           m(r - r_0) + \alpha  for  r >= r_0
+           0                    for  r >= (r_0 - \alpha) / m
+    \]
+    where $r = ||x - x_0||$, r_0 is --radius--, m is --slope--, and
+    x_0 is --center--.
+
+    Returns
+    -------
+    well : function
+    Function with signature well(x), where x are the Cartesian coordinates
+    at which the function whould be evaluated.
+
+    """
+    center = np.array(center)
+
+    def well(x):
+        r = np.linalg.norm(x - center)
+        if r == 0:
+            return np.zeros_like(x)
+        theta = np.arccos((x[0] - center[0]) / r)
+        if r < radius:
+            out = alpha
+        else:
+            out = max(0, slope * (r - radius) + alpha)
+        ret_val = out * (x - center) / r
+        return ret_val
+    return well
+
+
+def simple_integration():
+    """Integrates the PriorArm._ode() function from 0 to 1 using the dumbest
+    x += dt * f(x) integration method to compare against scipy's solve_ivp.
+
+    """
+    arm = PriorArm(x_end=[0.5, 1])
+    arm.priors_fun = lambda x: 0
+    initial_speed = np.array([0, 0.2])
+
+    T = 5
+    dt = 0.001
+    x = np.array([*arm.x_ini, *initial_speed])
+    x_t = np.zeros((x.size, np.ceil(T / dt).astype(int) + 1))
+    for idt, t in enumerate(np.arange(0, T, dt)):
+        x += dt * arm._ode(t, x, m=(5,))
+        x_t[:, idt] = x
+    return arm, x_t
