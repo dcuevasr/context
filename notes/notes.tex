@@ -1,0 +1,112 @@
+\documentclass{report}
+\usepackage{graphicx}
+\usepackage{breakcites}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage[margin=1.5cm]{geometry}
+\bibliographystyle{apalike}
+
+% Remember to start reftex-mode
+
+\begin{document}
+
+\begin{chapter}{Random ideas}
+\section{Straight movements as a sign of learning}
+According to Gurevich\_93 (see \cite{Wolpert_Are_1995}) and \cite{Shadmehr_Adaptive_1994}, the more a person practices a movement, the straighter this movement becomes. Could we use the curvature of a movement as a measure of how much they've learned this movement?
+
+This could be useful for the context-dependent learning paradigm. The question to answer is: if a participant learns context A fully (and their movements become more straight), when switching back to A, will the first movement be straight or curved? If it's straight, then we can link this to the idea of context-based learning.
+
+NOTE: Gurevich\_93 is a doctoral thesis that doesn't seem to be available.
+\end{chapter}
+
+\begin{chapter}{Paper}
+In this chapter, I describe the everything related to the paper that should come out of this project, including modeling and experimental findings, as well as the direction of the paper and things needed to get there.
+
+\section{Project description}
+The idea of the project is the following: We will create an agent that learns to control an arm in environment A (say, the real world carrying nothing), and learns how to control the arm in environment B (say, with high winds). The agent then learns to recognize environments A and B and to deploy the right controller for each environment depending on this recognition.
+
+We will argue that this is how humans do it and present evidence (based on literature research) for the predictions this model makes, as well as try to make new predictions.
+
+After this methods paper is done, model validation can be carried out in future studies.
+
+\section{Planning}
+Here I enumerate the things I need to learn and do in order to get this project moving and to finish it.
+
+\begin{enumerate}
+\item (1.5 weeks) Learn about published models on arm-movement planning, especially those that can be used as generative models.
+\item (0.5 weeks) Learn about measures for how practiced a movement is. Reaction times? Speed profiles? Trajectories?
+\item (2-3 weeks)Implement the best model/s and do some testing as to its capabilities.
+\item (1 weeks) Add the context inference as another level in the hierarchy.
+\item (2 weeks) Run some exploratory simulations
+\item (1 week + meeting)Talk about possible predictions that can be made with the model for later experimental verification.
+\item (Months?) Write the paper
+\item Profit!
+
+\end{enumerate}
+
+\end{chapter}
+
+
+\begin{chapter}{Modeling}
+Notes from \cite{Harris_Signaldependent_1998}:
+\begin{enumerate}
+\item Check the following models: Nelson 83, Todorov and Jordan 02, Hamilton and Wolpert 02, van Beers at al 02, 04, Enderle and Wolfe 87, Happee 92
+\end{enumerate}
+
+I should read Knill and Pouget 2004 for Bayesian calculations in neurons.
+
+\end{chapter}
+
+
+
+
+\begin{chapter}{Physiology and neurons}
+A few notes from \cite{Wolpert_Are_1995}:
+\begin{enumerate}
+\item Hand paths become straight with practice (Gurevich 93, Shadmehr and Musa-Ivaldi 94)
+\item Deafferented patients move differently (Ghez 90)
+\item Bell-shaped speed emerges from dynamics of control, not from planning (Jordan 94)
+\item Curvature matches the participant's messed up perception of straight lines (wolpert 94)
+
+\end{enumerate}
+
+Notes from \cite{Harris_Signaldependent_1998}:
+\begin{enumerate}
+\item Arm stiffness can be adapted (Burdet et al 01.
+\end{enumerate}
+
+Notes from \cite{Bays_Computational_2007}:
+\begin{enumerate}
+\item We have the ability to recall previously learned dynamics even after months! (Bashers-Krug et al 96, Gandolfo et al 96).
+\end{enumerate}
+
+Notes from \cite{Shadmehr_Adaptive_1994}:
+\begin{enumerate}
+\item When planning movement, the target is transformed from a retinocentric vector to a head-centered and finally a shoulder-centered one. (Andersen\_85, Soechting and Flanders\_91).
+\item Gordon\_93 says that the target is finally represented as a vector from the current hand positoin (or whatever the effector is) to the goal position.
+\item From Lackner\_and\_Dizio\_92, aftereffects exist when introduced Coriolis forces are withdrawn. They also exist when perception is mucked with with prism glasses (Held\_59, 62, 63).
+\end{enumerate}
+
+
+
+
+
+\end{chapter}
+
+
+
+\begin{chapter}{Notes on papers}
+Conclusions and useful things about different papers I read. This differs from the comments above in that the notes here are holistic.
+
+\section{\cite{Shadmehr_Adaptive_1994}}
+In this paper they show a number of things. First, the show that people can adapt the dynamics of their control states to match changing dynamics of the observers. They also show that this adaptation takes the form of a straightening of trajectories, which are very twisted when they are first introduced to new system dynamics (viscosity of the environment); participants learn to do straight lines in the new environment after some trials, and the learing is monotonically increasing. They show a model of the dynamics of the arm, the control states and the adaptation that happens when exposed to the new dynamics. Finally, they show, both experimentally and in their model, the aftereffects of the new dynamics, whereby they display bad behavior when they go back to the natural environment, but eventually adapt to it as well.
+
+Interesting paper that cound be the foundation of our models, assuming that it hasn't been improved upon and maybe entirely replaced by newer stuff.
+
+\end{chapter}
+
+
+\bibliography{../MyLibrary}
+
+\end{document}
+
