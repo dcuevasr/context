@@ -3,12 +3,27 @@
 \usepackage{breakcites}
 \usepackage{natbib}
 \usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{tabularx}
 \usepackage[margin=1.5cm]{geometry}
 \bibliographystyle{apalike}
 
 % Remember to start reftex-mode
 
 \begin{document}
+
+\begin{chapter}{Glossary}
+\begin{enumerate}
+\item Error-clamp: Refers to the phase of a simulation in the models of motor adaptation where the error that drives learning is set to zero. This emulates a no-feedback experimental condition.
+\end{enumerate}
+\end{chapter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 
 \begin{chapter}{Random ideas}
 \section{Straight movements as a sign of learning}
@@ -17,7 +32,22 @@ According to Gurevich\_93 (see \cite{Wolpert_Are_1995}) and \cite{Shadmehr_Adapt
 This could be useful for the context-dependent learning paradigm. The question to answer is: if a participant learns context A fully (and their movements become more straight), when switching back to A, will the first movement be straight or curved? If it's straight, then we can link this to the idea of context-based learning.
 
 NOTE: Gurevich\_93 is a doctoral thesis that doesn't seem to be available.
+
+
+\section{Quick adaptation to perturbations in the irrelevant manifold.}
+Models for motor control can be divided into two categories: (1) optimal trajectory and (2) end point. Optimal trajectory are those in which the controller tries to stick to a previously-calculated optimal trajectory and any perturbation (internal, external) will be dealt with by trying to go back to the optimal trajectory. Endpoint models, on the other hand, do not care that much about the trajectory itself and, with models that follow the ``minimal intervention'' principle, will only correct for perturbations if they mess with the endpoint.
+
+Endpoint models are more recent and arguably better than optimal trajectory ones. However, there is one thorn on their side: if during a movement an arm is perturbed, it will immediately try to return to the optimal trajectory \citep{Bizzi_Posture_1984}, even if the perturbation does not detract from the endpoint (this last part is my speculation). \cite{Todorov_Optimality_2004} argues that this is due to impedance, as a sort of immediate dumb fighback.
+
+A nice low-hanging fruit project would be to test whether \cite{Todorov_Optimality_2004} is right by having participants perform a reaching task in real life, where a motor creates random perturbations (in the irrelevant manifold, for good measure) and compare their reactions to the same task in virtual reality where the perturbation happens in the VR environment, but not in real time. If participants adapt in the same way in both environments, then \cite{Todorov_Optimality_2004} is wrong.
+
 \end{chapter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{chapter}{Paper}
 In this chapter, I describe the everything related to the paper that should come out of this project, including modeling and experimental findings, as well as the direction of the paper and things needed to get there.
@@ -32,35 +62,229 @@ After this methods paper is done, model validation can be carried out in future 
 \section{Planning}
 Here I enumerate the things I need to learn and do in order to get this project moving and to finish it.
 
-\begin{enumerate}
-\item (1.5 weeks) Learn about published models on arm-movement planning, especially those that can be used as generative models.
-\item (0.5 weeks) Learn about measures for how practiced a movement is. Reaction times? Speed profiles? Trajectories?
-\item (2-3 weeks)Implement the best model/s and do some testing as to its capabilities.
-\item (1 weeks) Add the context inference as another level in the hierarchy.
-\item (2 weeks) Run some exploratory simulations
-\item (1 week + meeting)Talk about possible predictions that can be made with the model for later experimental verification.
-\item (Months?) Write the paper
-\item Profit!
+\begin{tabularx}{\textwidth}{
+  l|
+  >{\hsize=.4\hsize\linewidth=\hsize}X|
+  >{\hsize=.2\hsize\linewidth=\hsize}X|
+  >{\hsize=.2\hsize\linewidth=\hsize}X}
+% {l|{\hsize=.4\hsize}X|{\hsize=0.3\hsize}X|{\hsize=0.3\hsize}X}
+End Date & Milestone & A priori comments & A posteriori comments \\ \hline \hline
+12.02.2021 & Learn about published models on arm-movement planning, especially those that can be used as generative models & & \\ \hline
+19.02.2021 & Learn about measures for how practiced a movement is. Reaction times? Speed profiles? Trajectories? & & \\\hline
+12.03.2021 & Implement the best model/s and do some testing as to its capabilities. & Without inference &   \\ \hline
+19.03.2021 & Add the sequential goals as another level in the hierarchy. & Still no inference. & \\ \hline
+02.04.2021 & Run some exploratory simulations & How well does the model behave? Are there bad cases? & \\ \hline
+09.04.2021 & Talk a  bout possible predictions that can be made with the model. & This includes a meeting. & \\ \hline
+--- & Run final simulations and write paper. & & \\ \hline
 
-\end{enumerate}
+\end{tabularx}
+
 
 \end{chapter}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{chapter}{Modeling}
-Notes from \cite{Harris_Signaldependent_1998}:
+\section{Random thoughts}
+I should read Knill and Pouget 2004 for Bayesian calculations in neurons.
+
+\section{Categorizing models}
+
+\section{Models to implement}
+\subsection{Optimal feedback control from \cite{Todorov_Optimal_2002}}
+\label{subsec:todorov-2002}
+This model, very well specified in the supplementary information of \cite{Todorov_Optimal_2002}, is an optimal control model, where some cost function is established and solved alongside the dynamical system.
+
+The model is based on what they call the ``minimal intervention principle'', where trajectories are only corrected when they interfere with the goals. This is fancy talk for the idea of using cost functions that are based entirely on the final goal (and subgoals, if any), as opposed to calculating optimal trajectories and trying to stick to them. The cost function also must be written in a way that establishes what is relevant and what isn't. For example, they talk about a cost function of the form $x_1 + x_2 - x*$, which does not specify what the end positions of $x_1$ and $x_2$ have to be, but only that their sum must be close to $x*$.
+
+Once the cost function is created, the system of differential equations (see below), cost function and observation feedback functions are all solved by casting the problem in terms of a Kalman filter.
+
+It seems like the model is ready to be applied as-is, with modifications only at the level of the dynamical system and the cost function.
+
+From \cite{Wolpert_Principles_2011}:
 \begin{enumerate}
-\item Check the following models: Nelson 83, Todorov and Jordan 02, Hamilton and Wolpert 02, van Beers at al 02, 04, Enderle and Wolfe 87, Happee 92
+\item ``The minimum intervention principle has now
+been demonstrated in a number of tasks including the seemingly simple task of
+generating a target force with the tip of the index finger[35]''
+\item ``Recently, it has been pro- posed that such impedance control can be
+brought within an optimal control framework by formulating impedance control as
+the optimal response in the face of uncertainty about the dynamics of the body
+and environment[39].''
 \end{enumerate}
 
-I should read Knill and Pouget 2004 for Bayesian calculations in neurons.
+\subsection{Adaptive dynamics from \cite{Shadmehr_Adaptive_1994}}
+\label{subsec:shadmehr-1994}
+The gist of this model is as follows: first, determine an optimal trajectory
+$q^*(t)$, then set up the controller of each joint such that $q^*(t)$ is an
+attractor (for $0 \le t \le T$) of the system and then just let it rip. The
+optimal trajectory in this paper is obtained using the minimum jerk model
+\citep{Hogan_organizing_1984}.
+
+Because of the use of an optimal trajectory that the controlled system is trying
+to stick to, this model differs from that presented by
+\cite{Todorov_Optimal_2002} (see \ref{subsec:todorov-2002}). In addition to this
+essential difference, this model also does not have the possibility of feedback
+signals (visual or proprioceptive) and, due to its complexity, is probably less
+viable as a generative model for inversion, though that might be a problem for
+future studies and not this paper.
+
+\subsection{Object avoidance from \cite{Hamilton_Controlling_2002}}
+In this paper they're touting the awesomeness of the TOPS model
+\citep{Harris_Signaldependent_1998} and applying it to a reaching problem with
+an obstacle in between.
+
+The implementation of this model is way too handcrafted. The gist of it is as
+follows: They put an obstacle between the starting and ending positions and
+assume that the optimal trajectory is a polynomial of fifth order (maybe even
+just $y = Ax^5$, I'm not sure). To optimize its parameters they created a cost
+function with two parts: the first part is the predicted covariance of the end
+point and the second part is a term penalizing ``visiting'' the obstacle. They
+basically discard any trajectory that gets close to the obstacle.
+
+While it works, I find it too ad hoc to be useful.
+
+
+\subsection{2-timescale motor learning from \cite{Lee_Dual_2009}}
+\label{subsec:lee-dual}
+This is a motor learning model, i.e. a model for how we can learn to perform
+movements in an environment that is different from the default. For example,
+under strong winds. It's an extension of the model presented by
+\cite{Smith_Interacting_2006} to the problem of ``dual adaptation'', i.e. the
+adaptation to different contexts and their force fields, and switching between
+them.
+
+While they present many models for dual adaptation, through model comparison (of
+the qualitative type) they arrive at the conclusion that the only good one is
+the parallel 1-fast N-slow model, which I describe here.
+
+Consider an abstract motor system (for example, an arm) that has learned to
+perform its movements in a baseline environment. Let $y(t) \in \mathbb{R}$ be
+the outcome for some motor signal given at time $t$ by the controller in the
+baseline environment. Now, assume that in a new environment, with some force
+field that is unknown to the controller, the controller issues the command that
+under the baseline environment would lead to $y(t)$, but, due to the force
+field, it leads to the outcome $f(t)$. Now, define a prediction error between
+the expected outcome and the observed outcome as $e(t) = f(t) - y(t)$. The model
+from \cite{Lee_Dual_2009} postulates two adaptation systems, one fast and one
+slow, which learn from this prediction error.
+
+Both slow and fast systems adapt with a similar rule:
+\[
+x_{f/s}(t + 1) = A_{f/s}x_{f/s}(t) + B_{f/s}e(n)c(n)^T
+\]
+where $x$ is a ``learning process'', $f/s$ refers to fast/slow (one equation
+each), and $A$ and $B$ are learning rates. $c(n)$ is the environment variable
+that informs the controller which environment is currently active.
+$x_s,c, B \in \mathbb{R}^M$ to account for multiple environments. In the case
+where the learning of one environment does not interfere with the learning of
+others (as in \cite{Lee_Dual_2009}), $c = (0, ..., 1, 0, ..., 0)$, where the 1
+is in the position of the current environment. Note that the fast process is
+single-dimensional in this model (see \citep{Lee_Dual_2009} for the reasoning).
+
+The controller is then given by:
+\[
+y(t) = x_f(t) + x_s(t)c(t)^T
+\]
+
+\subsection{Proposal: Bayesian motor learner}
+This model is a Bayesian alternative to the N-state learners from
+\cite{Lee_Dual_2009}. In this model, there is no need for explicit different
+timescales and multiple states; instead, the model relies on Bayesian learning
+of the best control, combined with inference over the current context. This
+model will, hopefully, reproduce all the experimental findings from the
+literature on motor learning (e.g. saving, interference).
+
+The model consists of three parts: (1) context inference, (2) decision making,
+(3) updating of the decision-making rules.
+
+Before describing these parts, I present some nomenclature:
+\begin{itemize}
+\item $t$: Time at the moment an observation is made, before inference is done.
+\item $\theta_t$: Observation. Note that this is assumed to be a noisy
+observation of the generalized state (see below) given by $\theta_t = h(z_t)$.
+\item $s_t$: Hidden state, e.g. the position of the hand. It is assumed not to
+depend on context. E.g. the physical position of the hand.
+\item $a_t$: Action taken after observing $\theta_t$ and inferring the context.
+\item $c_t$: Context inferred after observing $\theta_t$.
+\item $\omega_t$: Contextual cue.
+\item $z_t$: Generalized state, $z_t = \{s_t, c_t, \omega_t\}$. Observed noisily
+as $\theta_t$.
+\end{itemize}
+
+Context inference can work through context-specific (possibly unreliable) cues,
+or through the dynamics themselves, using prediction error as the force behind
+inference. Let us assume that both parts are present in the observation
+$\theta_t$. In this case, the inferred generalized state is given by
+$q(z_t | \theta_t, \theta_{t-1}, a_{t-1}) \propto p(\theta_t |
+z_t)p(z_t|\theta_{t-1}, a_{t-1})$.
+
+Having inferred the generalized state (including context), a decision is made
+sampling from $p(a_t | z_t, \beta)$, which is a distribution that is assumed to
+be parametrized by $\beta$. These parameters can be updated via
+$q(\beta | z_t, \theta_{t+1}, a_t) \propto p(\theta_{t+1} | \beta, z_t,
+a_t)p(\beta)$
+
+\subsubsection{Expected results}
+I predict that this model will display all the experimental findings that other
+models do, without invoking a possibly-infinite hierarchy of time scales, each
+with their own learning rate. Here I briefly go through the experimental
+findings and why I expect the model to reproduce them.
+
+Savings. This refers to the effect that, while learning a new context, if
+learning is interrupted by going back to a baseline context (e.g. no force
+field) and the new context is later retaken, the new dynamics do not need to be
+learned from scratch. Instead, learning continues where it was left off, with
+the possibility of some performance having been lost (i.e. learning having been
+forgotten). The Bayesian lerner displays this behavior simply by virtue of the
+learning of contex-specific action rules (learned dynamics), which are ``stored
+away'' once the context is no longer the new one (i.e. it has returned to
+baseline).
+
+Retrograde interference. This refers to the learning of context A interfering
+with the learning of context B. This occurs, for example, if context A has a
+force field that pushes right, while context B has a force field that pushes
+left. In this case, learning B is made slower by having learned Abefore,
+compared to learning B without having encountered A. This effect will be
+observed in the behavior of the model if context inference needs to accumulate
+before the agent is sure that a context switch has occured. In the meantime,
+context A's learned dynamics will interfere with context B's because actions are
+taken with a rule that depends on context (via $z_t$). Related to this, the
+model makes three predictions: (1) Contextual cues (that can be trusted) will
+reduce interference. (2) The amount of learning on contexts A and B will affect
+intereference such that highly trained contexts will interfere more
+strongly. (3) The duration of interference will be reduced in the case of
+highly-learned, opposing contexts, as the prediction error of the outcomes of
+actions will quickly drive contexts to switch to the current one.
+
+Rapid de-adaptation. This is the phenomenon in which forgetting an adaptation is
+faster than learning it. This would happen simply through context-based
+learning, where getting out of a context means that adaptations are no longer
+used (and eventually are forgotten). Note: I need to read more on this
+phenomenon, as I might be misinterpreting what it means.
+
+Bicycle effect. We never forget how to ride a bicycle. Existing models would
+need to incorporate an almost-infinite hierarchy of time scales to account for
+this, but my Bayesian learner naturally accounts for it by making use of
+probability distributions: the longer you practice something, the more
+entrenched the adaptation becomes by virtue of the posterior probability
+becoming very peaky.
+
 
 \end{chapter}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
-\begin{chapter}{Physiology and neurons}
+\begin{chapter}{Behavioral findings, Physiology and neurons}
 A few notes from \cite{Wolpert_Are_1995}:
 \begin{enumerate}
 \item Hand paths become straight with practice (Gurevich 93, Shadmehr and Musa-Ivaldi 94)
@@ -70,17 +294,17 @@ A few notes from \cite{Wolpert_Are_1995}:
 
 \end{enumerate}
 
-Notes from \cite{Harris_Signaldependent_1998}:
+\section{Notes from \cite{Harris_Signaldependent_1998}}
 \begin{enumerate}
 \item Arm stiffness can be adapted (Burdet et al 01.
 \end{enumerate}
 
-Notes from \cite{Bays_Computational_2007}:
+\section{Notes from \cite{Bays_Computational_2007}}
 \begin{enumerate}
 \item We have the ability to recall previously learned dynamics even after months! (Bashers-Krug et al 96, Gandolfo et al 96).
 \end{enumerate}
 
-Notes from \cite{Shadmehr_Adaptive_1994}:
+\section{Notes from \cite{Shadmehr_Adaptive_1994}}
 \begin{enumerate}
 \item When planning movement, the target is transformed from a retinocentric vector to a head-centered and finally a shoulder-centered one. (Andersen\_85, Soechting and Flanders\_91).
 \item Gordon\_93 says that the target is finally represented as a vector from the current hand positoin (or whatever the effector is) to the goal position.
@@ -88,10 +312,39 @@ Notes from \cite{Shadmehr_Adaptive_1994}:
 \end{enumerate}
 
 
+\section{Notes from \cite{deC.Hamilton_scaling_2004}}
+\begin{enumerate}
+\item ``Muscle activity in specific tasks shows stereotypy whether subjects generate force with the fingertips (Valero-Cuevas et al. 1998), the wrist (Hoffman and Strick 1999), the neck (Vasavada et al. 2002) or the arm (van Zuylen et al. 1988; Flanders and Soechting 1990; Buchanan et al. 1993; van Bolhuis and Gielen 1997).''
+\item ``Primates also show repeatable patterns of muscle activation when grasping the same object repeatedly, and different activation patterns for different objects (Brochier et al. 2001). This suggests that stereotypy is a general characteristic of movement and is not unique to humans.''
+\item There is a paragraph that discusses different cost functions. For example, one is based on the total torque, another on fatigue and endurance, and other mathematical alchemy. Lots of references there too.
+
+\end{enumerate}
+
+\section{Notes from \cite{Kojima_Memory_2004}}
+\begin{enumerate}
+\item ``Previous studies have shown that adaptation is relatively specific to the size and direction of target eccentricity (Deubel et al., 1987; Semmlow et al., 1989; Frens and van Opstal, 1994; Straube et al., 1997; Noto et al., 1999; Watanabe et al., 2000).''
+\item ``It has been demonstrated that adaptation progresses more slowly when the subject is exposed to adapting target steps of a variety of sizes and directions in humans (Miller et al., 1981) and monkeys (Scudder et al., 1998).''
+\end{enumerate}
 
 
+\section{Notes from \cite{Lee_Dual_2009}}
+``When given contextual cues and sufficient trials, humans can simultaneously adapt to two opposite force fields (Osu et al., 2004; Nozaki et al., 2006; Howard et al., 2008), two saccadic gains (Shelhamer et al., 2005), or several visuomotor rotations (Imamizu et al., 2007; Choi et al., 2008).''
+
+\section{Motor adaptation}
+Motor adaptation to modified environments (e.g. force fields) has been shown to display the following characteristics:
+\begin{enumerate}
+\item Savings: Learning a previously-learned environment (after some extinction phase) is faster than the original learning. This means that the previously learned model is saved for a while and its learning can be resumed after extinction. However, \cite{Kojima_Memory_2004} showed that savings can be ``washed out'' if baseline trials (no force field) are inserted between extinction and the second learning phase.
+\item Anterograde interference: Learning an adaptation (e.g. force field pointing left) slows down learning an opposing adaptation (e.g. force field pointing right).
+\item Rapid de-adaptation: Unlearning an adaptation (even after fully learning it) is faster than tlearning it \citep{Davidson_Scaling_2004}
+\end{enumerate}
 
 \end{chapter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
@@ -103,7 +356,49 @@ In this paper they show a number of things. First, the show that people can adap
 
 Interesting paper that cound be the foundation of our models, assuming that it hasn't been improved upon and maybe entirely replaced by newer stuff.
 
+A description of their model can be seen in \ref{subsec:shadmehr-1994} above.
+
+\section{\cite{Todorov_Optimal_2002}}
+See \ref{subsec:todorov-2002}
+
+\section{\cite{deC.Hamilton_scaling_2004}}
+The authors make use of the TOPS strategy \citep{Harris_Signaldependent_1998} and an experiment where they measure torque at different joints to show that bigger muscles produce less variability than smaller muscles for the same level of voluntary torque (I wonder what the opposite of voluntary is).
+
+It's an experimental paper with some muscle simulations thrown in for good measure. Contains a lot of references that might be useful later on the nature and characteristics of human and primate movements, as well as cost functions used in the past for modeling them.
+
+\section{\cite{Beers_When_2002}}
+This paper speaks of a model of optimal adaptation and weighting of visual and proprioceptive cues. Nothing of interest for us as of now.
+
+\section{\cite{Scheidt_Learning_2001}}
+Humans can adapt their movements to stochasticly varying changes in the dynamics of the environment. Moreover, they showed that their adaptation is most complatible with the idea that participants adapt to the mean of the dynamics (a one-directional force of changing magnitude) of the environment instead of doing trial-to-trial adaptations.
+
+These views, however, are challenged by the two-time-scales models of learning, like \cite{Smith_Interacting_2006}.
+
+\section{\cite{DeKleijn_Everyday_2014}}
+They cite \cite{Henry_Increased_1960} saying that participants have longer reaction times when preparing complex movements than when preparing simple ones. May be worth checking out.
+
+\section{\cite{Haar_Motor_2020}}
+This is the only paper I know where they do motor learning in a very natural task: playing billiards. It's great and I wish I could do this research.
+
+They tracked the joints of participants who were doing the same pool shot over and over (300 times). I do not think there was any variation in initial positions. They track performance and variability in joint movement.
+
+\section{\cite{Wolpert_Principles_2011}}
+Good review on motor learning. many relevant citations here.
+
+\section{\cite{Todorov_Optimality_2004}}
+Review of optimal control. Citation goldmine! Lots of papers on optimal control in biological systems are cited here.
+
+In particular, [43] and [44] might be similar to the idea of inferring goals and predicting future movements.
+
+``However, feedback control[25] explains an important additional observation: the increased duration of more accurate movements is due to a prolonged deceleration phase, making the speed profiles significantly skewed[88].''
+
 \end{chapter}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 \bibliography{../MyLibrary}
