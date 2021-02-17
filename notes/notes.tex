@@ -219,14 +219,25 @@ Context inference can work through context-specific (possibly unreliable) cues,
 or through the dynamics themselves, using prediction error as the force behind
 inference. Let us assume that both parts are present in the observation
 $\theta_t$. In this case, the inferred generalized state is given by
-$q(z_t | \theta_t, \theta_{t-1}, a_{t-1}) \propto p(\theta_t |
-z_t)p(z_t|\theta_{t-1}, a_{t-1})$.
+\[
+  q(z_t | \theta_t, \theta_{t-1}, a_{t-1}) \propto p(\theta_t | z_t)p(z_t|\theta_{t-1}, a_{t-1})
+\]
+  
+Additionally, after having inferred the current state, motor adaptation is given by
+\[
+q(\gamma | z_t, z_{t-1}, a_{t-1}) \propto p(z_t | z_{t-1}, a_{t-1}, \gamma)p(z_{t-1})p(\gamma)
+\]
+
+where $\gamma$ are the parameters of the internal model for the dynamics,
+i.e. the function $f: (z_t, a_t) \rightarrow z_{t+1}$, which determines the beliefs of
+the agent as to how the system evolves after having taken action $a_t$.
 
 Having inferred the generalized state (including context), a decision is made
-sampling from $p(a_t | z_t, \beta)$, which is a distribution that is assumed to
-be parametrized by $\beta$. These parameters can be updated via
-$q(\beta | z_t, \theta_{t+1}, a_t) \propto p(\theta_{t+1} | \beta, z_t,
-a_t)p(\beta)$
+sampling from $p(a_t | z_t, \gamma)$, which is the mapping between state and
+action, given the updated value for $\gamma$. Because the model is meant to be
+used to follow a given trajectory (which was created by another system, not
+modeled here), the desired $z_{t+1}$ is known at time $t$. Therefore, having
+$p(z_{t+1} | z_t, a_t, \gamma)$ is enough to create $p(a_t | z_t, \gamma)$.
 
 \subsubsection{Expected results}
 I predict that this model will display all the experimental findings that other
