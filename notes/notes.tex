@@ -6,6 +6,7 @@
 \usepackage{amsfonts}
 \usepackage{tabularx}
 \usepackage[margin=1.5cm]{geometry}
+\usepackage{todonotes}
 \bibliographystyle{apalike}
 
 \DeclareMathOperator*{\argmin}{argmin}
@@ -554,77 +555,173 @@ deceleration phase, making the speed profiles significantly skewed[88].''
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\begin{chapter}{Implementing the adaptation model}
-In this section, I propose a simulated task in which the prowess of the model proposed in \ref{subsec:proposal} is put to the test. I additionally present simulation results and some writeup. Basically a mini-paper on this model.
+\begin{chapter}{Implementing the adaptation model} In this section, I propose a
+simulated task in which the prowess of the model proposed in
+\ref{subsec:proposal} is put to the test. I additionally present simulation
+results and some writeup. Basically a mini-paper on this model.
 
-\section{The Task}
-The tasks used for models like this one are usually \citep[e.g.][]{Lee_Dual_2009} reaching tasks: a participant sits in front of a table with shoulders immobilized, and has to bring her hand from the starting position A to a designated position B. This is done while holding a robotic arm that moves with the hand. The robotic arm is used to create force fields in different directions (CW and CCW, typically, but it's basically left and right) for the different contexts. The position of the participant's arm is recorded and deviations from the straight line are considered as errors ($e(t)$ in \ref{eqn:lee-learn}).
+\section{The Task} The tasks used for models like this one are usually
+\citep[e.g.][]{Lee_Dual_2009} reaching tasks: a participant sits in front of a
+table with shoulders immobilized, and has to bring her hand from the starting
+position A to a designated position B. This is done while holding a robotic arm
+that moves with the hand. The robotic arm is used to create force fields in
+different directions (CW and CCW, typically, but it's basically left and right)
+for the different contexts. The position of the participant's arm is recorded
+and deviations from the straight line are considered as errors ($e(t)$ in
+\ref{eqn:lee-learn}).
 
-To simplify the task, I propose the following: participants need to keep their hand still in the starting position for the duration of the trial. The robotic arm creates forces that will drive the arm away from its current position by pushing in a constant direction with constant force. This experiment has the same elements as the one by \cite{Lee_Dual_2009} but eliminates the necessity of an underlying movement. While it works wonders as a thought experiment and helps me see if the proposed model behaves the way I want, it must not be used as a real experiment because participants could simply use impedance for each trial, regardless of context.
+To simplify the task, I propose the following: participants need to keep their
+hand still in the starting position for the duration of the trial. The robotic
+arm creates forces that will drive the arm away from its current position by
+pushing in a constant direction with constant force. This experiment has the
+same elements as the one by \cite{Lee_Dual_2009} but eliminates the necessity
+of an underlying movement. While it works wonders as a thought experiment and
+helps me see if the proposed model behaves the way I want, it must not be used
+as a real experiment because participants could simply use impedance for each
+trial, regardless of context.
 
-In this experiment, every context $C_i$ is characterized by the strength and direction of its force: $C_i = \{\theta_i, \gamma_i\}$, where $i = 1, 2, ..., N_c$, $N_c$ is the number of contexts, $\theta$ is the angle of the force measured Cartesianly, and $w_i$ is the intensity of the force.
+In this experiment, every context $C_i$ is characterized by the strength and
+direction of its force: $C_i = \{\theta_i, \gamma_i\}$, where $i = 1, 2, ...,
+N_c$, $N_c$ is the number of contexts, $\theta$ is the angle of the force
+measured Cartesianly, and $w_i$ is the intensity of the force.
 
-As in \cite{Lee_Dual_2009}, I will simulate an A-B-clamp paradigm, which starts with a context $C_0 = \{0, 0\}$ in which no force is being applied. Then context $C_A$ is shown for a few trials, then context $C_B$, then an error-clamp block in which the hand is forced to stay at the initial position by the robotic arm.
+As in \cite{Lee_Dual_2009}, I will simulate an A-B-clamp paradigm, which starts
+with a context $C_0 = \{0, 0\}$ in which no force is being applied. Then
+context $C_A$ is shown for a few trials, then context $C_B$, then an
+error-clamp block in which the hand is forced to stay at the initial position
+by the robotic arm.
 
-Additionally, a contextual cue $\omega$ is shown to the participant which signals the current context. The experiment will be run with different levels of reliability of this cue. Different sessions will be run with different cue reliabilities.
+Additionally, a contextual cue $\omega$ is shown to the participant which
+signals the current context. The experiment will be run with different levels
+of reliability of this cue. Different sessions will be run with different cue
+reliabilities.
 
-An experimental session $\Xi$ is characterized by the reliability of the cue, the contexts avaiable and the order in which they are shown. In a given session, each trial begins with the cue and the XXX seconds during which the participant must keep the hand in the starting position. During the intertrial time, no forces are applied to the hand, but the hand must remain in the starting position.
+An experimental session $\Xi$ is characterized by the reliability of the cue,
+the contexts avaiable and the order in which they are shown. In a given
+session, each trial begins with the cue and the XXX seconds during which the
+participant must keep the hand in the starting position. During the intertrial
+time, no forces are applied to the hand, but the hand must remain in the
+starting position.
 
 \section{The model}
-The model is an implementation of \ref{subsec:proposal}. The generalized state is given by:
-\[
+The model is an implementation of \ref{subsec:proposal}. The generalized state
+is given by:
+\begin{equation}
 z_t = \{x, \theta_t, \gamma_t, \omega_t\}
-\]
-where $x$ is the current position of the hand in Cartesian coordinates, where the origin is the starting point. We assume that motor commands are issued every $\Delta t$ for simplicity. At the beginning of each time interval, the context is inferred combining the cue and the prediction error of the outcome of the previous motor command. We assume further than the cue and the force field are uncorrelated, which yields:
+\end{equation}
+where $x$ is the current position of the hand in Cartesian coordinates,
+where the origin is the starting point. We assume that motor commands are
+issued every $\Delta t$ for simplicity. At the beginning of each time interval,
+the context is inferred combining the cue and the prediction error of the
+outcome of the previous motor command. We assume further than the cue and the
+force field are uncorrelated, which yields:
 \begin{align}
   q(C_t) &= q(C_t | \omega_t)q(C_t | s_t, s_{t-1}, a_{t-1}) \\ \label{eqn:estimated-context}
   q(C_t | \omega_t) &\propto p(\omega_t | C_t)p(C_t) \\
   q(C_t | x_t, x_{t-1}, a_{t-1}) &\propto p(x_t | C_t, x_{t-1}, a_{t-1})p(x_t)p(x_{t-1})p(C_t)
 \end{align}
-The terms $p(C_t)$ refer to the prior probability of the context at the beginning of the trial: at the first trial, this refers to prior beliefs over which contexts are more common/likely. At each subsequent trial, it incorporates the belief that has so far been accumulated, given previous trials.
+The terms $p(C_t)$ refer to the prior probability of the context at
+the beginning of the trial: at the first trial, this refers to prior beliefs
+over which contexts are more common/likely. At each subsequent trial, it
+incorporates the belief that has so far been accumulated, given previous
+trials.
 
-Once the posterior over contexts has been calculated for the current trial, it is used to select the current context. A simple rule is to sample the context directly from the posterior distribution. However, a useful extension of this is to use a softmax function to create a distribution:
+Once the posterior over contexts has been calculated for the current trial, it
+is used to select the current context. A simple rule is to sample the context
+directly from the posterior distribution. However, a useful extension of this
+is to use a softmax function to create a distribution:
 
 \begin{equation}
-S(C^{(t)}) = \frac{e^{\kappa q\left(C^{(t)}\right)}}{\displaystyle \sum_{i=1}^{N_c}e^{\kappa q\left(C_i\right)}}
+S(C^{(t)}) = \frac{e^{\kappa
+q\left(C^{(t)}\right)}}{\displaystyle \sum_{i=1}^{N_c}e^{\kappa
+q\left(C_i\right)}}
 \end{equation}
-where $q(C_i)$ is given by \eref{eqn:estimated-context}. The function $S(\cdot)$ is then used to sample the (inferred) current context. This representation has the advantage of adding a parameter with which the sampling behavior can be characterized, ranging from choosing uniformly when $\kappa = 0$ to choosing the context with the highest probability deterministically as $\kappa \rightarrow \infty$.
+where $q(C_i)$ is given by \eref{eqn:estimated-context}. The
+function $S(\cdot)$ is then used to sample the (inferred) current context. This
+representation has the advantage of adding a parameter with which the sampling
+behavior can be characterized, ranging from choosing uniformly when $\kappa =
+0$ to choosing the context with the highest probability deterministically as
+$\kappa \rightarrow \infty$.
 
-In the case where the hand position can be determined by the participant with perfect accuracy (ignoring visual and proprioceptive error), we have that $p(x_\tau) = \delta(x_\tau, \hat x)$, where $\hat x$ is the real position of the hand, and $\delta (\cdot, \cdot)$ is the Kronecker delta function. We assume this to be the case during this experiment.
+In the case where the hand position can be determined by the participant with
+perfect accuracy (ignoring visual and proprioceptive error), we have that
+$p(x_\tau) = \delta(x_\tau, \hat x)$, where $\hat x$ is the real position of
+the hand, and $\delta (\cdot, \cdot)$ is the Kronecker delta function. We
+assume this to be the case during this experiment.
 
-For simplicity, we assume that participants know how many distinct contexts will be shown to them, and therefore all the $C_x$ have been created by the agent before the session begins. By default, all contexts assume a force with angle and magnitude equal zero, and their true values are learned during the experiment (see below).
+For simplicity, we assume that participants know how many distinct contexts
+will be shown to them, and therefore all the $C_x$ have been created by the
+agent before the session begins. By default, all contexts assume a force with
+angle and magnitude equal zero, and their true values are learned during the
+experiment (see below).
 
-For mathematical tractability (i.e. to avoid circular distributions), we will limit contexts to one where the force points left (angle $\pi$) and one where the force points right (angle 0), in addition to the baseline context. In this scheme, participants need only learn the magnitude of the force for each context. We will assume that for each context, the prior distribution over the magnitude of the force is Gaussian:
-\[
-p(\gamma) = N(1, 0.1)
-\]
-We will show that the form of this prior affects learning rate, but not the final learned magnitude.
-
-After the generalized state has been inferred given the information at the beginning of the trial, the next step is to infer the parameters of the context, as in \eref{eqn:update-parameters}:
+For mathematical tractability (i.e. to avoid circular distributions), we will
+limit contexts to one where the force points left (angle $\pi$) and one where
+the force points right (angle 0), in addition to the baseline context. In this
+scheme, participants need only learn the magnitude of the force for each
+context. We will assume that for each context, the agent's belief over the
+magnitude of the force is given by a normal distribution:
 \begin{equation}
-q(C_t | x_t, x_{t-1}, a_{t-1}) \propto p(x_t | x_{t-1}, a_{t-1}, C_t)p(C_t) \label{eqn:context-from-x}
+p(\gamma) = N(\mu_f, \sigma_f) \label{eqn:data-dist}
 \end{equation}
-
-where $p(C_t)$ is either a prior belief of the likelihood of each context, or the probability inferred up to the previous trial. Note that, because we assumed that the position of the hand is directly observable without any noise, there are no terms for the uncertainty of $x_t$ or $x_{t-1}$.
-
-With this, \eref{eqn:context-from-x} becomes:
+where $\mu_f$ and $\sigma_f$ are parameters to be estimated at each
+trial. Before the experiment begins, the agent will have a prior distribution
+over these parameters. A standard Bayesian approach is to choose NormalGamma
+priors:
 \begin{equation}
-q(\gamma | x_t, x_{t-1}, a_{t-1}) \propto N(\hat x_t, \sqrt{\Delta t})p(\gamma) \label{eqn:data-dist}
+p(\mu_f, \sigma_f) = NG(\mu_0, \nu_0, \alpha_0, \beta_0)
 \end{equation}
-where $\hat x_t$ is the predicted value of the position $x_t$ given the previous state and action and the force field of the context; see \eref{eqn:dynamics} below. Because we chose the priors $p(\gamma)$ to be Gaussian, the posteriors $q(\gamma)$ after every trial will also be a Gaussian distribution with parameters:
-\begin{align}
-  \mu_\gamma^{(t)} &= \frac{\mu_\gamma^{(t-1)}\left(\sigma_\gamma^{(d)}\right)^2 + \mu_\gamma^{(d)}\left(\sigma_\gamma^{(t-1)}\right)^2}{\left(\sigma_\gamma^{(t-1)}\right)^2 + \left(\sigma_\gamma^{(d)}\right)^2} \\
-  \sigma_\gamma^{(t)} & = \sqrt{\frac{\left(\sigma_\gamma^{(t-1)}\right)^2\left(\sigma_\gamma^{(d)}\right)^2}{\left(\sigma_\gamma^{(t-1)}\right)^2 + \left(\sigma_\gamma^{(d)}\right)^2}}
+where $\mu_0, \nu_0, \alpha_0$ and $\beta_0$ are free hyperparameters of the
+model. Because participants are told that there are three contexts (baseline,
+left and right), we assume the following hyperparameter values:
+\begin{align} \mu_f^{(0)} &= (0, -1, 1) \\
+  \nu_f^{(0)} &= 0.1 \\
+  \alpha_f^{(0)} &= 1 \\
+  \beta_f^{(0)} &= 0.5
 \end{align}
-where the superscripts $(t)$ and $(t-1)$ refer to the inferred values for the current and previous trials, respectively, and $(d)$ to the parameters in \eref{eqn:data-dist}.
+Note that $\mu_f^{(0)}$ is different for each context and is thus
+provided as a vector $(0, -1, 1)$ representing the baseline, left and right
+contexts, respectively. For all other hyperparameters, all contexts have the
+same value. These values ensure that the prior over the hyperparameters
+$(\mu_f, \sigma_f)$ has the mode at $(\mu_f^{(0)}, 1)$. We will show that the
+choice of these hyperparameters affects learning rate, but not the final
+learned magnitude \todo{Check this}.
 
-The final step is action selection. Action selection is done at the level of desired outcome (as opposed to motor commands) following the equations:
+The update equations for the magnitud parameters are given by:
+\begin{equation}
+q(\mu_f, \sigma_f | x_t, x_{t-1}, a_{t-1}) \propto p(x_t |
+x_{t-1}, a_{t-1}, C_t)p(\mu_f, \sigma_f) \label{eqn:context-from-x}
+\end{equation}
+where $p(x_t | x_{t-1}, a_{t-1}, C_t)$ is a Gaussian distribution centered
+around $\mu_a$ with standard deviation $\sigma_a$, which is a free parameter of
+the model. It is assumed that the standard deviation over outcomes ($\sigma_a$)
+is related to that of the parameter $\mu_f$ as follows:
+\begin{equation}
+\sigma_f = \sigma_a / \nu_f
+\end{equation}
+which makes $\nu_f$ a parameter to estimate. Because we chose the priors to be
+NormalGamma and the likelihood to be Gaussian, the posteriors are also
+NormalGamma, and the parameters are updated after one time step via:
 \begin{align}
-  x_{t+1} &= x_t + a_t + f_t + \sqrt{\Delta t}\epsilon\\ \label{eqn:dynamics}
+  \mu_f^{(t)} &= \frac{\nu_f^{(t-1)} \mu_f^{(t-1)} + x_t}{\nu_f + 1} \\
+  \nu_f^{(t)} &= \nu_f^{(t-1)} + 1 \\
+  \alpha_f^{(t)} &= \alpha_f^{(t-1)} + 0.5 \\
+  \beta_f^{(t)} &= \beta_f^{(t-1)} + \frac{\nu_f^{(t-1)}}{\nu_f^{(t-1)} +
+                  1}\frac{\left(x - \mu_f^{(t-1)}\right)^2}{2}
+\end{align}
+
+
+The final step is action selection. Action selection is done at the level of
+desired outcome (as opposed to motor commands) following the equations:
+\begin{align}
+  x_{t+1} &= x_t + a_t + f_t + \sqrt{\Delta
+            t}\epsilon\\ \label{eqn:dynamics}
   f_t &= \gamma_t (cos\theta_t, sin\theta_t) \\
   a_t &= \argmax_{a_t}p(x_{t+1} = (0, 0) | x_t, a_t, f_t)
 \end{align}
-where $\gamma_t$ and $\theta_t$ are the participant's estimate of the parameters, given by \eref{eqn:estimated-context}. $\epsilon$ is a Gaussian motor error component.
+where $\gamma_t$ and $\theta_t$ are the participant's estimate of
+the parameters, given by \eref{eqn:estimated-context}. $\epsilon$ is a Gaussian
+motor error component.
 
 \section{Simulation results}
 
