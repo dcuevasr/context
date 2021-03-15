@@ -399,21 +399,26 @@ class LeftRightAgent(object):
     # Fixed parameters
     angles = np.array([0, 1, -1])
     force_sds = np.array([0.01, 0.2, 0.2])
-    
+
     # Free parameters:
     action_sd = 0.01  # SD of a Gaussian for action uncertainty
-    cue_noise = 0.1  # If ix_cue is observed, the posterior over the corresponding
-                     # context is 1 - 2 * cue_noise.
+    cue_noise = 0.1  # If ix_cue is observed, the posterior over the
+                     # corresponding context is 1 - 2 * cue_noise.
 
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
 
+    max_force = 3.5  # Maximum force (abs value) the agent can exert.
+
     context_noise = 0.0001
     context_sd_constant = 0.1
     context_sd_exponent = 3
-    
+
     def __init__(self, obs_sd=None):
-        """Initializes the known left and right contexts, as well as baseline."""
+        """Initializes the known left and right contexts, as well as
+        baseline.
+
+        """
         self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
         self.magnitude_history = [self.magnitudes]
@@ -456,6 +461,8 @@ class LeftRightAgent(object):
         c_context = self.sample_context('mode')
         c_force = self.magnitudes[c_context][0]
         action = -c_pos - c_force
+        if abs(action) > self.max_force:
+            action = action / abs(action) * self.max_force
         self.action = action
         self.action_history.append(action)
         return action
@@ -476,12 +483,9 @@ class LeftRightAgent(object):
         """
         ix_context = self.sample_context(t=-2)
         mu_p, sd_p = self.magnitudes[ix_context]
-        p_context = np.exp(self.log_context[ix_context])
         mu_l, sd_l = self.predict_outcome()[1][ix_context]
-        mu_l = mu_p + self.hand_position
-        sd_con = self._sd_context(p_context)
-        # sd_p = np.sqrt(sd_p ** 2 * sd_con ** 2 / (sd_p ** 2 + sd_con ** 2))
-        mu_post = (mu_l * sd_p ** 2 + mu_p * sd_l ** 2 ) / \
+        mu_l = mu_p + self.hand_position - mu_l
+        mu_post = (mu_l * sd_p ** 2 + mu_p * sd_l ** 2) / \
             (sd_l ** 2 + sd_p ** 2)
         sd_post = np.sqrt((sd_l ** 2 * sd_p ** 2) / (sd_p ** 2 + sd_l ** 2))
         c_con = np.array(self.magnitudes)
@@ -516,7 +520,6 @@ class LeftRightAgent(object):
         action_sd = self.action_sd
         if hand_position is None:
             hand_position = self.hand_position_history[-2]
-        p_contexts = np.exp(self.log_context)
         funs = []
         posterior_pars = []
         for ix_context in range(self.num_contexts):
@@ -629,10 +632,12 @@ class LeftRightAgent(object):
         mag_mu = magnitudes[..., 0]
         mag_sd = magnitudes[..., 1]
         hand = self.hand_position_history
+        actions = self.action_history
         trial_number = np.arange(context.shape[0]) - 1
         aggregate = np.stack([*context.T, max_context, *mag_mu.T,
                               *mag_sd.T,
                               hand,
+                              actions,
                               trial_number],
                              axis=1)
         pandata = pd.DataFrame(aggregate,
@@ -640,7 +645,7 @@ class LeftRightAgent(object):
                                         'con_t',
                                         'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
                                         'mag_sd_0', 'mag_sd_1', 'mag_sd_2',
-                                        'hand', 'trial'])
+                                        'hand', 'action', 'trial'])
         pandata.reset_index(drop=True, inplace=True)
         pandata.set_index('trial', inplace=True)
         return pandata
@@ -687,7 +692,7 @@ class LRMean(LeftRightAgent):
         ix_context = self.sample_context(t=-2)  # todo: should be sampled from t-1
         mu_pre, sd_pre = self.mag_hypers[ix_context]
         mu_l, sd_l = self.predict_outcome()[1][ix_context]
-        mu_l = mu_pre + self.hand_position  # 
+        mu_l = mu_pre + self.hand_position - mu_l
         coeff = 1 / (sd_pre ** 2 + sd_l ** 2)
         mu_pos = sd_pre ** 2 * coeff * mu_l + \
             sd_l ** 2 * coeff * mu_pre
