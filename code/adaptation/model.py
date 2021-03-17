@@ -154,242 +154,6 @@ class BayesianAgent(object):
         return contexts
 
 
-class LeftRightGenAgent(object):
-    """Subclass that knows two contexts(plus baseline): one pointing left and one
-    pointing right. The magnitude of these forces are inferred during the
-    experiment.
-
-    This model assumes that the environment generates the force field 
-    stochastically, sampling from a normal distribution with unknown parameters
-    that are estimated after every observation. It uses NormalGamma priors for
-    these parameters and drinks cold coffee. Psycho.
-
-    """
-    def __init__(self,):
-        """Initializes the known left and right contexts, as well as baseline."""
-        self.num_contexts = 3
-        self.angles, self.mags_hyperpars = self.__init_contexts()
-        self.magnitude_history = [self.mags_hyperpars]
-        self.decision_history = []
-        self.hand_position_history = [0]
-        self.hand_position = 0
-        self.action_history = [0]
-        self.log_context = np.log([0.8, 0.1, 0.1])
-        self.log_context_history = [self.log_context]
-        self.action_sd = 0.01  # SD of a Gaussian for action uncertainty
-        self.obs_sd = 1  # fake observation noise. Good for inference.
-        
-        self.sample_context_mode = 'mode'
-        self.sample_force_mode = 'mode'
-
-    def __init_contexts(self, ):
-        r"""Creates baseline, left and right contexts, with a known angle (no force,
-        right, left), as well as the hyperparameters for the magnitudes,
-        assumed to be NormalGamma with mu, nu, alpha and beta parameters.
-
-        """
-        angles = np.array([0, 1, -1])
-        magnitudes = np.array([[angles[0], 1, 1, 1], [angles[1], 1, 1, 1],
-                               [angles[2], 1, 1, 1]])  # mu, nu, alpha, beta
-        return angles, magnitudes
-
-    def make_decision(self, ):
-        """Makes a decision after all the inferences for the trial have been
-        carried out.
-
-        The logic is to choose an action such that
-        p(pos) - p(force) + p(s_(t+1)| action) = 0
-
-        A simple proxy is to use the mode of each one of this, which is what
-        this function does for now.
-
-        The decision is returned and also saved into self.decision_history.
-
-        """
-        c_pos = self.hand_position
-        c_context = self.sample_context('mode')
-        c_force = self.mags_hyperpars[c_context][0]
-        action = -c_pos - c_force
-        self.action = action
-        self.action_history.append(action)
-        return action
-
-    def update_magnitudes(self, hand_position):
-        """At the beginning of a trial, updates the inferred magnitudes for
-        the contexts given the previous action and its outcome.
-
-        Saves the results to self.inferred_magnitude_pars and samples (TODO: or
-        uses the mean) to save in self.context_pars.
-
-        Parameters
-        ----------
-        likelihood_pars : iterable size=(2,)
-        Mean and standard deviation of the current observation, used as the
-        likelihood to update the posteriors over magnitudes.
-
-        """
-        ix_context = self.sample_context()
-        mu_p, sd_p = self.predict_outcome()[1][ix_context]
-        mag_pars = self.mags_hyperpars[ix_context]
-        post_mag = [(mag_pars[1] * mag_pars[0] + mu_p) / (mag_pars[1] + 1),
-                    mag_pars[1] + 1,
-                    mag_pars[2] + 0.5,
-                    mag_pars[3] + mag_pars[1] * (mu_p - mag_pars[0]) ** 2 / 2 / (mag_pars[1] + 1)]
-        mags_hyperpars = self.mags_hyperpars.copy()
-        mags_hyperpars[ix_context, :] = post_mag
-        self.mags_hyperpars = mags_hyperpars
-        self.magnitude_history.append(self.mags_hyperpars)
-
-    def predict_outcome(self, hand_position=None, action=None):
-        """Given an action, generates a probability distribution over all
-        possible outcomes.
-
-        If --hand_position-- and/or --action-- are not provided, the values
-        are taken from self.xxx_history[-1/-2] (-2 because one_trial calls
-        this function after having saved the current hand position, but before
-        saving the current action).
-
-        Returns
-        -------
-        predicted_hand : function
-        Function with two inputs (hand_position, context_index) that returns
-        the log-likelihood of the hand_position given the context.
-
-        force_pars : list (of stats.norm.pdf instances)
-        List containing the posterior over final position after the action
-        has been taken. force_pars[ix_context](x) returns the posterior
-        probability for x given context ix_context.
-
-        """
-        if action is None:
-            action = self.action_history[-1]
-        action_mu = action
-        action_sd = self.action_sd
-        if hand_position is None:
-            hand_position = self.hand_position_history[-2]
-        funs = []
-        posterior_pars = []
-        for ix_context in range(self.num_contexts):
-            force_mag_mu, force_mag_sd = self.mags_hyperpars[ix_context][:2]
-            pos_mu = force_mag_mu + action_mu + hand_position
-            pos_sd = np.sqrt(force_mag_sd ** 2 + action_sd ** 2)
-            posterior_pars.append([pos_mu, pos_sd])
-            fun = stats.norm(loc=pos_mu, scale=pos_sd).pdf
-            funs.append(fun)
-
-        def predicted_hand(pos, context):
-            return funs[context](pos)
-        return predicted_hand, posterior_pars
-
-    def infer_context(self, hand_position, cue=None):
-        """Infers the current context given the current observation, as well
-        as the previous action and outcome.
-
-        """
-        lh_fun = self.predict_outcome()[0]
-        log_posterior = np.array([lh_fun(hand_position, ix_context) +
-                                  self.log_context[ix_context] for ix_context
-                                  in range(self.num_contexts)])
-        slog_posterior = log_posterior - np.log(np.exp(log_posterior -
-                                                       log_posterior.max()).sum())
-        if np.isnan(slog_posterior.sum()):
-            ipdb.set_trace()
-        self.log_context = slog_posterior
-        self.log_context_history.append(slog_posterior)
-
-    def sample_context(self, mode=None):
-        """This function defines the logic to obtain a single number from
-        the current estimation of the current context. Implemented logics
-        are 'mode', 'sample'.
-
-        Parameters
-        ----------
-        mode : str
-        One of {'mode', 'sample'}. If None, it will
-        be taken from self.sample_context_mode.
-
-        Returns
-        -------
-        sampled_context : int
-        Integer to index the context.
-
-        """
-        if mode is None:
-            mode = self.sample_context_mode
-        posti = np.exp(self.log_context - self.log_context.max())
-        if mode == 'mode':
-            sampled_context = np.argmax(posti)
-        elif mode == 'sample':
-            sampled_context = np.random.choice(np.arange(len(posti)),
-                                               p=posti)
-        return sampled_context
-
-    def sample_force(self, mode=None):
-        """This function defines the logic to obtain a single number from
-        the current estimation of the force. Implemented logics
-        are 'mean', 'sample'.
-
-        Parameters
-        ----------
-        mode : str
-        One of {'mean', 'sample'}. If None, it will
-        be taken from self.sample_context_mode.
-
-        Returns
-        -------
-        sampled_context : int
-        Integer to index the context.
-
-        """
-        if mode is None:
-            mode = self.sample_force_mode
-        ix_context = self.sample_context()
-        force_pars = self.force_pars[ix_context]
-        if mode == 'mean':
-            sampled_force = force_pars[0]
-        elif mode == 'sample':
-            sampled_force = stats.norm(loc=force_pars[0],
-                                       scale=force_pars[1]).rvs()
-        return sampled_force
-
-    def one_trial(self, hand_position, cue=None):
-        r"""Processes the entire trial (\Delta t): receives an observation (hand
-        position and contextual cue, if available), updates context and force
-        inference, makes a decision.
-
-        """
-        self.hand_position = hand_position
-        self.hand_position_history.append(hand_position)
-        self.infer_context(hand_position, cue)
-        obs_likelihood = [hand_position, self.obs_sd]
-        self.update_magnitudes(obs_likelihood)
-        action = self.make_decision()
-        return action
-
-    def pandify_data(self):
-        """Pandifies the history of the agent."""
-        context = np.exp(self.log_context_history)
-        max_context = np.argmax(context, axis=1)
-        magnitudes = np.array(self.magnitude_history)
-        mag_mu_mu = magnitudes[..., 0]
-        mag_mu_sd = magnitudes[..., 1]
-        mag_sd_mu = magnitudes[..., 2]
-        mag_sd_sd = magnitudes[..., 3]
-        trial_number = np.arange(context.shape[0]) - 1
-        aggregate = np.stack([*context.T, max_context,
-                              *mag_mu_mu.T, *mag_mu_sd.T,
-                              *mag_sd_mu.T, *mag_sd_sd.T, trial_number], axis=1)
-        pandata = pd.DataFrame(aggregate,
-                               columns=['con0', 'con1', 'con2',
-                                        'con_t',
-                                        'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
-                                        'mag_nu_0', 'mag_nu_1', 'mag_nu_2',
-                                        'mag_alpha_0', 'mag_alpha_1', 'mag_alpha_2',
-                                        'mag_beta_0', 'mag_beta_1', 'mag_beta_2',
-                                        'trial'])
-        return pandata
-
-
 class LeftRightAgent(object):
     """Subclass that knows two contexts(plus baseline): one pointing left and one
     pointing right. The magnitude of these forces are inferred during the
@@ -707,3 +471,106 @@ class LRMean(LeftRightAgent):
         self.magnitude_history.append(magnitudes)
         self.magnitudes = magnitudes
         self.mag_hypers = mag_hypers
+
+
+class LRMeanSD(LeftRightAgent):
+    """Subclass that knows two contexts(plus baseline): one pointing left and one
+    pointing right. The magnitude of these forces are inferred during the
+    experiment.
+
+    This model assumes that the environment generates the force field
+    stochastically, sampling from a normal distribution with unknown parameters
+    that are estimated after every observation. It uses NormalGamma priors for
+    these parameters and drinks cold coffee. Psycho.
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        """Initializes hyperparameters and calls LeftRightAgent.__init__ """
+        super().__init__(*args, **kwargs)
+        self.mag_hypers = [[angle, 1, sd, 1]
+                           for angle, sd in zip(self.angles, self.force_sds)]
+        self.mag_hypers_history = [self.mag_hypers]
+
+    def update_magnitudes(self):
+        """Updates all four hyperparameters of the force magnitudes, using
+        NormalGamma priors and posteriors.
+
+        Parameters
+        ----------
+        likelihood_pars : iterable size=(2,)
+        Mean and standard deviation of the current observation, used as the
+        likelihood to update the posteriors over magnitudes.
+
+        """
+        ix_context = self.sample_context()
+        mu_l, sd_l = self.predict_outcome()[1][ix_context]
+        mag_pars = self.mag_hypers[ix_context]
+        mu_l = mag_pars[0] + self.hand_position - mu_l
+        post_mag = [(mag_pars[0] + mag_pars[1] * mu_l) / (mag_pars[1] + 1),
+                    mag_pars[1] + 1,
+                    mag_pars[2] + 0.5,
+                    mag_pars[3] + mag_pars[1] *
+                    (mu_l - mag_pars[0]) ** 2 / 2 / (mag_pars[1] + 1)]
+        mag_hypers = self.mag_hypers.copy()
+        mag_hypers[ix_context] = post_mag
+        self.mag_hypers = mag_hypers
+        self.mag_hypers_history.append(mag_hypers)
+        magnitudes = np.array(self.magnitudes)
+        magnitudes[ix_context][0] = post_mag[0]
+        magnitudes[ix_context][1] = 1 / post_mag[2]
+        self.magnitudes = magnitudes
+        self.magnitude_history.append(magnitudes)
+
+    def sample_force(self, mode=None):
+        """This function defines the logic to obtain a single number from
+        the current estimation of the force. Implemented logics
+        are 'mean', 'sample'.
+
+        Parameters
+        ----------
+        mode : str
+        One of {'mean', 'sample'}. If None, it will
+        be taken from self.sample_context_mode.
+
+        Returns
+        -------
+        sampled_context : int
+        Integer to index the context.
+
+        """
+        if mode is None:
+            mode = self.sample_force_mode
+        ix_context = self.sample_context()
+        force_pars = self.force_pars[ix_context]
+        if mode == 'mean':
+            sampled_force = force_pars[0]
+        elif mode == 'sample':
+            sampled_force = stats.norm(loc=force_pars[0],
+                                       scale=force_pars[1]).rvs()
+        return sampled_force
+
+    def pandify_data(self):
+        """Pandifies the history of the agent."""
+        context = np.exp(self.log_context_history)
+        max_context = np.argmax(context, axis=1)
+        magnitudes = np.array(self.mag_hypers_history)
+        mag_mu_mu = magnitudes[..., 0]
+        mag_mu_sd = magnitudes[..., 1]
+        mag_sd_mu = magnitudes[..., 2]
+        mag_sd_sd = magnitudes[..., 3]
+        trial_number = np.arange(context.shape[0]) - 1
+        aggregate = np.stack([*context.T, max_context,
+                              *mag_mu_mu.T, *mag_mu_sd.T,
+                              *mag_sd_mu.T, *mag_sd_sd.T, trial_number],
+                             axis=1)
+        pandata = pd.DataFrame(aggregate,
+                               columns=['con0', 'con1', 'con2',
+                                        'con_t',
+                                        'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
+                                        'mag_nu_0', 'mag_nu_1', 'mag_nu_2',
+                                        'mag_alpha_0', 'mag_alpha_1', 'mag_alpha_2',
+                                        'mag_beta_0', 'mag_beta_1', 'mag_beta_2',
+                                        'trial'])
+        return pandata
+        
