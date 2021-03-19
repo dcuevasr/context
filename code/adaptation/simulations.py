@@ -5,9 +5,11 @@
 
 import multiprocessing as mp
 from itertools import product
+import glob
 
 import numpy as np
 from matplotlib import pyplot as plt
+import pandas as pd
 
 import model
 import task_hold_hand as thh
@@ -93,3 +95,27 @@ def _one_sim(obs_noise, cue_noise, agent_fun):
     agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise)
     filename = 'grid_sims_{}_{}_{}.pi'.format(obs_noise, cue_noise, agent.name)
     thh.run(agent=agent, save=True, filename=filename)
+
+
+def read_data():
+    """Reads the data files with the format in _one_sim() and creates
+    a panda with it, including the parameter values as columns.
+
+    """
+    data_folder = './sim_data/'
+    files = glob.iglob(data_folder + 'grid_sims_*.pi')
+    pandas = []
+    for file in files:
+        split = file.split('_')
+        panda = pd.read_pickle(file)
+        len_panda = len(panda)
+        obs_noise = float(split[3]) * np.ones(len_panda)
+        cue_noise = float(split[4]) * np.ones(len_panda)
+        agent = [split[5][:-3]] * len_panda
+        panda['obs_noise'] = obs_noise
+        panda['cue_noise'] = cue_noise
+        panda['agent'] = agent
+        pandas.append(panda)
+    # pandatron = pd.concat(pandas, axis=0)
+    # return pandatron
+    return pandas

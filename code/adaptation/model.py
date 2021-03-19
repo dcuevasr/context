@@ -579,5 +579,6 @@ class LRMeanSD(LeftRightAgent):
                                         'mag_alpha_0', 'mag_alpha_1', 'mag_alpha_2',
                                         'mag_beta_0', 'mag_beta_1', 'mag_beta_2',
                                         'trial'])
+        pandata.set_index('trial', inplace=True)
         return pandata
         
