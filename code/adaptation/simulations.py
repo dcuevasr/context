@@ -82,14 +82,14 @@ def grid_sims():
     seeds = np.unique(seeds)
 
     for ix_pars, pars in enumerate(all_pars):
-        my_robots.apply_async(_one_sim, pars)
+        my_robots.apply_async(_one_sim, list(pars))
 
     my_robots.close()
     my_robots.join()
 
 
-def _one_sim(obs_noise, cue_noise, agent):
+def _one_sim(obs_noise, cue_noise, agent_fun):
     """Runs one iteration for grid_sims(). """
+    agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise)
     filename = 'grid_sims_{}_{}_{}.pi'.format(obs_noise, cue_noise, agent.name)
-    thh.run(agent=agent, obs_noise=obs_noise, cue_noise=cue_noise,
-            save=True, filename=filename)
+    thh.run(agent=agent, save=True, filename=filename)
