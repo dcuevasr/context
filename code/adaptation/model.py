@@ -7,6 +7,7 @@ import numpy as np
 import scipy as sp
 from scipy import stats
 import pandas as pd
+from matplotlib import pyplot as plt
 
 """Bayesian motor adaptation model."""
 
@@ -110,64 +111,20 @@ class Context(object):
             self.angle = angle
 
 
-class BayesianAgent(object):
-    """Base class of the agent that adapts to new motor dynamics."""
-
-    def __init__(self, context_pars=None):
-        self.num_contexts = 3
-        if context_pars is None:
-            context_pars = self._default_pars()
-        self.p_contexts = self._prior_context()  # Will be updated
-        self.gamma = GaussGaussInference()
-
-    def _default_pars(self, ):
-        """Default parameters for the contexts, which are assumed to be like the
-        baseline."""
-        return [[0, 0]] * self.num_contexts
-
-    def _prior_context(self, ):
-        """Prior probabilities of observing all contexts. The baseline context
-        is arbitrarily set to be five times as likely as any other.
-
-        """
-        return np.array([5, *np.ones(self.num_contexts - 1)])
-
-    def _prior_force_magnitudes(self, ):
-        """Defines the parameters for the normal distribution over the magnitude
-        parameter of the force for each context. The priors are chosen to be
-        centered around 2 with a standard deviation of 1.
-
-        """
-        return [[0, 0.01]] + [[2, 1]] * (self.num_contexts - 1)
-
-    def init_contexts(self, context_pars=None):
-        """Initializes a context with default values, or those in --context_pars--, if
-        given.
-
-        Returns a list of instances of the class Context, where the
-        zero-th entry is the baseline.
-
-        """
-        contexts = [Context(baseline=True), ]
-        for pars in context_pars:
-            contexts.append(Context(pars))
-        return contexts
-
-
 class LeftRightAgent(object):
     """Subclass that knows two contexts(plus baseline): one pointing left and one
     pointing right. The magnitude of these forces are inferred during the
     experiment.
 
     """
-    # Fixed parameters
-    angles = np.array([0, 1, -1])
-    force_sds = np.array([0.01, 0.2, 0.2])
-
-    # Free parameters:
+    name = 'LR'
+    # Free parameters with default values. Can be overwritten by __init__
     action_sd = 0.01  # SD of a Gaussian for action uncertainty
     cue_noise = 0.1  # If ix_cue is observed, the posterior over the
                      # corresponding context is 1 - 2 * cue_noise.
+    obs_sd = 1
+    angles = np.array([0, 1, -1])
+    force_sds = np.array([0.01, 0.2, 0.2])
 
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
@@ -178,11 +135,21 @@ class LeftRightAgent(object):
     context_sd_constant = 0.1
     context_sd_exponent = 3
 
-    def __init__(self, obs_sd=None):
+    def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
+                 angles=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
         """
+        if obs_sd:
+            self.obs_sd = obs_sd
+        if action_sd:
+            self.action_sd = action_sd
+        if cue_noise:
+            self.cue_noise = cue_noise
+        if angles:
+            self.angles = np.array(angles)
+
         self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
         self.magnitude_history = [self.magnitudes]
@@ -193,10 +160,7 @@ class LeftRightAgent(object):
         self.log_context = np.log([0.8, 0.1, 0.1])
         self.log_context_history = [self.log_context]
 
-        if obs_sd:
-            obs_sd = obs_sd  # fake observation noise. Good for inference.
-        else:
-            obs_sd = 1
+        self.sample_norm = stats.norm().rvs
 
     def __init_contexts(self, ):
         r"""Creates baseline, left and right contexts, with a known angle (no force,
@@ -221,10 +185,12 @@ class LeftRightAgent(object):
         The decision is returned and also saved into self.decision_history.
 
         """
+        # raise NotImplementedError('obs noise!')
         c_pos = self.hand_position
         c_context = self.sample_context('mode')
         c_force = self.magnitudes[c_context][0]
-        action = -c_pos - c_force
+        action_mu = -c_pos - c_force
+        action = self.sample_norm() * self.action_sd + action_mu
         if abs(action) > self.max_force:
             action = action / abs(action) * self.max_force
         self.action = action
@@ -289,7 +255,8 @@ class LeftRightAgent(object):
         for ix_context in range(self.num_contexts):
             force_mag_mu, force_mag_sd = self.magnitudes[ix_context]
             pos_mu = force_mag_mu + action_mu + hand_position
-            pos_sd = np.sqrt(force_mag_sd ** 2 + action_sd ** 2)
+            pos_sd = np.sqrt(force_mag_sd ** 2 + action_sd ** 2 +
+                             self.obs_sd ** 2)
             posterior_pars.append([pos_mu, pos_sd])
             fun = stats.norm(loc=pos_mu, scale=pos_sd).logpdf
             funs.append(fun)
@@ -313,9 +280,10 @@ class LeftRightAgent(object):
 
         """
         lh_fun, lh_pars = self.predict_outcome()
-        log_posterior = np.array([lh_fun(hand_position, ix_context) +
-                                  self.log_context[ix_context] for ix_context
-                                  in range(self.num_contexts)])
+        # Hand position likelihood:
+        log_li_hand = np.array([lh_fun(hand_position, ix_context)
+                                for ix_context in range(self.num_contexts)])
+        log_li_hand -= np.log(np.exp(log_li_hand - log_li_hand.max()).sum())
         # Cue likelihood:
         if cue is None:
             log_cue = np.zeros(self.num_contexts)
@@ -323,10 +291,11 @@ class LeftRightAgent(object):
             cue_li = self.cue_noise * np.ones(self.num_contexts)
             cue_li[cue] = 1 - (self.num_contexts - 1) * self.cue_noise
             log_cue = np.log(cue_li)
-        full_logli = log_posterior + log_cue
+        prior = np.exp(self.log_context - self.log_context.max()) + \
+            self.context_noise
+        log_prior = np.log(prior / prior.sum())
+        full_logli = log_li_hand + log_cue + log_prior
         full_li = np.exp(full_logli - full_logli.max())
-        full_li /= full_li.sum()
-        full_li += self.context_noise
         full_li /= full_li.sum()
         full_logli = np.log(full_li)
         self.log_context = full_logli
@@ -429,6 +398,43 @@ class LeftRightAgent(object):
         action = self.make_decision()
         return action
 
+    def plot_mu(self, trials=None, fignum=1, axis=None):
+        """Plots the adaptation (mu of the force) as a function of time."""
+        colors = ['black', 'red', 'blue']
+        if axis is None:
+            fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
+        mag_hist = np.array(self.magnitude_history)
+        for ix_context in range(self.num_contexts):
+            axis.plot(mag_hist[:, ix_context, 0],
+                      color=colors[ix_context])
+        axis.set_xlabel('Trial')
+        axis.set_ylabel('Adaptation')
+
+    def plot_contexts(self, alpha=0.2, fignum=2, axis=None):
+        """Plots a stacked bar plot representing the posterior over
+        contexts for every trial.
+
+        """
+        con_t = np.exp(np.array(self.log_context_history) -
+                       np.array(self.log_context_history).max(axis=1)[:, None])
+        con_t = con_t / con_t.sum(axis=1)[:, None]
+        trials = np.arange(con_t.shape[0])
+        colors = ['black', 'red', 'blue']
+        if axis is None:
+            fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
+        axis.bar(trials, con_t[:, 0], color=colors[0], alpha=alpha)
+        axis.bar(trials, con_t[:, 1], bottom=con_t[:, 0], color=colors[1],
+                 alpha=alpha)
+        axis.bar(trials, con_t[:, 2], bottom=con_t[:, 1], color=colors[2],
+                 alpha=alpha)
+
+    def plot_position(self, alpha=0.9, fignum=3, axis=None):
+        """Plots the observation of the in time."""
+        obs = np.array(self.hand_position_history)
+        if axis is None:
+            fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
+        axis.plot(obs, alpha=alpha)
+
 
 class LRMean(LeftRightAgent):
     """Agent with three contexts in which only the mean of each contextg is
@@ -436,6 +442,7 @@ class LRMean(LeftRightAgent):
     the model.
 
     """
+    name = 'LRM'
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mag_hypers = self.magnitudes
@@ -484,7 +491,7 @@ class LRMeanSD(LeftRightAgent):
     these parameters and drinks cold coffee. Psycho.
 
     """
-
+    name = 'LRMS'
     def __init__(self, *args, **kwargs):
         """Initializes hyperparameters and calls LeftRightAgent.__init__ """
         super().__init__(*args, **kwargs)

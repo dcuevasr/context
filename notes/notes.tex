@@ -798,6 +798,8 @@ NormalGamma, and the parameters are updated after one time step via:
 
 
 \section{Simulation results}
+\subsection{Effects of observation noise on inference}
+Observation noise refers to the noise on the position of the hand. The generating process is a Gaussian with $\sigma = 0.1$, which is determined in ./code/adaptation/pars.py. However, the agent has a belief on this value, which is fixed for the agent. This value (obs_sd, which can be passed on instanciation) can be used in lieu of an explicit $\Delta t$ parameter which controls the size of the time step
 
 \section{Conclusions}
 
