@@ -492,6 +492,7 @@ class LRMeanSD(LeftRightAgent):
 
     """
     name = 'LRMS'
+
     def __init__(self, *args, **kwargs):
         """Initializes hyperparameters and calls LeftRightAgent.__init__ """
         super().__init__(*args, **kwargs)
@@ -566,19 +567,24 @@ class LRMeanSD(LeftRightAgent):
         mag_mu_sd = magnitudes[..., 1]
         mag_sd_mu = magnitudes[..., 2]
         mag_sd_sd = magnitudes[..., 3]
+        hand = self.hand_position_history
+        actions = self.aciton_history
         trial_number = np.arange(context.shape[0]) - 1
         aggregate = np.stack([*context.T, max_context,
                               *mag_mu_mu.T, *mag_mu_sd.T,
-                              *mag_sd_mu.T, *mag_sd_sd.T, trial_number],
+                              *mag_sd_mu.T, *mag_sd_sd.T, hand, actions,
+                              trial_number],
                              axis=1)
         pandata = pd.DataFrame(aggregate,
                                columns=['con0', 'con1', 'con2',
                                         'con_t',
                                         'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
                                         'mag_nu_0', 'mag_nu_1', 'mag_nu_2',
-                                        'mag_alpha_0', 'mag_alpha_1', 'mag_alpha_2',
-                                        'mag_beta_0', 'mag_beta_1', 'mag_beta_2',
-                                        'trial'])
+                                        'mag_alpha_0', 'mag_alpha_1',
+                                        'mag_alpha_2',
+                                        'mag_beta_0', 'mag_beta_1',
+                                        'mag_beta_2',
+                                        'hand', 'action', 'trial'])
+        pandata.reset_index(drop=True, inplace=True)
         pandata.set_index('trial', inplace=True)
         return pandata
-        
