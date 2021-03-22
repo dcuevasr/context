@@ -72,6 +72,7 @@ def grid_sims():
     """
     obs_noises = np.arange(0, 2, 0.1)
     cue_noises = np.arange(0, 0.05, 0.005)
+
     agents = [model.LeftRightAgent,
               model.LRMean,
               model.LRMeanSD]
@@ -116,6 +117,5 @@ def read_data():
         panda['cue_noise'] = cue_noise
         panda['agent'] = agent
         pandas.append(panda)
-    # pandatron = pd.concat(pandas, axis=0)
-    # return pandatron
-    return pandas
+    pandatron = pd.concat(pandas, axis=0)
+    return pandatron
