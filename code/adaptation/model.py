@@ -568,7 +568,7 @@ class LRMeanSD(LeftRightAgent):
         mag_sd_mu = magnitudes[..., 2]
         mag_sd_sd = magnitudes[..., 3]
         hand = self.hand_position_history
-        actions = self.aciton_history
+        actions = self.action_history
         trial_number = np.arange(context.shape[0]) - 1
         aggregate = np.stack([*context.T, max_context,
                               *mag_mu_mu.T, *mag_mu_sd.T,

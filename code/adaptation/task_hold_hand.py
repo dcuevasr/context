@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/task_hold_hand.py
-import ipdb
+# import ipdb
 from datetime import datetime
-import argparse
-from importlib import import_module
 
 import numpy as np
 from scipy import stats
@@ -17,26 +15,16 @@ The game is meant to be played by model.LeftRightAgent or its children.
 
 """
 
-# Import task parameters from a file, if provided:
-PARSER = argparse.ArgumentParser(description='Run experiment')
-PARSER.add_argument('-p', '--pars', dest='pars', default=None,
-                    help='Filename for the parameters')
-ARGS = PARSER.parse_args()
-parsfile = ARGS.pars
-if parsfile is None:
-    parsfile = 'pars'
-if parsfile.endswith('.py'):
-    parsfile = parsfile[:-3]
-pars = import_module(parsfile).pars
 
-
-def run(agent=None, save=False, filename=None, **trial_kwargs):
+def run(agent=None, save=False, filename=None, pars=None):
     """Runs an entire game of the holding-hand task."""
+    if pars is None:
+        from pars import pars
     if agent is None:
         agent = model.LeftRightAgent(obs_sd=pars['obs_noise'][1])
     outs = []
-    for ix_miniblock in pars['context_seq']:
-        out = miniblock(ix_miniblock, 0, agent, **trial_kwargs)
+    for ix_miniblock, _ in enumerate(pars['context_seq']):
+        out = miniblock(ix_miniblock, 0, agent, pars)
         outs.append(out)
     data = np.stack(outs, axis=0)
     pandata = pd.DataFrame(data.reshape((-1, 5)),
@@ -49,18 +37,18 @@ def run(agent=None, save=False, filename=None, **trial_kwargs):
     return pandata, pandagent, agent
 
 
-def miniblock(ix_context, hand_position, agent, **trial_kwargs):
+def miniblock(ix_context, hand_position, agent, pars):
     """Runs a miniblock of the task."""
     outs = []
     for ix_trial in range(pars['num_trials']):
-        out = trial(ix_context, hand_position, agent, **trial_kwargs)
+        out = trial(ix_context, hand_position, agent, pars)
         outs.append(out)
         hand_position = out[3]
     outs = np.stack(outs, axis=0)
     return outs
 
 
-def trial(ix_context, hand_position, agent, cue_key=None):
+def trial(ix_miniblock, hand_position, agent, pars):
     """Runs a single trial of the task.
 
     Parameters
@@ -86,27 +74,23 @@ def trial(ix_context, hand_position, agent, cue_key=None):
     something else, the agent will be lied to. LIES!
 
     """
-    if cue_key is None:
-        cue_key = np.arange(agent.num_contexts)
+    context = pars['context_seq'][ix_miniblock]
+    cue = pars['cues'][ix_miniblock]
     c_hand_position = hand_position
-    if isinstance(ix_context, str):
-        cue = 1
-    else:
-        cue = ix_context
-    c_obs = sample_observation(hand_position, ix_context)
-    action = agent.one_trial(c_obs, cue=cue_key[cue])
-    if ix_context == 'clamp':
+    c_obs = sample_observation(hand_position, pars)
+    action = agent.one_trial(c_obs, cue=cue)
+    if context == 'clamp':
         n_hand_position = 0
         force = -action
     else:
-        force = sample_force(ix_context)
+        force = sample_force(context, pars)
         n_hand_position = c_hand_position + force + action
     outs = [action, force, c_hand_position, n_hand_position,
-            ix_context]
+            context]
     return outs
 
 
-def sample_observation(hand_position, ix_context):
+def sample_observation(hand_position, pars):
     """Generates an observation given the current position and
     the context.
 
@@ -126,14 +110,14 @@ def sample_observation(hand_position, ix_context):
     return distri.rvs()
 
 
-def sample_force(ix_context):
+def sample_force(context, pars):
     """Samples the force exerted by the environment on the force
     given the --hand_position-- and the context.
 
     """
-    loc, scale = pars['force_noise'][ix_context]
+    loc, scale = pars['force_noise'][context]
     distri = stats.norm(loc=loc, scale=scale)
-    magnitude = np.prod(pars['forces'][ix_context])
+    magnitude = np.prod(pars['forces'][context])
     return magnitude + distri.rvs()
 
 
@@ -152,7 +136,8 @@ def save_pandas(pandata, pandagent, filename=None):
     """
     foldername = './sim_data/'
     if filename is None:
-        filename = 'data_{}.pi'.format(datetime.now().strftime('%Y%m%d_%H%M%S'))
+        date = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = 'data_{}.pi'.format(date)
     pandatron = join_pandas(pandata, pandagent)
     pandatron.to_pickle(foldername + filename)
 

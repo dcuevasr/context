@@ -118,4 +118,80 @@ def read_data():
         panda['agent'] = agent
         pandas.append(panda)
     pandatron = pd.concat(pandas, axis=0)
+    pandatron.reset_index(inplace=True)
+    pandatron['index'] = np.arange(len(pandatron))
+    pandatron.set_index('index', inplace=True)
     return pandatron
+
+
+def performance(pandata):
+    """Calculates the performance of each agent and each parameter combination in
+    --pandata--. Performance is calculated as the sum of the absolute value of hand
+    position.
+
+    Returns
+    performance : pd.DataFrame
+
+    """
+    pandata = pandata.copy()
+    pandata['abs_dev'] = pandata['hand'].apply(abs)
+    return pandata.groupby(['agent', 'obs_noise', 'cue_noise']).sum()['abs_dev']
+
+
+def context_inference(pandata):
+    """Calculates how well each agent in --pandata-- inferred the context. For every
+    trial that the agent mis-identified the context, a 1 is added to the score. Lower
+    scores mean better inference.
+
+    """
+    pandata = pandata.copy()
+    ix_delete = np.array(pandata['ix_context'] == 'clamp')
+    pandata.drop(np.nonzero(ix_delete)[0], inplace=True)
+    pandata.dropna(axis=0, how='any', inplace=True)
+    pandata['context_error'] = pandata['ix_context'].astype(float) != pandata['con_t']
+    return pandata.groupby(['agent', 'obs_noise', 'cue_noise']).sum()['context_error']
+
+
+def interactive_plot(pandata, axis=None, fignum=3):
+    """Generator to be able to navigate through the different agents in --pandata--.
+
+    Send an signed int N to go back or forth N agents. Send a list with parameter
+    values [obs_noise, cue_noise, agent] to go to that agent.
+
+    """
+    if axis is None:
+        fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
+    plt.show(block=False)
+    pandata = pandata.set_index(['obs_noise', 'cue_noise', 'agent'])
+    indices = list(pandata.index.unique())
+    num_indices = len(indices)
+    ix_ix = 0
+    while 1:
+        pandatum = pandata.loc[indices[ix_ix]]
+        num_trials = len(pandatum)
+        real_con = np.zeros((num_trials, 4))
+        real_con[pandatum['ix_context'] == '0.0', 0] = 1
+        real_con[pandatum['ix_context'] == '1.0', 1] = 1
+        real_con[pandatum['ix_context'] == '2.0', 2] = 1
+        real_con[pandatum['ix_context'] == 'clamp', 3] = 1
+        axis.clear()
+        axis.plot(np.array(pandatum['hand']), color='black', alpha=0.4)
+        axis.plot(np.array(pandatum['mag_mu_0']), color='black')
+        axis.plot(np.array(pandatum['mag_mu_1']), color='red')
+        axis.plot(np.array(pandatum['mag_mu_2']), color='blue')
+        ylim = axis.get_ylim()
+        conx = np.array(pandatum.loc[:, ['con0', 'con1', 'con2']])
+        axis.plot(ylim[0] + conx[:, 0], color='black')
+        axis.plot(ylim[0] + conx[:, 1], color='red')
+        axis.plot(ylim[0] + conx[:, 2], color='blue')
+        axis.plot(ylim[0] - 1.5 + real_con[:, 0], color='black')
+        axis.plot(ylim[0] - 1.5 + real_con[:, 1], color='red')
+        axis.plot(ylim[0] - 1.5 + real_con[:, 2], color='blue')
+        axis.plot(ylim[0] - 1.5 + real_con[:, 3], color='green')
+        axis.set_title(indices[ix_ix])
+        plt.draw()
+        input = yield None
+        if input == 0:
+            return
+        ix_ix += input
+        ix_ix = ix_ix % num_indices
