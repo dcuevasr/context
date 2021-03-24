@@ -2,7 +2,6 @@
 # ./adaptation/simulations.py
 
 """Some simulations for the agent and the task."""
-
 import multiprocessing as mp
 from itertools import product
 import glob
@@ -13,7 +12,6 @@ import pandas as pd
 
 import model
 import task_hold_hand as thh
-
 
 def test_obsnoise(fignum=1):
     """Runs the game with increasingly high observation noise, for all three
@@ -57,7 +55,6 @@ def test_deadaptation(fignum=2):
               model.LRMeanSD(**kwargs)]
     for ix_agent, agent in enumerate(agents):
         thh.run(agent)
-        thh.run(agent, cue_key=[0, 2, 1])
         agent.plot_mu(axis=axes[ix_agent])
         agent.plot_contexts(axis=axes[ix_agent])
         agent.plot_position(axis=axes[ix_agent])
@@ -70,19 +67,16 @@ def test_deadaptation(fignum=2):
 def grid_sims():
     """Makes the agent(s) perform the task for all the parameter values.
     """
+
     obs_noises = np.arange(0, 2, 0.1)
     cue_noises = np.arange(0, 0.05, 0.005)
+    con_noises = np.arange(0, 0.3, 0.1)
 
     agents = [model.LeftRightAgent,
               model.LRMean,
               model.LRMeanSD]
-    all_pars = product(obs_noises, cue_noises, agents)
-    num_pars = len(obs_noises) * len(cue_noises) * len(agents)
+    all_pars = product(obs_noises, cue_noises, con_noises, agents)
     my_robots = mp.Pool()
-    num_seeds = num_pars
-
-    seeds = np.random.randint(low=0, high=10000, size=num_seeds * 10)
-    seeds = np.unique(seeds)
 
     for ix_pars, pars in enumerate(all_pars):
         my_robots.apply_async(_one_sim, list(pars))
@@ -91,11 +85,15 @@ def grid_sims():
     my_robots.join()
 
 
-def _one_sim(obs_noise, cue_noise, agent_fun):
+def _one_sim(obs_noise, cue_noise, con_noise, agent_fun):
     """Runs one iteration for grid_sims(). """
-    agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise)
-    filename = 'grid_sims_{}_{}_{}.pi'.format(obs_noise, cue_noise, agent.name)
-    thh.run(agent=agent, save=True, filename=filename)
+    from pars import pars as task_pars
+    task_pars['obs_noise'][1] = obs_noise
+    agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise,
+                      context_noise=con_noise, angles=[0, 0, 0])
+    filename = 'grid_sims_{}_{}_{}_{}.pi'.format(obs_noise, cue_noise,
+                                                 con_noise, agent.name)
+    thh.run(agent=agent, save=True, filename=filename, pars=task_pars)
 
 
 def read_data():
@@ -112,9 +110,11 @@ def read_data():
         len_panda = len(panda)
         obs_noise = float(split[3]) * np.ones(len_panda)
         cue_noise = float(split[4]) * np.ones(len_panda)
-        agent = [split[5][:-3]] * len_panda
+        con_noise = float(split[5]) * np.ones(len_panda)
+        agent = [split[6][:-3]] * len_panda
         panda['obs_noise'] = obs_noise
         panda['cue_noise'] = cue_noise
+        panda['context_noise'] = con_noise
         panda['agent'] = agent
         pandas.append(panda)
     pandatron = pd.concat(pandas, axis=0)
@@ -135,7 +135,8 @@ def performance(pandata):
     """
     pandata = pandata.copy()
     pandata['abs_dev'] = pandata['hand'].apply(abs)
-    return pandata.groupby(['agent', 'obs_noise', 'cue_noise']).sum()['abs_dev']
+    return pandata.groupby(['agent', 'obs_noise',
+                            'cue_noise', 'context_noise']).sum()['abs_dev']
 
 
 def context_inference(pandata):
@@ -149,7 +150,9 @@ def context_inference(pandata):
     pandata.drop(np.nonzero(ix_delete)[0], inplace=True)
     pandata.dropna(axis=0, how='any', inplace=True)
     pandata['context_error'] = pandata['ix_context'].astype(float) != pandata['con_t']
-    return pandata.groupby(['agent', 'obs_noise', 'cue_noise']).sum()['context_error']
+    return pandata.groupby(['agent', 'obs_noise',
+                            'cue_noise',
+                            'context_noise']).sum()['context_error']
 
 
 def interactive_plot(pandata, axis=None, fignum=3):
@@ -162,7 +165,8 @@ def interactive_plot(pandata, axis=None, fignum=3):
     if axis is None:
         fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
     plt.show(block=False)
-    pandata = pandata.set_index(['obs_noise', 'cue_noise', 'agent'])
+    pandata = pandata.set_index(['obs_noise', 'cue_noise',
+                                 'context_noise', 'agent'])
     indices = list(pandata.index.unique())
     num_indices = len(indices)
     ix_ix = 0
@@ -170,12 +174,12 @@ def interactive_plot(pandata, axis=None, fignum=3):
         pandatum = pandata.loc[indices[ix_ix]]
         num_trials = len(pandatum)
         real_con = np.zeros((num_trials, 4))
-        real_con[pandatum['ix_context'] == '0.0', 0] = 1
-        real_con[pandatum['ix_context'] == '1.0', 1] = 1
-        real_con[pandatum['ix_context'] == '2.0', 2] = 1
+        real_con[pandatum['ix_context'] == 0, 0] = 1
+        real_con[pandatum['ix_context'] == 1, 1] = 1
+        real_con[pandatum['ix_context'] == 2, 2] = 1
         real_con[pandatum['ix_context'] == 'clamp', 3] = 1
         axis.clear()
-        axis.plot(np.array(pandatum['hand']), color='black', alpha=0.4)
+        axis.plot(np.array(pandatum['pos(t)']), color='black', alpha=0.4)
         axis.plot(np.array(pandatum['mag_mu_0']), color='black')
         axis.plot(np.array(pandatum['mag_mu_1']), color='red')
         axis.plot(np.array(pandatum['mag_mu_2']), color='blue')
@@ -188,10 +192,17 @@ def interactive_plot(pandata, axis=None, fignum=3):
         axis.plot(ylim[0] - 1.5 + real_con[:, 1], color='red')
         axis.plot(ylim[0] - 1.5 + real_con[:, 2], color='blue')
         axis.plot(ylim[0] - 1.5 + real_con[:, 3], color='green')
-        axis.set_title(indices[ix_ix])
+        # axis.plot(np.array(pandatum['action']), color='yellow')
+        axis.set_title('Obs Noise: {}, Cue Noise: {}, Con Noise: {}, Agent: {}'.format(*indices[ix_ix]))
         plt.draw()
         input = yield None
         if input == 0:
+            fig.close()
+            yield None
             return
         ix_ix += input
         ix_ix = ix_ix % num_indices
+
+
+if __name__ == '__main__':
+    grid_sims()

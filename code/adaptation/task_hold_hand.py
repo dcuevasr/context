@@ -25,9 +25,9 @@ def run(agent=None, save=False, filename=None, pars=None):
     outs = []
     for ix_miniblock, _ in enumerate(pars['context_seq']):
         out = miniblock(ix_miniblock, 0, agent, pars)
-        outs.append(out)
-    data = np.stack(outs, axis=0)
-    pandata = pd.DataFrame(data.reshape((-1, 5)),
+        for one_out in out:
+            outs.append(one_out)
+    pandata = pd.DataFrame(outs,
                            columns=('action', 'force', 'pos(t)', 'pos(t+1)',
                                     'ix_context'))
     pandata.rename_axis('trial', inplace=True)
@@ -44,7 +44,7 @@ def miniblock(ix_context, hand_position, agent, pars):
         out = trial(ix_context, hand_position, agent, pars)
         outs.append(out)
         hand_position = out[3]
-    outs = np.stack(outs, axis=0)
+    # outs = np.stack(outs, axis=0)
     return outs
 
 
@@ -126,6 +126,8 @@ def join_pandas(pandata, pandagent):
     into one big panda, aligned by trial number. Returns the panda.
 
     """
+    pandagent = pandagent.drop(['action', 'hand'], axis=1)
+    pandagent = pandagent.iloc[pandagent.index != -1]
     return pd.concat([pandata, pandagent], axis=1)
 
 

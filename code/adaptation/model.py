@@ -136,7 +136,7 @@ class LeftRightAgent(object):
     context_sd_exponent = 3
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
-                 angles=None):
+                 angles=None, context_noise=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
@@ -149,6 +149,8 @@ class LeftRightAgent(object):
             self.cue_noise = cue_noise
         if angles:
             self.angles = np.array(angles)
+        if context_noise:
+            self.context_noise = context_noise
 
         self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
@@ -501,21 +503,22 @@ class LRMeanSD(LeftRightAgent):
         self.mag_hypers_history = [self.mag_hypers]
 
     def update_magnitudes(self):
-        """Updates all four hyperparameters of the force magnitudes, using
+        r"""Updates all four hyperparameters of the force magnitudes, using
         NormalGamma priors and posteriors.
 
-        Parameters
-        ----------
-        likelihood_pars : iterable size=(2,)
-        Mean and standard deviation of the current observation, used as the
-        likelihood to update the posteriors over magnitudes.
+        Note: for simplicity, a single value for the mean and the standard
+        deviation is saved to self.magnitudes (and the rest of the code will
+        treat these values as the mean and standard deviation of a
+        Gaussian). The mean is simply the first hyperparameter and the standard
+        deviation is $\beta / (\nu \alpha)$, where the hyperparameters are
+        $\mu, \nu, \alpha, \beta$.
 
         """
         ix_context = self.sample_context()
         mu_l, sd_l = self.predict_outcome()[1][ix_context]
         mag_pars = self.mag_hypers[ix_context]
         mu_l = mag_pars[0] + self.hand_position - mu_l
-        post_mag = [(mag_pars[0] + mag_pars[1] * mu_l) / (mag_pars[1] + 1),
+        post_mag = [(mag_pars[0] * mag_pars[1] + mu_l) / (mag_pars[1] + 1),
                     mag_pars[1] + 1,
                     mag_pars[2] + 0.5,
                     mag_pars[3] + mag_pars[1] *
@@ -526,7 +529,7 @@ class LRMeanSD(LeftRightAgent):
         self.mag_hypers_history.append(mag_hypers)
         magnitudes = np.array(self.magnitudes)
         magnitudes[ix_context][0] = post_mag[0]
-        magnitudes[ix_context][1] = 1 / post_mag[2]
+        magnitudes[ix_context][1] = 1 / post_mag[1] / post_mag[2] * post_mag[3]
         self.magnitudes = magnitudes
         self.magnitude_history.append(magnitudes)
 
