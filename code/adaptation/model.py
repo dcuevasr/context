@@ -129,7 +129,7 @@ class LeftRightAgent(object):
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
 
-    max_force = 3.5  # Maximum force (abs value) the agent can exert.
+    max_force = 30  # Maximum force (abs value) the agent can exert.
 
     context_noise = 0.0001
     context_sd_constant = 0.1

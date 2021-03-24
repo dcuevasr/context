@@ -205,4 +205,4 @@ def interactive_plot(pandata, axis=None, fignum=3):
 
 
 if __name__ == '__main__':
-    grid_sims()
+    print('yo')
