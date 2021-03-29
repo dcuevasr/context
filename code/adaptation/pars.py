@@ -28,5 +28,5 @@ agent = {'obs_noise': obs_noise,
          'delta_t': delta_t,
          'max_force': 2 * max(fake_mags),
          'action_sd': max(fake_mags) / 5,
-         'force_sd': force_sd * np.ones(3)
+         'force_sd': force_sd * np.ones(3) * 3
          }

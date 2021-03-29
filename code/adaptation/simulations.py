@@ -74,7 +74,6 @@ def grid_sims():
 
     Outputs are saved (callback to _one_sim()) to pickled files
     """
-
     obs_noises = task_pars['obs_noise']
     cue_noises = np.arange(0, 0.05, 0.005)
     con_noises = np.arange(0, 0.3, 0.1)
@@ -82,12 +81,11 @@ def grid_sims():
     agents = [model.LeftRightAgent,
               model.LRMean,
               model.LRMeanSD]
-    all_pars = product(obs_noises, cue_noises, con_noises, agents)
+    all_pars = product([obs_noises], cue_noises, con_noises, agents)
     my_robots = mp.Pool()
 
     for ix_pars, pars in enumerate(all_pars):
         my_robots.apply_async(_one_sim, list(pars))
-
     my_robots.close()
     my_robots.join()
 
@@ -181,24 +179,25 @@ def interactive_plot(pandata, axis=None, fignum=3):
         pandatum = pandata.loc[indices[ix_ix]]
         num_trials = len(pandatum)
         real_con = np.zeros((num_trials, 4))
-        real_con[pandatum['ix_context'] == 0, 0] = 1
-        real_con[pandatum['ix_context'] == 1, 1] = 1
-        real_con[pandatum['ix_context'] == 2, 2] = 1
-        real_con[pandatum['ix_context'] == 'clamp', 3] = 1
         axis.clear()
         axis.plot(np.array(pandatum['pos(t)']), color='black', alpha=0.4)
         axis.plot(np.array(pandatum['mag_mu_0']), color='black')
         axis.plot(np.array(pandatum['mag_mu_1']), color='red')
         axis.plot(np.array(pandatum['mag_mu_2']), color='blue')
         ylim = axis.get_ylim()
-        conx = np.array(pandatum.loc[:, ['con0', 'con1', 'con2']])
+        height = np.abs(np.max(ylim) - np.min(ylim)) * 0.2
+        real_con[pandatum['ix_context'] == 0, 0] = height
+        real_con[pandatum['ix_context'] == 1, 1] = height
+        real_con[pandatum['ix_context'] == 2, 2] = height
+        real_con[pandatum['ix_context'] == 'clamp', 3] = height
+        conx = np.array(pandatum.loc[:, ['con0', 'con1', 'con2']]) * height
         axis.plot(ylim[0] + conx[:, 0], color='black')
         axis.plot(ylim[0] + conx[:, 1], color='red')
         axis.plot(ylim[0] + conx[:, 2], color='blue')
-        axis.plot(ylim[0] - 1.5 + real_con[:, 0], color='black')
-        axis.plot(ylim[0] - 1.5 + real_con[:, 1], color='red')
-        axis.plot(ylim[0] - 1.5 + real_con[:, 2], color='blue')
-        axis.plot(ylim[0] - 1.5 + real_con[:, 3], color='green')
+        axis.plot(ylim[0] - 1.5 * height + real_con[:, 0], color='black')
+        axis.plot(ylim[0] - 1.5 * height + real_con[:, 1], color='red')
+        axis.plot(ylim[0] - 1.5 * height + real_con[:, 2], color='blue')
+        axis.plot(ylim[0] - 1.5 * height + real_con[:, 3], color='green')
         # axis.plot(np.array(pandatum['action']), color='yellow')
         axis.set_title('Obs Noise: {}, Cue Noise: {}, Con Noise: {}, Agent: {}'.format(*indices[ix_ix]))
         plt.draw()
@@ -211,5 +210,27 @@ def interactive_plot(pandata, axis=None, fignum=3):
         ix_ix = ix_ix % num_indices
 
 
-if __name__ == '__main__':
+def dummy(x):
     print('yo')
+
+
+def _error(x):
+    print(x)
+
+
+if __name__ == '__main__':
+    obs_noises = task_pars['obs_noise']
+    cue_noises = np.arange(0, 0.05, 0.005)
+    con_noises = np.arange(0, 0.3, 0.1)
+
+    agents = [model.LeftRightAgent,
+              model.LRMean,
+              model.LRMeanSD]
+    all_pars = product([obs_noises], cue_noises, con_noises, agents)
+    my_robots = mp.Pool()
+
+    # for ix_pars, pars in enumerate(all_pars):
+    #     my_robots.apply_async(_one_sim, list(pars), callback=dummy)
+    # my_robots.close()
+    # my_robots.join()
+    my_robots.map_async(dummy, list(all_pars)).get()

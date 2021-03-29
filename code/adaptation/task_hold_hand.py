@@ -11,7 +11,7 @@ import model
 
 """Task described in section 7.1 of notes.pdf in which the participant
 must hold her hand in the starting position in different force fields.
-The game is meant to be played by model.LeftRightAgent or its children.
+The game is meant to be played by model.LeftRightAgent or its childrenlambda.
 
 """
 
