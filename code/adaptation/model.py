@@ -9,6 +9,8 @@ from scipy import stats
 import pandas as pd
 from matplotlib import pyplot as plt
 
+from pars import agent as pars
+
 """Bayesian motor adaptation model."""
 
 
@@ -119,21 +121,19 @@ class LeftRightAgent(object):
     """
     name = 'LR'
     # Free parameters with default values. Can be overwritten by __init__
-    action_sd = 0.01  # SD of a Gaussian for action uncertainty
+    action_sd = pars['action_sd']  # SD of a Gaussian for action uncertainty
     cue_noise = 0.1  # If ix_cue is observed, the posterior over the
                      # corresponding context is 1 - 2 * cue_noise.
-    obs_sd = 1
+    obs_sd = pars['obs_noise']
     angles = np.array([0, 1, -1])
-    force_sds = np.array([0.01, 0.2, 0.2])
+    force_sds = pars['force_sd']  # np.array([0.01, 0.2, 0.2])
 
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
 
-    max_force = 30  # Maximum force (abs value) the agent can exert.
+    max_force = pars['max_force']  # Maximum force the agent can exert
 
     context_noise = 0.0001
-    context_sd_constant = 0.1
-    context_sd_exponent = 3
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None):
@@ -266,15 +266,6 @@ class LeftRightAgent(object):
         def predicted_hand(pos, context):
             return funs[context](pos)
         return predicted_hand, posterior_pars
-
-    def _sd_context(self, prob):
-        """Function that determines the effect of the probability of the context
-        on the standard deviation of the outcome prediction.
-
-        """
-        if prob == 0:
-            return np.inf
-        return self.context_sd_constant / prob ** self.context_sd_exponent
 
     def infer_context(self, hand_position, cue=None):
         """Infers the current context given the current observation, as well
@@ -445,6 +436,7 @@ class LRMean(LeftRightAgent):
 
     """
     name = 'LRM'
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.mag_hypers = self.magnitudes

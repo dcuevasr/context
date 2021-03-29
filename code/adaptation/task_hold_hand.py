@@ -19,9 +19,9 @@ The game is meant to be played by model.LeftRightAgent or its children.
 def run(agent=None, save=False, filename=None, pars=None):
     """Runs an entire game of the holding-hand task."""
     if pars is None:
-        from pars import pars
+        from pars import task as pars
     if agent is None:
-        agent = model.LeftRightAgent(obs_sd=pars['obs_noise'][1])
+        agent = model.LeftRightAgent(obs_sd=pars['obs_noise'])
     outs = []
     for ix_miniblock, _ in enumerate(pars['context_seq']):
         out = miniblock(ix_miniblock, 0, agent, pars)
@@ -104,8 +104,8 @@ def sample_observation(hand_position, pars):
                                       'n-dimensional spaces.')
     except TypeError:
         pass
-    loc, scale = pars['obs_noise']
-    loc += hand_position
+    scale = pars['obs_noise']
+    loc = hand_position
     distri = stats.norm(loc=loc, scale=scale)
     return distri.rvs()
 
@@ -115,8 +115,8 @@ def sample_force(context, pars):
     given the --hand_position-- and the context.
 
     """
-    loc, scale = pars['force_noise'][context]
-    distri = stats.norm(loc=loc, scale=scale)
+    scale = pars['force_noise'][context]
+    distri = stats.norm(loc=0, scale=scale)
     magnitude = np.prod(pars['forces'][context])
     return magnitude + distri.rvs()
 

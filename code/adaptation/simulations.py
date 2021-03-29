@@ -12,6 +12,8 @@ import pandas as pd
 
 import model
 import task_hold_hand as thh
+from pars import task as task_pars
+
 
 def test_obsnoise(fignum=1):
     """Runs the game with increasingly high observation noise, for all three
@@ -46,8 +48,9 @@ def test_deadaptation(fignum=2):
     the opposite meaning.
 
     """
-    kwargs = {'angles': [0, 0, 0], 'obs_sd': 1,
-              'cue_noise': 0.001}
+    kwargs = {'angles': [0, 0, 0], 'obs_sd': task_pars['obs_noise'],
+              'context_noise': 0.1,
+              'cue_noise': 0.01}
     fig, axes = plt.subplots(3, 1, num=fignum, clear=True,
                              sharex=True, sharey=True, squeeze=True)
     agents = [model.LeftRightAgent(**kwargs),
@@ -66,9 +69,13 @@ def test_deadaptation(fignum=2):
 
 def grid_sims():
     """Makes the agent(s) perform the task for all the parameter values.
+
+    All your processors are belong to us.
+
+    Outputs are saved (callback to _one_sim()) to pickled files
     """
 
-    obs_noises = np.arange(0, 2, 0.1)
+    obs_noises = task_pars['obs_noise']
     cue_noises = np.arange(0, 0.05, 0.005)
     con_noises = np.arange(0, 0.3, 0.1)
 
@@ -87,8 +94,8 @@ def grid_sims():
 
 def _one_sim(obs_noise, cue_noise, con_noise, agent_fun):
     """Runs one iteration for grid_sims(). """
-    from pars import pars as task_pars
-    task_pars['obs_noise'][1] = obs_noise
+    from pars import task as task_pars
+    task_pars['obs_noise'] = obs_noise
     agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise,
                       context_noise=con_noise, angles=[0, 0, 0])
     filename = 'grid_sims_{}_{}_{}_{}.pi'.format(obs_noise, cue_noise,
