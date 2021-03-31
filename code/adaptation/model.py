@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/model.py
 
-import ipdb
+# import ipdb
 
 import numpy as np
 import scipy as sp

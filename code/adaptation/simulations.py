@@ -83,9 +83,9 @@ def grid_sims():
               model.LRMeanSD]
     all_pars = product([obs_noises], cue_noises, con_noises, agents)
     my_robots = mp.Pool()
-
     for ix_pars, pars in enumerate(all_pars):
         my_robots.apply_async(_one_sim, list(pars))
+
     my_robots.close()
     my_robots.join()
 
@@ -210,27 +210,5 @@ def interactive_plot(pandata, axis=None, fignum=3):
         ix_ix = ix_ix % num_indices
 
 
-def dummy(x):
-    print('yo')
-
-
-def _error(x):
-    print(x)
-
-
 if __name__ == '__main__':
-    obs_noises = task_pars['obs_noise']
-    cue_noises = np.arange(0, 0.05, 0.005)
-    con_noises = np.arange(0, 0.3, 0.1)
-
-    agents = [model.LeftRightAgent,
-              model.LRMean,
-              model.LRMeanSD]
-    all_pars = product([obs_noises], cue_noises, con_noises, agents)
-    my_robots = mp.Pool()
-
-    # for ix_pars, pars in enumerate(all_pars):
-    #     my_robots.apply_async(_one_sim, list(pars), callback=dummy)
-    # my_robots.close()
-    # my_robots.join()
-    my_robots.map_async(dummy, list(all_pars)).get()
+    grid_sims()
