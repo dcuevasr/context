@@ -40,6 +40,7 @@ def run(agent=None, save=False, filename=None, pars=None):
 def miniblock(ix_context, hand_position, agent, pars):
     """Runs a miniblock of the task."""
     outs = []
+    agent.reset()
     for ix_trial in range(pars['num_trials']):
         out = trial(ix_context, hand_position, agent, pars)
         outs.append(out)

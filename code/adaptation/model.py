@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/model.py
 
-import ipdb
-
 import numpy as np
 import scipy as sp
 from scipy import stats
@@ -127,6 +125,8 @@ class LeftRightAgent(object):
     obs_sd = pars['obs_noise']
     angles = np.array([0, 1, -1])
     force_sds = pars['force_sd']  # np.array([0.01, 0.2, 0.2])
+    prediction_noise = pars['prediction_noise']
+    reset_after_change = pars['reset_after_change']
 
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
@@ -136,7 +136,8 @@ class LeftRightAgent(object):
     context_noise = 0.0001
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
-                 angles=None, context_noise=None):
+                 angles=None, context_noise=None, prediction_noise=None,
+                 reset_after_change=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
@@ -151,6 +152,10 @@ class LeftRightAgent(object):
             self.angles = np.array(angles)
         if context_noise:
             self.context_noise = context_noise
+        if prediction_noise:
+            self.prediction_noise = prediction_noise
+        if reset_after_change:
+            self.reset_after_change = reset_after_change
 
         self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
@@ -174,6 +179,11 @@ class LeftRightAgent(object):
                                self.force_sds[:, None]])
         return self.angles, magnitudes
 
+    def reset(self, ):
+        if self.reset_after_change:
+            self.log_context = np.log(np.ones(self.num_contexts) /
+                                      self.num_contexts)
+
     def make_decision(self, ):
         """Makes a decision after all the inferences for the trial have been
         carried out.
@@ -187,7 +197,6 @@ class LeftRightAgent(object):
         The decision is returned and also saved into self.decision_history.
 
         """
-        # raise NotImplementedError('obs noise!')
         c_pos = self.hand_position
         c_context = self.sample_context('mode')
         c_force = self.magnitudes[c_context][0]
@@ -276,7 +285,12 @@ class LeftRightAgent(object):
         # Hand position likelihood:
         log_li_hand = np.array([lh_fun(hand_position, ix_context)
                                 for ix_context in range(self.num_contexts)])
-        log_li_hand -= np.log(np.exp(log_li_hand - log_li_hand.max()).sum())
+        li_hand = np.exp(log_li_hand - log_li_hand.max())
+        p_hand = li_hand / li_hand.sum()
+        p_hand += self.prediction_noise
+        p_hand /= p_hand.sum()
+        log_li_hand = np.log(p_hand)
+
         # Cue likelihood:
         if cue is None:
             log_cue = np.zeros(self.num_contexts)
@@ -403,23 +417,21 @@ class LeftRightAgent(object):
         axis.set_xlabel('Trial')
         axis.set_ylabel('Adaptation')
 
-    def plot_contexts(self, alpha=0.2, fignum=2, axis=None):
+    def plot_contexts(self, offset=0, height=1, alpha=1, fignum=2, axis=None):
         """Plots a stacked bar plot representing the posterior over
         contexts for every trial.
 
         """
         con_t = np.exp(np.array(self.log_context_history) -
                        np.array(self.log_context_history).max(axis=1)[:, None])
-        con_t = con_t / con_t.sum(axis=1)[:, None]
+        con_t = con_t / con_t.sum(axis=1)[:, None] * height + offset
         trials = np.arange(con_t.shape[0])
         colors = ['black', 'red', 'blue']
         if axis is None:
             fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
-        axis.bar(trials, con_t[:, 0], color=colors[0], alpha=alpha)
-        axis.bar(trials, con_t[:, 1], bottom=con_t[:, 0], color=colors[1],
-                 alpha=alpha)
-        axis.bar(trials, con_t[:, 2], bottom=con_t[:, 1], color=colors[2],
-                 alpha=alpha)
+        for ix_con in range(self.num_contexts):
+            axis.plot(trials, con_t[:, ix_con], color=colors[ix_con],
+                      alpha=alpha)
 
     def plot_position(self, alpha=0.9, fignum=3, axis=None):
         """Plots the observation of the in time."""
@@ -427,6 +439,14 @@ class LeftRightAgent(object):
         if axis is None:
             fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
         axis.plot(obs, alpha=alpha)
+
+    def plot_full(self, fignum=4):
+        """Plots EVERYTHING (cue Gary Oldman in Leon). """
+        fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
+        self.plot_contexts(offset=-0.5, height=0.2, axis=axis)
+        self.plot_mu(axis=axis)
+        plt.draw()
+        plt.show(block=False)
 
 
 class LRMean(LeftRightAgent):
@@ -468,6 +488,7 @@ class LRMean(LeftRightAgent):
         mag_hypers[ix_context] = [mu_pos, sd_pos]
         magnitudes = np.array(self.magnitudes)
         magnitudes[ix_context][0] = mu_pos
+        # magnitudes[ix_context][1] = mu_pos
         self.mag_hypers_history.append(mag_hypers)
         self.magnitude_history.append(magnitudes)
         self.magnitudes = magnitudes
