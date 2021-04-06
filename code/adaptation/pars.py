@@ -26,7 +26,16 @@ task = {'obs_noise': obs_noise,  # Observation noise N(mu, sd)
 # Default values for the parameters of the agents in models.py
 agent = {'obs_noise': obs_noise,
          'delta_t': delta_t,
-         'max_force': 2 * max(fake_mags),
-         'action_sd': max(fake_mags) / 5,
-         'force_sd': force_sd * np.ones(3) * 3
+         'max_force': 1.2 * max(fake_mags),
+         'action_sd': max(fake_mags) / 10,
+         'force_sd': 5 * force_sd * np.ones(3),
+         'prediction_noise': 0.01,
+         'reset_after_change': False,  # Whether to reset priors on new miniblock
          }
+
+# The following parameters follow the experiment in Smith_2006
+task_smith = task.copy()
+task_smith['num_trials'] = 10
+task_smith['context_seq'] = [0] * 12 + [1] * 40 + [2] * 2 + ['clamp'] * 18
+task_smith['cues'] = [0] * 12 + [1] * 40 + [1] * 2 + [1] * 18
+task_smith['reset_after_change'] = True

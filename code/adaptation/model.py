@@ -128,6 +128,10 @@ class LeftRightAgent(object):
     prediction_noise = pars['prediction_noise']
     reset_after_change = pars['reset_after_change']
 
+    is_reset = True  # Whether a new miniblock started
+
+    preferred = 1
+
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
 
@@ -179,10 +183,18 @@ class LeftRightAgent(object):
                                self.force_sds[:, None]])
         return self.angles, magnitudes
 
-    def reset(self, ):
-        if self.reset_after_change:
-            self.log_context = np.log(np.ones(self.num_contexts) /
-                                      self.num_contexts)
+    def reset(self, priors=None):
+        """Resets the priors over context to a uniform distribution.
+        If --priors-- are provided, they are used instead.
+
+        """
+        self.is_reset = True
+        if priors is None:
+            self.log_context = - np.log(self.num_contexts) * np.ones(self.num_contexts)
+        else:
+            if not np.isclose(np.sum(priors), 1):
+                raise ValueError('Provided priors do not add to 1')
+            self.log_context = np.log(priors)
 
     def make_decision(self, ):
         """Makes a decision after all the inferences for the trial have been
@@ -281,15 +293,18 @@ class LeftRightAgent(object):
         as the previous action and outcome.
 
         """
-        lh_fun, lh_pars = self.predict_outcome()
-        # Hand position likelihood:
-        log_li_hand = np.array([lh_fun(hand_position, ix_context)
-                                for ix_context in range(self.num_contexts)])
-        li_hand = np.exp(log_li_hand - log_li_hand.max())
-        p_hand = li_hand / li_hand.sum()
-        p_hand += self.prediction_noise
-        p_hand /= p_hand.sum()
-        log_li_hand = np.log(p_hand)
+        if not self.is_reset:
+            lh_fun, lh_pars = self.predict_outcome()
+            # Hand position likelihood:
+            log_li_hand = np.array([lh_fun(hand_position, ix_context)
+                                    for ix_context in range(self.num_contexts)])
+            li_hand = np.exp(log_li_hand - log_li_hand.max())
+            p_hand = li_hand / li_hand.sum()
+            p_hand += self.prediction_noise
+            p_hand /= p_hand.sum()
+            log_li_hand = np.log(p_hand)
+        else:
+            log_li_hand = -np.log(self.num_contexts) * np.ones(self.num_contexts)
 
         # Cue likelihood:
         if cue is None:
@@ -403,6 +418,7 @@ class LeftRightAgent(object):
         self.infer_context(hand_position, cue)
         self.update_magnitudes()
         action = self.make_decision()
+        self.is_reset = False
         return action
 
     def plot_mu(self, trials=None, fignum=1, axis=None):

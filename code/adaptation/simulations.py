@@ -36,7 +36,8 @@ def test_obsnoise(fignum=1):
             agent.plot_mu(axis=axes[ix_agent, ix_noise])
             agent.plot_position(axis=axes[ix_agent, ix_noise])
             if ix_agent == 0:
-                axes[ix_agent, ix_noise].set_title('Obs Noise: {}'.format(obs_noise))
+                axes[ix_agent, ix_noise].set_title(
+                    'Obs Noise: {}'.format(obs_noise))
     plt.ylabel('Adaptation')
     plt.xlabel('Trial')
     plt.draw()
@@ -72,32 +73,57 @@ def grid_sims():
 
     All your processors are belong to us.
 
-    Outputs are saved (callback to _one_sim()) to pickled files
+    Outputs are saved to pickled files
     """
-    obs_noises = task_pars['obs_noise']
+    labels, grid_elements = _define_grid()
+    labels = labels + ['agent']
+    all_pars = product(*grid_elements)
+    my_robots = mp.Pool()
+
+    for pars in all_pars:
+        inputs = {label: value
+                  for label, value in zip(labels, pars)}
+        # _one_sim(inputs)
+        my_robots.apply_async(_one_sim, args=[inputs])
+    my_robots.close()
+    my_robots.join()
+
+
+def _define_grid():
+    """Defines the grid for grid_sims and read_data.  This function is meant to be
+    edited manually to do different simulations. Keep in mind that the labels
+    must match those expected by the agents' instantiation functions.
+
+    """
+    from sys import version_info
+    if version_info[0] < 3 or version_info[1] < 7:
+        raise NotImplementedError('The functions that use this function '
+                                  'rely on dictionaries being ordered and '
+                                  'I was too lazy to implement it, so '
+                                  'python 3.7+ is required.')
+    pred_noises = np.arange(0, 1, 0.1)
     cue_noises = np.arange(0, 0.05, 0.005)
     con_noises = np.arange(0, 0.3, 0.1)
 
     agents = [model.LeftRightAgent,
               model.LRMean,
               model.LRMeanSD]
-    all_pars = product([obs_noises], cue_noises, con_noises, agents)
-    my_robots = mp.Pool()
+    labels = ['prediction_noise', 'cue_noise', 'context_noise']
+    try:  # Test labels on agent
+        agents[0](**{label: 0.1 for label in labels})
+    except TypeError:
+        raise ValueError('Testing the labels on the agent failed. '
+                         'Maybe the labels are misspelled?')
+    return labels, [pred_noises, cue_noises, con_noises, agents]
 
-    for ix_pars, pars in enumerate(all_pars):
-        my_robots.apply_async(_one_sim, list(pars))
-    my_robots.close()
-    my_robots.join()
 
-
-def _one_sim(obs_noise, cue_noise, con_noise, agent_fun):
+def _one_sim(kwargs):
     """Runs one iteration for grid_sims(). """
-    from pars import task as task_pars
-    task_pars['obs_noise'] = obs_noise
-    agent = agent_fun(obs_sd=obs_noise, cue_noise=cue_noise,
-                      context_noise=con_noise, angles=[0, 0, 0])
-    filename = 'grid_sims_{}_{}_{}_{}.pi'.format(obs_noise, cue_noise,
-                                                 con_noise, agent.name)
+    from pars import task_smith as task_pars
+    agent = kwargs.pop('agent')
+    agent = agent(**kwargs, angles=[0, 0, 0])
+    file_stem = 'grid_sims' + '_{}' * (len(kwargs) + 1) + '.pi'
+    filename = file_stem.format(*list(kwargs.values()), agent.name)
     thh.run(agent=agent, save=True, filename=filename, pars=task_pars)
 
 
@@ -106,21 +132,22 @@ def read_data():
     a panda with it, including the parameter values as columns.
 
     """
+    labels, _ = _define_grid()
     data_folder = './sim_data/'
     files = glob.iglob(data_folder + 'grid_sims_*.pi')
     pandas = []
     for file in files:
-        split = file.split('_')
+        split = file.split('_')[3:]
         panda = pd.read_pickle(file)
         len_panda = len(panda)
-        obs_noise = float(split[3]) * np.ones(len_panda)
-        cue_noise = float(split[4]) * np.ones(len_panda)
-        con_noise = float(split[5]) * np.ones(len_panda)
-        agent = [split[6][:-3]] * len_panda
-        panda['obs_noise'] = obs_noise
-        panda['cue_noise'] = cue_noise
-        panda['context_noise'] = con_noise
-        panda['agent'] = agent
+        for ix_part, part in enumerate(split[:-1]):
+            panda[labels[ix_part]] = float(part) * np.ones(len_panda)
+        # cue_noise = float(split[3]) * np.ones(len_panda)
+        # con_noise = float(split[4]) * np.ones(len_panda)
+        panda['agent'] = [split[-1][:-3]] * len_panda
+        # panda['cue_noise'] = cue_noise
+        # panda['context_noise'] = con_noise
+        # panda['agent'] = agent
         pandas.append(panda)
     pandatron = pd.concat(pandas, axis=0)
     pandatron.reset_index(inplace=True)
@@ -145,9 +172,9 @@ def performance(pandata):
 
 
 def context_inference(pandata):
-    """Calculates how well each agent in --pandata-- inferred the context. For every
-    trial that the agent mis-identified the context, a 1 is added to the score. Lower
-    scores mean better inference.
+    """Calculates how well each agent in --pandata-- inferred the context. For
+    every trial that the agent mis-identified the context, a 1 is added to the
+    score. Lower scores mean better inference.
 
     """
     pandata = pandata.copy()
@@ -161,17 +188,18 @@ def context_inference(pandata):
 
 
 def interactive_plot(pandata, axis=None, fignum=3):
-    """Generator to be able to navigate through the different agents in --pandata--.
+    """Generator to be able to navigate through the different agents in
+    --pandata--.
 
-    Send an signed int N to go back or forth N agents. Send a list with parameter
-    values [obs_noise, cue_noise, agent] to go to that agent.
+    Send an signed int N to go back or forth N agents. Send a list with
+    parameter values [obs_noise, cue_noise, agent] to go to that agent.
 
     """
+    labels, _ = _define_grid()
     if axis is None:
         fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
     plt.show(block=False)
-    pandata = pandata.set_index(['obs_noise', 'cue_noise',
-                                 'context_noise', 'agent'])
+    pandata = pandata.set_index(labels + ['agent'])
     indices = list(pandata.index.unique())
     num_indices = len(indices)
     ix_ix = 0
@@ -198,8 +226,10 @@ def interactive_plot(pandata, axis=None, fignum=3):
         axis.plot(ylim[0] - 1.5 * height + real_con[:, 1], color='red')
         axis.plot(ylim[0] - 1.5 * height + real_con[:, 2], color='blue')
         axis.plot(ylim[0] - 1.5 * height + real_con[:, 3], color='green')
+        axis.plot(np.array(pandatum['action']), color='yellow')
         # axis.plot(np.array(pandatum['action']), color='yellow')
-        axis.set_title('Obs Noise: {}, Cue Noise: {}, Con Noise: {}, Agent: {}'.format(*indices[ix_ix]))
+        title = ''.join([label + ': {}\n' for label in labels]) + 'Agent: {}\n'
+        axis.set_title(title.format(*indices[ix_ix]))
         plt.draw()
         input = yield None
         if input == 0:
@@ -210,27 +240,5 @@ def interactive_plot(pandata, axis=None, fignum=3):
         ix_ix = ix_ix % num_indices
 
 
-def dummy(x):
-    print('yo')
-
-
-def _error(x):
-    print(x)
-
-
 if __name__ == '__main__':
-    obs_noises = task_pars['obs_noise']
-    cue_noises = np.arange(0, 0.05, 0.005)
-    con_noises = np.arange(0, 0.3, 0.1)
-
-    agents = [model.LeftRightAgent,
-              model.LRMean,
-              model.LRMeanSD]
-    all_pars = product([obs_noises], cue_noises, con_noises, agents)
-    my_robots = mp.Pool()
-
-    # for ix_pars, pars in enumerate(all_pars):
-    #     my_robots.apply_async(_one_sim, list(pars), callback=dummy)
-    # my_robots.close()
-    # my_robots.join()
-    my_robots.map_async(dummy, list(all_pars)).get()
+    grid_sims()

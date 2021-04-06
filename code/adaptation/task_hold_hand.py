@@ -45,7 +45,6 @@ def miniblock(ix_context, hand_position, agent, pars):
         out = trial(ix_context, hand_position, agent, pars)
         outs.append(out)
         hand_position = out[3]
-    # outs = np.stack(outs, axis=0)
     return outs
 
 
@@ -68,11 +67,6 @@ def trial(ix_miniblock, hand_position, agent, pars):
     agent : model.LeftRightAgent instance
     Agent that makes decisions. Needs one_trial(hand_position, cue) method as
     well as log_context attribute.
-
-    cue_key : iterable
-    Iterable to fake cues. If in a trial the context is 2, cue_key[2] will
-    be used. If cue_key=[0, 1, 2] (the default), this has no effect. If
-    something else, the agent will be lied to. LIES!
 
     """
     context = pars['context_seq'][ix_miniblock]
