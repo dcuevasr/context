@@ -11,7 +11,7 @@ import model
 
 """Task described in section 7.1 of notes.pdf in which the participant
 must hold her hand in the starting position in different force fields.
-The game is meant to be played by model.LeftRightAgent or its childrenlambda.
+The game is meant to be played by model.LeftRightAgent or its children.
 
 """
 
@@ -23,10 +23,14 @@ def run(agent=None, save=False, filename=None, pars=None):
     if agent is None:
         agent = model.LeftRightAgent(obs_sd=pars['obs_noise'])
     outs = []
-    for ix_miniblock, _ in enumerate(pars['context_seq']):
-        out = miniblock(ix_miniblock, 0, agent, pars)
-        for one_out in out:
-            outs.append(one_out)
+    hand_position = 0
+    for c_trial, do_break in enumerate(pars['breaks']):
+        if do_break:
+            agent.reset()
+            hand_position = 0
+        out = trial(c_trial, hand_position, agent, pars)
+        outs.append(out)
+        hand_position = out[3]
     pandata = pd.DataFrame(outs,
                            columns=('action', 'force', 'pos(t)', 'pos(t+1)',
                                     'ix_context'))
@@ -48,7 +52,7 @@ def miniblock(ix_context, hand_position, agent, pars):
     return outs
 
 
-def trial(ix_miniblock, hand_position, agent, pars):
+def trial(c_trial, hand_position, agent, pars):
     """Runs a single trial of the task.
 
     Parameters
@@ -69,12 +73,12 @@ def trial(ix_miniblock, hand_position, agent, pars):
     well as log_context attribute.
 
     """
-    context = pars['context_seq'][ix_miniblock]
-    cue = pars['cues'][ix_miniblock]
+    context = pars['context_seq'][c_trial]
+    cue = pars['cues'][c_trial]
     c_hand_position = hand_position
     c_obs = sample_observation(hand_position, pars)
     action = agent.one_trial(c_obs, cue=cue)
-    if context == 'clamp':
+    if context == pars['clamp_index']:
         n_hand_position = 0
         force = -action
     else:

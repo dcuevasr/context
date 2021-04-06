@@ -116,6 +116,31 @@ class LeftRightAgent(object):
     pointing right. The magnitude of these forces are inferred during the
     experiment.
 
+    The class takes many values from the pars.py module, which must be
+    importable and must contain a dictionary called --agent--. For the default
+    values, see pars.py.
+
+    The necessary entries of the dictionary are the following:
+    'action_sd' : float
+    Std for the Gaussian from which actions should be sampled.
+
+    'obs_noise' : float
+    Assumed Std for the noise in the observations.
+
+    'force_sd' : float
+    Assumed Std for the force applied by the environment
+
+    'prediction_noise' : float
+    Inverse precision given to the predictions of the current state given the
+    last state and the last action. See self.update_magnitudes for more.
+
+    'reset_after_change' : bool
+    Whether to reset the priors over context when self.reset() is called by
+    external actors (i.e. the task).
+
+    'max_force': float
+    Maximum force (in units of distance (Newtons times delta t)). See
+    the model implementation in the notes.pdf file for an explanation of this.
     """
     name = 'LR'
     # Free parameters with default values. Can be overwritten by __init__
