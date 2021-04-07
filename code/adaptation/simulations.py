@@ -101,29 +101,40 @@ def _define_grid():
                                   'rely on dictionaries being ordered and '
                                   'I was too lazy to implement it, so '
                                   'python 3.7+ is required.')
-    pred_noises = np.arange(0, 1, 0.1)
+    pred_noises = np.arange(0, 0.2, 0.03)
     cue_noises = np.arange(0, 0.05, 0.005)
     con_noises = np.arange(0, 0.3, 0.1)
+    force_sds = np.tile(np.arange(0.0001, 0.002, 0.0002), (3, 1)).T
 
     agents = [model.LeftRightAgent,
               model.LRMean,
               model.LRMeanSD]
-    labels = ['prediction_noise', 'cue_noise', 'context_noise']
+    values = [pred_noises, cue_noises, con_noises, force_sds]
+    labels = ['prediction_noise', 'cue_noise', 'context_noise', 'force_sds']
     try:  # Test labels on agent
-        agents[0](**{label: 0.1 for label in labels})
+        test_values = [value[0] for value in values]
+        agents[0](**{label: value for label, value in zip(labels, test_values)})
     except TypeError:
         raise ValueError('Testing the labels on the agent failed. '
                          'Maybe the labels are misspelled?')
-    return labels, [pred_noises, cue_noises, con_noises, agents]
+    values.append(agents)
+    return labels, values
 
 
 def _one_sim(kwargs):
     """Runs one iteration for grid_sims(). """
-    from pars import task_smith as task_pars
+    from pars import task as task_pars
     agent = kwargs.pop('agent')
     agent = agent(**kwargs, angles=[0, 0, 0])
     file_stem = 'grid_sims' + '_{}' * (len(kwargs) + 1) + '.pi'
-    filename = file_stem.format(*list(kwargs.values()), agent.name)
+    values = []
+    for value in kwargs.values():
+        if np.size(value) > 1:
+            c_value = value[0]
+        else:
+            c_value = value
+        values.append(c_value)
+    filename = file_stem.format(*values, agent.name)
     thh.run(agent=agent, save=True, filename=filename, pars=task_pars)
 
 
@@ -141,7 +152,12 @@ def read_data():
         panda = pd.read_pickle(file)
         len_panda = len(panda)
         for ix_part, part in enumerate(split[:-1]):
-            panda[labels[ix_part]] = float(part) * np.ones(len_panda)
+            split_split = part.split(' ')
+            if len(split_split) > 1:
+                c_part = split_split[0][1:]
+            else:
+                c_part = part
+            panda[labels[ix_part]] = float(c_part) * np.ones(len_panda)
         # cue_noise = float(split[3]) * np.ones(len_panda)
         # con_noise = float(split[4]) * np.ones(len_panda)
         panda['agent'] = [split[-1][:-3]] * len_panda
@@ -167,8 +183,8 @@ def performance(pandata):
     """
     pandata = pandata.copy()
     pandata['abs_dev'] = pandata['hand'].apply(abs)
-    return pandata.groupby(['agent', 'obs_noise',
-                            'cue_noise', 'context_noise']).sum()['abs_dev']
+    labels, _ = _define_grid()
+    return pandata.groupby(labels).sum()['abs_dev']
 
 
 def context_inference(pandata):
@@ -182,9 +198,8 @@ def context_inference(pandata):
     pandata.drop(np.nonzero(ix_delete)[0], inplace=True)
     pandata.dropna(axis=0, how='any', inplace=True)
     pandata['context_error'] = pandata['ix_context'].astype(float) != pandata['con_t']
-    return pandata.groupby(['agent', 'obs_noise',
-                            'cue_noise',
-                            'context_noise']).sum()['context_error']
+    labels, _ = _define_grid()
+    return pandata.groupby(labels).sum()['context_error']
 
 
 def interactive_plot(pandata, axis=None, fignum=3):

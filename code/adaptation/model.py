@@ -2,7 +2,6 @@
 # ./adaptation/model.py
 
 import numpy as np
-import scipy as sp
 from scipy import stats
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -10,105 +9,6 @@ from matplotlib import pyplot as plt
 from pars import agent as pars
 
 """Bayesian motor adaptation model."""
-
-
-class RandomVariable(object):
-    """Defines a random variable, with a pdf and cdf, as well as a __call__ method
-    that samples from the pdf.
-
-    The distribution parameters can be updated via the method update_parameters.
-
-    Can be initiated with its own pdf and cdf. If None provided, it defaults to
-    numpy's implementation of a Gaussian.
-
-    """
-
-    def __init__(self,):
-        """Does nothing!"""
-        pass
-
-    def __call__(self, ):
-        return self.sample()
-
-    def sample(self, ):
-        """Samples a value using the pdf."""
-        rand = np.random.rand()
-        if self.var_type == 'continuous':
-            solution = sp.optimize.minimize(fun=lambda x: self.cdf(x) - rand,
-                                            x0=0)
-            sample = solution.x
-        else:
-            sample = np.argmin(abs(self.cdf - rand))
-        return sample
-
-    def plot_pdf(self, num_points=100, support=None):
-        """Plots a smooth approximation of the pdf, with --num_points-- points and
-        an x-range given by the elements of --support--.
-        """
-        raise NotImplementedError('Not yet!')
-
-
-class GaussGaussInference(RandomVariable):
-    """Performs Bayesian inference using Gaussian priors and likelihood. """
-    def __init__(self, mu=None, sd=None):
-        """Initiates the Gaussian priors with the given parameters or defaults.
-        """
-        if mu is None:
-            mu = 0
-        if sd is None:
-            sd = 1
-
-        self.pars = np.array([mu, sd])
-        self.pars_history = [self.pars]
-
-    def pdf(self, x):
-        """Evaluates the Gaussian pdf on the current parameters."""
-        return stats.norm.pdf(x, loc=self.pars[0], scale=self.pars[1])
-
-    def cdf(self, x):
-        """Evaluates the Gaussian cdf on the current parameters."""
-        return stats.norm.cdf(x, loc=self.pars[0], scale=self.pars[1])
-
-    def inference(self, likelihood_pars):
-        """Updates the parameters of the posterior."""
-        mu_l, sd_l = likelihood_pars
-        mu_p, sd_p = self.pars
-        mu_post = (mu_l * sd_p ** 2 + mu_p * sd_p ** 2) / \
-            (sd_l ** 2 + sd_p ** 2)
-        sd_post = np.sqrt((sd_l ** 2 * sd_p ** 2) / (sd_p ** 2 + sd_l ** 2))
-        self.pars = np.array([mu_post, sd_post])
-        self.pars_history.append(self.pars)
-
-
-class Context(object):
-    """Stores the force and direction of a context. If called, returns the force in
-    2D Cartesian coordinates.
-
-    """
-
-    def __init__(self, magnitude=1, angle=0, baseline=False):
-        """Well..."""
-        self.magnitude = magnitude
-        self.angle = angle
-        self.baseline = baseline
-
-    def __call__(self, x=None):
-        """Returns the force."""
-        if self.baseline:
-            return 0
-        return self.magnitude * np.array([np.cos(self.angle),
-                                          np.sin(self.angle)])
-
-    def update(self, magnitude=None, angle=None):
-        """Replaces the values of the magnitude and the angle, if
-        any provided. If both are None, does nothing but cry and
-        drink itself silly in the dark.
-
-        """
-        if magnitude:
-            self.magnitude = magnitude
-        if angle:
-            self.angle = angle
 
 
 class LeftRightAgent(object):
@@ -148,7 +48,7 @@ class LeftRightAgent(object):
     cue_noise = 0.1  # If ix_cue is observed, the posterior over the
                      # corresponding context is 1 - 2 * cue_noise.
     obs_sd = pars['obs_noise']
-    angles = np.array([0, 1, -1])
+    angles = np.array([0, 0.01, -0.01])
     force_sds = pars['force_sd']  # np.array([0.01, 0.2, 0.2])
     prediction_noise = pars['prediction_noise']
     reset_after_change = pars['reset_after_change']
@@ -166,7 +66,7 @@ class LeftRightAgent(object):
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
-                 reset_after_change=None):
+                 reset_after_change=None, force_sds=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
@@ -185,6 +85,8 @@ class LeftRightAgent(object):
             self.prediction_noise = prediction_noise
         if reset_after_change:
             self.reset_after_change = reset_after_change
+        if force_sds is not None:
+            self.force_sds = force_sds
 
         self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
@@ -552,7 +454,7 @@ class LRMeanSD(LeftRightAgent):
     def __init__(self, *args, **kwargs):
         """Initializes hyperparameters and calls LeftRightAgent.__init__ """
         super().__init__(*args, **kwargs)
-        self.mag_hypers = [[angle, 1, sd, 1]
+        self.mag_hypers = [[angle, 1, sd / 0.01, 0.001]
                            for angle, sd in zip(self.angles, self.force_sds)]
         self.mag_hypers_history = [self.mag_hypers]
 
@@ -583,7 +485,7 @@ class LRMeanSD(LeftRightAgent):
         self.mag_hypers_history.append(mag_hypers)
         magnitudes = np.array(self.magnitudes)
         magnitudes[ix_context][0] = post_mag[0]
-        magnitudes[ix_context][1] = 1 / post_mag[1] / post_mag[2] * post_mag[3]
+        magnitudes[ix_context][1] = post_mag[3] / post_mag[2]
         self.magnitudes = magnitudes
         self.magnitude_history.append(magnitudes)
 

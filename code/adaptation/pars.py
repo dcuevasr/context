@@ -7,7 +7,9 @@ explanation of each one of them and how these values were found.
 
 All values are in the international system of units (m, g, s, N, ...).
 """
-CLAMP_INDEX=150
+
+CLAMP_INDEX = 150
+
 
 def _populate(nonzeros, vector=None, size=None, element=1):
     """Creates a vector of zeros of size --size-- and puts an --element-- in each
@@ -85,7 +87,7 @@ agent = {'obs_noise': obs_noise,
          'delta_t': delta_t,
          'max_force': 1.2 * max(fake_mags),
          'action_sd': max(fake_mags) / 10,
-         'force_sd': 5 * force_sd * np.ones(3),
+         'force_sd': 2 * force_sd * np.ones(3),
          'prediction_noise': 0.01,
          'reset_after_change': True,  # Whether to reset priors on new miniblock
          }

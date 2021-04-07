@@ -705,7 +705,7 @@ motor error component.
 
 
 
-\subsection{Fixed force value}
+\subsection{Left-right with fixed force value (LR)}
 In this version, the force field is assumed to have a fixed value which the
 agent tries to infer. The agent's uncertainty on this inference is reflected on
 the parameters of the posterior over the force directly. For simplicity, we
@@ -727,7 +727,7 @@ equations are given by:
 \end{align}
 where the superscripts $(t)$ and $(t-1)$ refer to the inferred values for the current and previous trials, respectively, and $(d)$ to the parameters in \eref{eqn:data-dist}.
 
-\subsection{Fixed-$\sigma$ model}
+\subsection{Left-right with unknown standard deviation (LRS)}
 In this model, the force at each trial is assumed to be sampled from a normal
 distribution and the mean of this distribution is inferred from the
 observations, while the standard deviation is assumed to be known. The mean of
@@ -747,7 +747,7 @@ $\sigma$ (not $\sigma_mu$) is known, the update equations are given by:
 \end{align}
 where $x$ is the observation.
 
-\subsection{Full uncertainty}
+\subsection{Left-right with unknown mean and standard deviation (LRMS)}
 In this version, we will assume that for each context, the agent's belief over
 the magnitude of the force is given by a normal distribution:
 \begin{equation}
@@ -833,29 +833,14 @@ the participant observes the position of her own hand (visual + proprioceptive)
 with Gaussian observation noise with $\mu = 0m$ and $\sigma = 0.005m$.
 
 \section{Simulation results}
-\subsection{Effects of observation noise on inference}
-Observation noise refers to the noise on the position of the hand. The
-generating process is a Gaussian with $\sigma = 0.1$, which is determined in
-./code/adaptation/pars.py. However, the agent has a belief on this value, which
-is fixed for the agent. This value (obs\_sd, which can be passed on
-instanciation) can be used in lieu of an explicit $\Delta t$ parameter which
-controls the size of the time step
+\subsection{Deadaptation and context inference}
+During the deadaptation phase, not all parametrized agents detect the correct context. For each agent type (LR, LRS, LRMS), different parameter values allow the information from the predicted hand positions to overcome the information from the cue, which enables the correct identification of the current context.
 
-\subsection{Parameter values to look into}
-By visual inspection of the results of simulations, these are the parameter values that seem promising:
-
-\begin{tabularx}{\textwidth}{
-  >{\hsize=.2\hsize\linewidth=\hsize}X|
-  >{\hsize=.1\hsize\linewidth=\hsize}X|
-  >{\hsize=.1\hsize\linewidth=\hsize}X|
-  l}
-% {l|{\hsize=.4\hsize}X|{\hsize=0.3\hsize}X|{\hsize=0.3\hsize}X}
-Agent & Obs noise & Cue noise & Notes \\ \hline \hline
-LR    & 1.2       & 0.04      & Slow fake-context inference. Maybe the priors coming from the previous stage are messing things up. \\ \hline
-1 & 1 & 1 & 1
-\end{tabularx}
+It is unclear which parameter values lead to this, but, as expected, prediction noise (see XXX) and context noise (see XXX) play an important role. In particular, keeping the prediction noise below 0.2 seems to be necessary for the correct identification of the context, for all the used values of context noise. It could be good to check this.
 
 
+\subsection{Adaptation}
+Adaptation happens mostly very quickly for all agents. For the current $\Delta t = \dt$, adaptation happens within 20 to 30 time steps, although many times (depending on agent and parametrization) it happens much more quickly. For example, for the LR agent with prediction noise of 0.15, cue noise and context noise of 0, and assumed force variability of 0.25, within 15-20 time steps the adaptation is complete.
 \section{Conclusions}
 
 
