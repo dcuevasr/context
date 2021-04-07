@@ -834,9 +834,78 @@ with Gaussian observation noise with $\mu = 0m$ and $\sigma = 0.005m$.
 
 \section{Simulation results}
 \subsection{Deadaptation and context inference}
-During the deadaptation phase, not all parametrized agents detect the correct context. For each agent type (LR, LRS, LRMS), different parameter values allow the information from the predicted hand positions to overcome the information from the cue, which enables the correct identification of the current context.
+During the deadaptation phase, not all parametrized agents detect the correct
+context. For each agent type (LR, LRS, LRMS), different parameter values allow
+the information from the predicted hand positions to overcome the information
+from the cue, which enables the correct identification of the current context.
 
-It is unclear which parameter values lead to this, but, as expected, prediction noise (see XXX) and context noise (see XXX) play an important role. In particular, keeping the prediction noise below 0.2 seems to be necessary for the correct identification of the context, for all the used values of context noise. It could be good to check this.
+It is unclear which parameter values lead to this, but, as expected, prediction
+noise (see XXX) and context noise (see XXX) play an important role. In
+particular, keeping the prediction noise below 0.2 seems to be necessary for
+the correct identification of the context, for all the used values of context
+noise. It could be good to check this.
+
+
+\subsection{Context inference requires a new likelihood}
+\label{subsec:new-likelihood}
+It became clear by running preliminary simulations that, regardless of the
+agent, context inference happened too quickly and too ``reliably''. The context
+was identified during the first trial at first, and during deadaptation, when
+the cue and the forces do not match, it took at most a couple of trials to
+recognize the real context.
+
+Since the model proposes that deadaptation is nothing but a consequence of slow
+recognition of the context, lightning-fast context recognition will just not do
+it.
+
+The problem stems from the fact that the estimate on the magnitudes becomes so
+good (e.g. low standard deviation on the estimate) that the likelihood
+$p(x | C_t)$ becomes a delta function. Because of this, the cue itself is being
+ignored and the context is immediately identified.
+
+The best fix to this problem is to modify the way the likelihood works. As it
+stands, the likelihood is the probability of observing the current hand position
+given the current context and the previous hand position. The more ``separated''
+the different estimates become from each other (the means are too far apart
+and/or the precisions are too high), the more this is going to be a delta
+function.
+
+The best fix for this is to modify the likelihood function and introduce in it a
+measurement of the reliability of each of the modalities of perception (force
+feedback and visual cue). Such moderators are common in the literature
+\citep[e.g.][]{Lee_Neural_2014}.
+
+The simplest implementation I can think of is
+one in which additive noise is added to the posterior estimate for each
+modality:
+\begin{equation}
+p(C | \omega_t) \leftarrow (p(C | \omega_t) + \chi_{\omega})
+p(C | s_{t-1}, s_t, a_{t-1}) \leftarrow (p(C |  s_{t-1}, s_t, a_{t-1}) + \chi_{\text{pred}})
+\end{equation}
+where $\chi_{\omega}$ and $\chi_{\text{pred}}$ are constants which encode the
+reliability of each modality.
+
+A more convoluted approach would be to bring all modalities to the same
+level. In the current implementation, the likelihood uses the standard deviation
+of the inference over the magnitudes to calculate $p(C | s, a)$. Instead, a
+standard deviation could be used that is proportional to the mean, which would
+put the cue and predictive modalities on the same playing ground, depending on
+the proportionality constant chosen.
+
+\subsection{Parameter values to look into}
+By visual inspection of the results of simulations, these are the parameter values that seem promising:
+
+\begin{tabularx}{\textwidth}{
+  >{\hsize=.2\hsize\linewidth=\hsize}X|
+  >{\hsize=.1\hsize\linewidth=\hsize}X|
+  >{\hsize=.1\hsize\linewidth=\hsize}X|
+  l}
+% {l|{\hsize=.4\hsize}X|{\hsize=0.3\hsize}X|{\hsize=0.3\hsize}X}
+Agent & Obs noise & Cue noise & Notes \\ \hline \hline
+LR    & 1.2       & 0.04      & Slow fake-context inference. Maybe the priors coming from the previous stage are messing things up. \\ \hline
+1 & 1 & 1 & 1
+\end{tabularx}
+>>>>>>> adc91ff996e45d6eaf8974cd33ea69b5d380ed07
 
 
 \subsection{Adaptation}
