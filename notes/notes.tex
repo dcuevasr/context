@@ -727,7 +727,7 @@ equations are given by:
 \end{align}
 where the superscripts $(t)$ and $(t-1)$ refer to the inferred values for the current and previous trials, respectively, and $(d)$ to the parameters in \eref{eqn:data-dist}.
 
-\subsection{Left-right with unknown standard deviation (LRS)}
+\subsection{Left-right with unknown mean (LRS)}
 In this model, the force at each trial is assumed to be sampled from a normal
 distribution and the mean of this distribution is inferred from the
 observations, while the standard deviation is assumed to be known. The mean of
@@ -823,10 +823,10 @@ of these forces on the arm. With a force of 10N and a $\Delta t$ of 50ms, the
 total distance the arm will be moved by the force (again, assuming mass of 1Kg)
 is given by:
 \begin{align}
-  d_\plusminus &= \plusminus \frac{1}{2}(\force / 1Kg)((\dt)^2)\\
-               &= \plusminus 0.0125m
+  d_\pm &= \pm \frac{1}{2}(\force / 1Kg)((\dt)^2)\\
+               &= \pm 0.0125m
 \end{align}
-The agent will try to estimate $d_\plusminus$ during the experiment.
+The agent will try to estimate $d_\pm$ during the experiment.
 
 We will assume \todo{This is arbitrary. Might want to justify it later.} that
 the participant observes the position of her own hand (visual + proprioceptive)

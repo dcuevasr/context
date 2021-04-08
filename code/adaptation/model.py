@@ -66,6 +66,8 @@ class LeftRightAgent(object):
 
     context_noise = 0.0001
 
+    sample_norm = stats.norm().rvs
+
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
                  reset_after_change=None, force_sds=None):
@@ -99,8 +101,7 @@ class LeftRightAgent(object):
         self.action_history = [0]
         self.log_context = np.log([0.8, 0.1, 0.1])
         self.log_context_history = [self.log_context]
-
-        self.sample_norm = stats.norm().rvs
+        self.cue_history = [-1]
 
     def __init_contexts(self, ):
         r"""Creates baseline, left and right contexts, with a known angle (no force,
@@ -142,12 +143,49 @@ class LeftRightAgent(object):
         c_context = self.sample_context('mode')
         c_force = self.magnitudes[c_context][0]
         action_mu = -c_pos - c_force
-        action = self.sample_norm() * self.action_sd + action_mu
+        # action = self.sample_norm() * self.action_sd + action_mu
+        action = self._make_decision_mixed()
         if abs(action) > self.max_force:
             action = action / abs(action) * self.max_force
         self.action = action
         self.action_history.append(action)
         return action
+
+    def _make_decision_mixed(self, sampled=True):
+        r"""Creates a distribution which is the weighted sum of a Gaussian distribution
+        for each context:
+
+        \begin{equation}
+        p(a_t) = \sum_{i=1}^{N_c}p(c_t=c_i) N(\hat{a}_{c_i}, \sigma)
+        \end{equation}
+
+        where $\hat{a}_{c_i}$ is the best action given the context $c_i$, and
+        $\sigma$ is self.action_sd.
+
+        If --sampled-- is True, a decision is sampled from this
+        distribution. Otherwise, the decision is the mean of the distribution.
+
+        """
+        bests = np.array([self._best(ix_context)
+                          for ix_context in range(self.num_contexts)])
+        probs = np.exp(self.log_context - self.log_context.max())
+        probs /= probs.sum()
+        if not sampled:
+            return (bests * probs).sum() / probs.sum()
+        sampled_context = np.random.choice(np.arange(len(probs)), p=probs)
+        sampled_decision = bests[sampled_context] + \
+            self.action_sd * self.sample_norm()
+        return sampled_decision
+
+    def _best(self, context):
+        """Returns the best possible decision given the current context in
+        --context--. The best decision is that that counteracts the estimated
+        force of this context plus the offset of the current position.
+
+        """
+        hand_position = self.hand_position
+        force = self.magnitudes[context][0]
+        return - (hand_position + force)
 
     def update_magnitudes(self, ):
         """At the beginning of a trial, updates the inferred magnitudes for
@@ -304,13 +342,13 @@ class LeftRightAgent(object):
         if mode == 'mean':
             sampled_force = force_pars[0]
         elif mode == 'sample':
-            sampled_force = stats.norm(loc=force_pars[0],
-                                       scale=force_pars[1]).rvs()
+            sampled_force = force_pars[0] + force_pars[1] * self.sample_norm()
         return sampled_force
 
     def pandify_data(self):
         """Pandifies the history of the agent."""
         context = np.exp(self.log_context_history)
+        cues = self.cue_history
         max_context = np.argmax(context, axis=1)
         magnitudes = np.array(self.magnitude_history)
         mag_mu = magnitudes[..., 0]
@@ -318,7 +356,9 @@ class LeftRightAgent(object):
         hand = self.hand_position_history
         actions = self.action_history
         trial_number = np.arange(context.shape[0]) - 1
-        aggregate = np.stack([*context.T, max_context, *mag_mu.T,
+        aggregate = np.stack([*context.T,
+                              cues,
+                              max_context, *mag_mu.T,
                               *mag_sd.T,
                               hand,
                               actions,
@@ -326,6 +366,7 @@ class LeftRightAgent(object):
                              axis=1)
         pandata = pd.DataFrame(aggregate,
                                columns=['con0', 'con1', 'con2',
+                                        'cue',
                                         'con_t',
                                         'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
                                         'mag_sd_0', 'mag_sd_1', 'mag_sd_2',
@@ -342,6 +383,8 @@ class LeftRightAgent(object):
         """
         # if len(self.hand_position_history) >= 12:
         #     ipdb.set_trace()
+        if not (cue is None):
+            self.cue_history.append(cue)
         self.hand_position = hand_position
         self.hand_position_history.append(hand_position)
         self.infer_context(hand_position, cue)
@@ -515,8 +558,7 @@ class LRMeanSD(LeftRightAgent):
         if mode == 'mean':
             sampled_force = force_pars[0]
         elif mode == 'sample':
-            sampled_force = stats.norm(loc=force_pars[0],
-                                       scale=force_pars[1]).rvs()
+            sampled_force = force_pars[0] + force_pars[1] * self.sample_norm()
         return sampled_force
 
     def pandify_data(self):

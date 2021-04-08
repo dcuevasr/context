@@ -202,7 +202,7 @@ def context_inference(pandata):
     return pandata.groupby(labels).sum()['context_error']
 
 
-def interactive_plot(pandata, axis=None, fignum=3):
+def interactive_plot(pandata, axes=None, fignum=3):
     """Generator to be able to navigate through the different agents in
     --pandata--.
 
@@ -211,40 +211,35 @@ def interactive_plot(pandata, axis=None, fignum=3):
 
     """
     labels, _ = _define_grid()
-    if axis is None:
-        fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
-    plt.show(block=False)
-    pandata = pandata.set_index(labels + ['agent'])
+    if axes is None:
+        fig, axes = plt.subplots(2, 1, clear=True, num=fignum)
+    else:
+        if len(axes) != 2:
+            error_text = 'Number of axes provided is {}, should be {}.'
+            raise ValueError(error_text.format(len(axes), 2))
+        plt.show(block=False)
+    flag_noindex = False
+    try:
+        pandata = pandata.set_index(labels + ['agent'])
+    except KeyError:
+        print('Warning: the given panda does not have at least some '
+              'of the columns in _define_grid(); using the indices '
+              'present in the panda instead.')
+        flag_noindex = True
     indices = list(pandata.index.unique())
     num_indices = len(indices)
     ix_ix = 0
     while 1:
         pandatum = pandata.loc[indices[ix_ix]]
-        num_trials = len(pandatum)
-        real_con = np.zeros((num_trials, 4))
-        axis.clear()
-        axis.plot(np.array(pandatum['pos(t)']), color='black', alpha=0.4)
-        axis.plot(np.array(pandatum['mag_mu_0']), color='black')
-        axis.plot(np.array(pandatum['mag_mu_1']), color='red')
-        axis.plot(np.array(pandatum['mag_mu_2']), color='blue')
-        ylim = axis.get_ylim()
-        height = np.abs(np.max(ylim) - np.min(ylim)) * 0.2
-        real_con[pandatum['ix_context'] == 0, 0] = height
-        real_con[pandatum['ix_context'] == 1, 1] = height
-        real_con[pandatum['ix_context'] == 2, 2] = height
-        real_con[pandatum['ix_context'] == 'clamp', 3] = height
-        conx = np.array(pandatum.loc[:, ['con0', 'con1', 'con2']]) * height
-        axis.plot(ylim[0] + conx[:, 0], color='black')
-        axis.plot(ylim[0] + conx[:, 1], color='red')
-        axis.plot(ylim[0] + conx[:, 2], color='blue')
-        axis.plot(ylim[0] - 1.5 * height + real_con[:, 0], color='black')
-        axis.plot(ylim[0] - 1.5 * height + real_con[:, 1], color='red')
-        axis.plot(ylim[0] - 1.5 * height + real_con[:, 2], color='blue')
-        axis.plot(ylim[0] - 1.5 * height + real_con[:, 3], color='green')
-        axis.plot(np.array(pandatum['action']), color='yellow')
-        # axis.plot(np.array(pandatum['action']), color='yellow')
-        title = ''.join([label + ': {}\n' for label in labels]) + 'Agent: {}\n'
-        axis.set_title(title.format(*indices[ix_ix]))
+        axes[0].clear()
+        axes[1].clear()
+        plot_adaptation(pandatum, axis=axes[0])
+        plot_contexts(pandatum, axis=axes[1])
+        if flag_noindex:
+            axes[0].set_title(indices[ix_ix])
+        else:
+            title = ''.join([label + ': {}\n' for label in labels]) + 'Agent: {}\n'
+            axes.set_title(title.format(*indices[ix_ix]))
         plt.draw()
         input = yield None
         if input == 0:
@@ -253,6 +248,80 @@ def interactive_plot(pandata, axis=None, fignum=3):
             return
         ix_ix += input
         ix_ix = ix_ix % num_indices
+
+
+def plot_contexts(pandata, axis=None, fignum=4):
+    """Plots the inferred contexts as well as the true contexts. True contexts
+    are plotted as background colors and the posterior over contexts as
+    colored lines. The chromatic code is the same for both, but the alpha on
+    the true contexts is lower for visual clarity.
+
+    Parameters
+    ----------
+    pandata : DataFrame
+    Data from both the agent and the task, i.e. the output of thh.join_pandas.
+
+    """
+    flag_makepretty = False
+    if axis is None:
+        fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
+        flag_makepretty = True
+    else:
+        plt.show(block=False)
+    alpha = 0.1
+    cue_range = [1.1, 1.3]
+    color_list = [(0, 0, 0, alpha), (1, 0, 0, alpha),
+                  (0, 0, 1, alpha), (0, 1, 0, alpha)]
+    all_cons = pandata['ix_context'].unique()
+    colors = {idx: color
+              for idx, color in zip(all_cons, color_list)}
+    real_con = np.array(pandata['ix_context'])
+    con_breaks = np.nonzero(np.diff(real_con))[0] + 1
+    con_breaks = np.concatenate([[0], con_breaks, [len(real_con) - 1]])
+    cons = np.array([real_con[one_break] for one_break in con_breaks])
+    # plot real context
+    for c_con, n_con, ix_con in zip(con_breaks, con_breaks[1:], cons):
+        axis.fill_between([c_con, n_con], [1, 1],
+                          color=colors[ix_con])
+    axis.text(x=len(pandata) / 2, y=0.5, s='Real context')
+    conx = np.array(pandata.loc[:, ['con0', 'con1', 'con2']])
+    con_breaks = np.nonzero(np.diff(real_con))[0] + 1
+    con_breaks = np.concatenate([[0], con_breaks, [len(real_con) - 1]])
+    cons = np.array([real_con[one_break] for one_break in con_breaks])
+
+    # plot cues
+    real_cues = np.array(pandata['cue'])
+    cue_breaks = np.nonzero(np.diff(real_cues))[0] + 1
+    cue_breaks = np.concatenate([[0], cue_breaks, [len(real_cues) - 1]])
+    cues = np.array([real_cues[one_break] for one_break in cue_breaks])
+    for c_cue, n_cue, ix_cue in zip(cue_breaks, cue_breaks[1:], cues):
+        axis.fill_between([c_cue, n_cue], *cue_range, color=colors[ix_cue])
+    axis.text(x=len(pandata) / 2, y=np.mean(cue_range), s='Cues')
+    # plot inferred context
+    for ix_con in range(len(all_cons) - 1):
+        color = colors[ix_con][:-1] + (1, )
+        axis.plot(conx[:, ix_con], color=color)
+    if flag_makepretty:
+        axis.set_xticks(con_breaks)
+        axis.set_yticks([0, 0.5, 1])
+        axis.set_title('Context inference')
+        axis.set_xlabel('Trial')
+        axis.set_ylabel('Prob. of context')
+    plt.draw()
+
+
+def plot_adaptation(pandata, axis=None, fignum=5):
+    """Plots inferred magnitudes, hand position and "adaptation".
+
+    """
+    if axis is None:
+        fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
+    axis.plot(np.array(pandata['pos(t)']), color='black', alpha=0.4)
+    axis.plot(np.array(pandata['pos(t)'] + pandata['action']), color='yellow')
+    axis.plot(np.array(pandata['mag_mu_0']), color='black')
+    axis.plot(np.array(pandata['mag_mu_1']), color='red')
+    axis.plot(np.array(pandata['mag_mu_2']), color='blue')
+    plt.draw()
 
 
 if __name__ == '__main__':
