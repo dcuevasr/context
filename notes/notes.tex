@@ -138,6 +138,20 @@ End Date & Milestone & A priori comments & A posteriori comments \\ \hline \hlin
 \end{tabularx}
 
 
+The previous time table was interrupted by the possibility of the new project. Now that this new project has taken shape, this new time table applies:
+
+\begin{tabularx}{\textwidth}{
+  l|
+  >{\hsize=0.4\hsize\linewidth=\hsize}X|
+  >{\hsize=0.2\hsize\linewidth=\hsize}X|
+  >{\hsize=0.2\hsize\linewidth=\hsize}X}
+End Date & Result & A priori comments & A posteriori comments \\ \hline \hline
+30.04.2021 & Lit. research on savings and deadaptation & Are there many with contextual cues? & \\ \hline
+07.05.2021 & Finding model pars to explain observations & This is mostly already done &  \\\hline
+14.05.2021 & Looking into error-clamp behavior & Maybe there's something to it. If there is, an extra week should be allocated to simulations. &  \\\hline
+--- & Start writing the paper. & & \\ \hline
+
+\end{tabularx}
 \end{chapter}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -447,23 +461,89 @@ adapt to two opposite force fields (Osu et al., 2004; Nozaki et al., 2006;
 Howard et al., 2008), two saccadic gains (Shelhamer et al., 2005), or several
 visuomotor rotations (Imamizu et al., 2007; Choi et al., 2008).''
 
+
+\section{Notes from }
+There is extensive evidence that fast trial-by-trial error-based learning relies on the cerebellum. Patients with cerebellar lesions show substantial impairment in fast adaptation across many task domains51–55
+
 \section{Motor adaptation}
-Motor adaptation to modified environments (e.g. force fields) has been shown to
-display the following characteristics:
+In typical motor adaptation experiments \citep[e.g.][]{Medina_Mechanism_2001,
+  Davidson_Scaling_2004,Kojima_Memory_2004}, the goal of the participant is to
+move some squishy appendage (e.g. eyes, hand) from point A to point B,
+repeatedly, under different circumstances. These experiments consist of a
+number of phases in different order (and some of them not present in some
+experiments). These phases are the following:
+\begin{enumerate}
+\item Baseline (O): Participants move their appendage from A to B without being
+hindered, as they normally would in their life.
+\item Adaptation (A, B, ...): In this phase, the circumstances in which the movement
+happens (still from A to B) are changed. For example, in human experiments with
+arm movement, the arm will be subjected to forces by an external actor (e.g. a
+mechanical arm attached to the participant's hand). The participant's goal is
+to learn to counteract these forces and perform the movement from A to B as
+well as in Baseline.
+\item De-adaptation: In this phase, the circumstances are changed, either
+reverted to Baseline or to some other circumstance. For example, the forces
+applied by the mechanical arm are removed, or their direction is changed to the
+opposite.
+\item Error-clamp (E): In this phase, the error in the movement is forced to
+zero. For example, the mechanical arm applies a force that forces the
+participant's hand to move in a straight line from A to B, even if the
+participant applies perpendicular forces.
+\end{enumerate}
+
+Using these phases, several phenomena has been shown:
 \begin{enumerate}
 \item Savings: Learning a previously-learned environment (after some extinction
 phase) is faster than the original learning. This means that the previously
 learned model is saved for a while and its learning can be resumed after
 extinction. However, \cite{Kojima_Memory_2004} showed that savings can be
 ``washed out'' if baseline trials (no force field) are inserted between
-extinction and the second learning phase.
+extinction and the second learning phase; their findings are perhaps confounded
+by the passage of time, as this inserted baseline makes a lot of time pass.
 \item Anterograde interference: Learning an adaptation (e.g. force field
 pointing left) slows down learning an opposing adaptation (e.g. force field
 pointing right).
 \item Rapid de-adaptation: Unlearning an adaptation (even after fully learning
-it) is faster than tlearning it \citep{Davidson_Scaling_2004}
+it) is faster than learning it \citep{Davidson_Scaling_2004}
+\item Spontaneous recovery: After a de-adaptation phase, an error-clamp phase
+is introduced and participants show a rapid adaptation in the direction of A,
+which slowly goes back to zero across hundreds (?) of trials.
 \end{enumerate}
 
+The experiment carried out with monkeys by \cite{Kojima_Memory_2004} used
+different structures (see their figure 1C). For example, to show savings they
+used O-A-B-A, where in A and B the saccade target moved during the saccade to
+make the monkey think that their saccades were off. During A and B, opposite
+directions were used (e.g. in A the monkeys had to learn to increase their
+gain, and in B learn to decrease it). They found savings in the form of a quick
+learning period during the second A block that took the monkey close to the
+adaptation at the end of the first A block (see their figure 3A); after that,
+learning proceeded as before.
+
+Using an O-A-B-O-A paradigm, they showed that savings were no longer
+present. On the other hand, using an O-A-B-E-A paradigm (where the error-clamp
+phase consisted on putting the monkey in the dark) they found savings (their
+figures 5A and 7A).
+
+\cite{Smith_Interacting_2006} showed spontaneous recovery in a O-A-B-E
+paradigm. From their data it is unclear what exactly happens during B, but
+during E it seems like participants adapted a bit in the direction of B and
+then quickly jumped to the direction of A, from which they slowly went to zero.
+
+Similarly, \cite{Ethier_Spontaneous_2008} who spontaneous recovery with
+saccades in an E-A-B-E paradigm. From their results (e.g. their figure 2) it
+seems possible that some participants go back to A's adaptation and some others
+to O's. Additionally, they introduced 30s breaks during adaptation and showed
+that these breaks had a ``forgetting'' effect, i.e. adaptation was set back by
+a small amount after each break. The further posit that introducing such a
+break before the second E phase would eliminate spontaneous recovery entirely.
+
+\cite{Huang_Persistence_2009} showed that if participants are placed in an
+adaptation environment where the force gradually ramps up (across many trials),
+participants show slower de-adaptation during an error-clamp phase, compared to
+participants in which the force was suddenly increased during adaptation. They
+also showed that participants alter their learning rates to better fit the
+volatility of the environment, regardless of the direction of adaptation.
 \end{chapter}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
