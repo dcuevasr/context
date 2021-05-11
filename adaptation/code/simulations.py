@@ -9,10 +9,12 @@ import glob
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+from scipy import stats
 
 import model
 import task_hold_hand as thh
 from pars import task as task_pars
+import pars
 
 
 def test_obsnoise(fignum=1):
@@ -80,10 +82,9 @@ def grid_sims():
     all_pars = product(*grid_elements)
     my_robots = mp.Pool()
 
-    for pars in all_pars:
+    for c_pars in all_pars:
         inputs = {label: value
-                  for label, value in zip(labels, pars)}
-        # _one_sim(inputs)
+                  for label, value in zip(labels, c_pars)}
         my_robots.apply_async(_one_sim, args=[inputs])
     my_robots.close()
     my_robots.join()
@@ -113,7 +114,8 @@ def _define_grid():
     labels = ['prediction_noise', 'cue_noise', 'context_noise', 'force_sds']
     try:  # Test labels on agent
         test_values = [value[0] for value in values]
-        agents[0](**{label: value for label, value in zip(labels, test_values)})
+        agents[0](**{label: value
+                     for label, value in zip(labels, test_values)})
     except TypeError:
         raise ValueError('Testing the labels on the agent failed. '
                          'Maybe the labels are misspelled?')
@@ -158,12 +160,7 @@ def read_data():
             else:
                 c_part = part
             panda[labels[ix_part]] = float(c_part) * np.ones(len_panda)
-        # cue_noise = float(split[3]) * np.ones(len_panda)
-        # con_noise = float(split[4]) * np.ones(len_panda)
         panda['agent'] = [split[-1][:-3]] * len_panda
-        # panda['cue_noise'] = cue_noise
-        # panda['context_noise'] = con_noise
-        # panda['agent'] = agent
         pandas.append(panda)
     pandatron = pd.concat(pandas, axis=0)
     pandatron.reset_index(inplace=True)
@@ -174,17 +171,17 @@ def read_data():
 
 def performance(pandata):
     """Calculates the performance of each agent and each parameter combination in
-    --pandata--. Performance is calculated as the sum of the absolute value of hand
-    position.
+    --pandata--. Performance is calculated as the sum of the absolute value of
+    hand position.
 
     Returns
     performance : pd.DataFrame
 
     """
     pandata = pandata.copy()
-    pandata['abs_dev'] = pandata['hand'].apply(abs)
+    pandata['abs_dev'] = pandata['pos(t)'].apply(abs)
     labels, _ = _define_grid()
-    return pandata.groupby(labels).sum()['abs_dev']
+    return pandata.groupby(labels + ['agent']).sum()['abs_dev']
 
 
 def context_inference(pandata):
@@ -194,12 +191,21 @@ def context_inference(pandata):
 
     """
     pandata = pandata.copy()
-    ix_delete = np.array(pandata['ix_context'] == 'clamp')
-    pandata.drop(np.nonzero(ix_delete)[0], inplace=True)
-    pandata.dropna(axis=0, how='any', inplace=True)
+    # pandata.dropna(axis=0, how='any', inplace=True)
     pandata['context_error'] = pandata['ix_context'].astype(float) != pandata['con_t']
     labels, _ = _define_grid()
-    return pandata.groupby(labels).sum()['context_error']
+    return pandata.groupby(labels + ['agent']).sum()['context_error']
+
+
+def scores(pandata):
+    """Convenience function to call performance() and context_inference().
+
+    Returns all in a concatenated panda.
+
+    """
+    perfy = performance(pandata)
+    conty = context_inference(pandata)
+    return pd.concat([perfy, conty], axis=1)
 
 
 def interactive_plot(pandata, axes=None, fignum=3):
@@ -239,7 +245,7 @@ def interactive_plot(pandata, axes=None, fignum=3):
             axes[0].set_title(indices[ix_ix])
         else:
             title = ''.join([label + ': {}\n' for label in labels]) + 'Agent: {}\n'
-            axes.set_title(title.format(*indices[ix_ix]))
+            axes[0].set_title(title.format(*indices[ix_ix]))
         plt.draw()
         input = yield None
         if input == 0:
@@ -269,10 +275,17 @@ def plot_contexts(pandata, axis=None, fignum=4):
     else:
         plt.show(block=False)
     alpha = 0.1
-    cue_range = [1.1, 1.3]
+    cue_range = [2.2, 3.2]
+    real_range = [1.1, 2.1]
+    infer_range = [0, 1]
     color_list = [(0, 0, 0, alpha), (1, 0, 0, alpha),
                   (0, 0, 1, alpha), (0, 1, 0, alpha)]
-    all_cons = pandata['ix_context'].unique()
+    con_strings = sorted([column for column in pandata.columns
+                          if (column.startswith('con')
+                              and not column.startswith('con_'))])
+    all_cons = np.concatenate([pandata['ix_context'].unique(),
+                               np.arange(len(con_strings))])
+    all_cons = np.unique(all_cons)
     colors = {idx: color
               for idx, color in zip(all_cons, color_list)}
     real_con = np.array(pandata['ix_context'])
@@ -281,10 +294,14 @@ def plot_contexts(pandata, axis=None, fignum=4):
     cons = np.array([real_con[one_break] for one_break in con_breaks])
     # plot real context
     for c_con, n_con, ix_con in zip(con_breaks, con_breaks[1:], cons):
-        axis.fill_between([c_con, n_con], [1, 1],
+        axis.fill_between([c_con, n_con], [real_range[0]] * 2,
+                          [real_range[1]] * 2,
                           color=colors[ix_con])
-    axis.text(x=len(pandata) / 2, y=0.5, s='Real context')
-    conx = np.array(pandata.loc[:, ['con0', 'con1', 'con2']])
+    axis.text(x=len(pandata) / 2, y=1.6, s='Real context',
+              horizontalalignment='center', verticalalignment='center')
+    # ['con{}'.format(idx) for idx in all_cons]
+    conx = np.array(pandata.loc[:, con_strings])
+    conx = conx * (infer_range[1] - infer_range[0]) + infer_range[0]
     con_breaks = np.nonzero(np.diff(real_con))[0] + 1
     con_breaks = np.concatenate([[0], con_breaks, [len(real_con) - 1]])
     cons = np.array([real_con[one_break] for one_break in con_breaks])
@@ -296,11 +313,18 @@ def plot_contexts(pandata, axis=None, fignum=4):
     cues = np.array([real_cues[one_break] for one_break in cue_breaks])
     for c_cue, n_cue, ix_cue in zip(cue_breaks, cue_breaks[1:], cues):
         axis.fill_between([c_cue, n_cue], *cue_range, color=colors[ix_cue])
-    axis.text(x=len(pandata) / 2, y=np.mean(cue_range), s='Cues')
+    axis.text(x=len(pandata) / 2, y=np.mean(cue_range), s='Cues',
+              horizontalalignment='center', verticalalignment='center')
     # plot inferred context
-    for ix_con in range(len(all_cons) - 1):
+    for ix_con in range(len(con_strings)):
         color = colors[ix_con][:-1] + (1, )
         axis.plot(conx[:, ix_con], color=color)
+    axis.text(x=len(pandata) / 2, y=0.5, s='Inferred context',
+              horizontalalignment='center', verticalalignment='center')
+    # Plot breaks
+    for c_break in con_breaks:
+        axis.plot([c_break, c_break], [infer_range[0], cue_range[1]],
+                  color='black', alpha=0.2)
     if flag_makepretty:
         axis.set_xticks(con_breaks)
         axis.set_yticks([0, 0.5, 1])
@@ -313,15 +337,165 @@ def plot_contexts(pandata, axis=None, fignum=4):
 def plot_adaptation(pandata, axis=None, fignum=5):
     """Plots inferred magnitudes, hand position and "adaptation".
 
+    Parameters
+    ----------
+    pandata : DataFrame
+    Data from a simulation that contains the following columns:
+      'pos(t)' : hand position
+      'mag_mu_x' : Estimate of the magnitude of the force in context x,
+                   for x = {0, 1, 2}.
+
     """
+    columns = sorted(list(pandata.columns))
+    trial = np.arange(len(pandata))
+    colors = ['black', 'red', 'blue']
+    adapt_color = np.array([174, 99, 164]) / 256
     if axis is None:
         fig, axis = plt.subplots(1, 1, clear=True, num=fignum)
-    axis.plot(np.array(pandata['pos(t)']), color='black', alpha=0.4)
-    axis.plot(np.array(pandata['pos(t)'] + pandata['action']), color='yellow')
-    axis.plot(np.array(pandata['mag_mu_0']), color='black')
-    axis.plot(np.array(pandata['mag_mu_1']), color='red')
-    axis.plot(np.array(pandata['mag_mu_2']), color='blue')
+    axis.plot(np.array(pandata['pos(t)']), color='black', alpha=0.4,
+              label='Error')
+    axis.plot(np.array(pandata['pos(t)'] + pandata['action']),
+              color=adapt_color, label='Adaptation')
+    magmu = [np.array(pandata[column])
+             for column in columns
+             if column.startswith('mag_mu')]
+    errors = [np.array(pandata[column])
+              for column in columns
+              if column.startswith('mag_sd')]
+    for color_x, error_x, magmu_x in zip(colors, errors, magmu):
+        axis.plot(magmu_x, color=color_x, label='{} model'.format(color_x))
+        axis.fill_between(trial, magmu_x - 2 * error_x, magmu_x + 2 * error_x,
+                          color=color_x, alpha=0.1)
+    magmu = np.array(magmu)
+    yrange = np.array([magmu.min(), magmu.max()]) * 1.1
+    axis.set_ylim(yrange)
     plt.draw()
+
+
+def sim_and_plot(agent, pars_task, return_data=False, axes=None, fignum=6):
+    """Simulates the agent playing and makes a nice plot with context inference and
+    adaptation and colors everywhere.
+
+    """
+    pandata, pandagent, agent = thh.run(agent, pars=pars_task)
+    pandota = thh.join_pandas(pandata, pandagent)
+    if axes is None:
+        fig, axes = plt.subplots(2, 1, num=fignum, clear=True, sharex=True)
+    plot_adaptation(pandota, axis=axes[0])
+    plot_contexts(pandota, axis=axes[1])
+
+    fake_forces = [-pars_task['forces'][1][1], 0, pars_task['forces'][1][1]]
+    real_forces = [-pars.forces[1], 0, pars.forces[1]]
+
+    axes[0].set_ylabel('Adaptation (N)')
+    axes[0].set_yticks(ticks=fake_forces)
+    axes[0].set_yticklabels(real_forces)
+    axes[0].legend()
+
+    axes[1].set_xlabel('Trial')
+    axes[1].set_ylabel('p(context)', y=0.05, horizontalalignment='left')
+    axes[1].set_yticks([0, 0.5, 1])
+
+    if return_data:
+        return pandota, agent
+
+
+def slow_context_inference_nocues(prediction_noise=None, fignum=7):
+    """Figure that shows the effects of slower and slower context inference in the
+    absence of any cues, by virtue of noisy predictions from each model.
+
+    """
+    if prediction_noise is None:
+        prediction_noise = 3
+    pars_task = pars.task_oaoa
+    agent = model.LRMeanSD(angles=[0, 0],
+                           prediction_noise=prediction_noise,
+                           cue_noise=0.5, context_noise=0,
+                           force_sds=0.02 * np.ones(2))
+    sim_and_plot(agent, pars_task, fignum=fignum)
+
+
+def slow_context_inference_badcues(cue_noise=None, fignum=8):
+    """Slow context inference based on bad cues and the interplay between cue noise
+    and prediction noise.
+
+    """
+    if cue_noise is None:
+        cue_noise = 0.017
+    pars_task = pars.task_oa
+    agent = model.LRMeanSD(angles=[0, 0], prediction_noise=0.0,
+                           cue_noise=cue_noise, context_noise=0.1,
+                           force_sds=0.01 * np.ones(2), max_force=5)
+    sim_and_plot(agent, pars_task, fignum=fignum)
+
+
+def baseline_bias(fignum=9):
+    """This reproduces the experiments in Davidson_Scaling_2004, plotting the
+    results for all their groups and experiments in one big pot of lovin.
+
+    """
+    fig, axes = plt.subplots(2, 4, gridspec_kw={'height_ratios': (3, 1)},
+                             num=fignum, clear=True)
+    agent = model.LRMeanSD(angles=[0, 0, 0],
+                           prediction_noise=0,
+                           cue_noise=1 / 3, context_noise=0.0,
+                           force_sds=0.02 * np.ones(3),
+                           max_force=1)
+    pars_task = pars.task_davidson_1_1
+    sim_and_plot(agent, pars_task, axes=[axes[0, 0], axes[1, 0]])
+
+    agent = model.LRMeanSD(angles=[0, 0, 0],
+                           prediction_noise=0,
+                           cue_noise=1 / 3, context_noise=0.0,
+                           force_sds=0.02 * np.ones(3),
+                           max_force=1)
+    pars_task = pars.task_davidson_1_2
+    sim_and_plot(agent, pars_task, axes=[axes[0, 1], axes[1, 1]])
+
+    agent = model.LRMeanSD(angles=[0, 0, 0],
+                           prediction_noise=0,
+                           cue_noise=1 / 3, context_noise=0.0,
+                           force_sds=0.02 * np.ones(3),
+                           max_force=1, hyper_sd=0.005)
+    pars_task = pars.task_davidson_2_1
+    sim_and_plot(agent, pars_task, axes=[axes[0, 2], axes[1, 2]])
+
+    agent = model.LRMeanSD(angles=[0, 0, 0],
+                           prediction_noise=0,
+                           cue_noise=1 / 3, context_noise=0.0,
+                           force_sds=0.02 * np.ones(3),
+                           max_force=1)
+    pars_task = pars.task_davidson_2_2
+    sim_and_plot(agent, pars_task, axes=[axes[0, 3], axes[1, 3]])
+    axes[0, 0].get_legend().remove()
+    axes[0, 1].get_legend().remove()
+    axes[0, 2].get_legend().remove()
+    axes[0, 3].get_legend().remove()
+
+
+def test():
+    agent = model.LRMeanSD(angles=[0, 0, 0],
+                           prediction_noise=1,
+                           cue_noise=1 / 3, context_noise=0.0,
+                           force_sds=0.02 * np.ones(3),
+                           max_force=1, hyper_sd=0.5)
+    pars_task = pars.task_davidson_2_1
+    pandota, agent = sim_and_plot(agent, pars_task, return_data=True)
+
+    manorm = stats.norm.logpdf
+    mag_hist = np.array(agent.magnitude_history)
+    probs = manorm(0.005, loc=mag_hist[..., 0], scale=mag_hist[:, :, 1])
+    probs = probs[1:, ...]
+    probs = np.exp((probs.T - probs.max(axis=1)).T)
+    pandota[['probs_0', 'probs_1', 'probs_2']] = probs
+    return pandota, agent
+
+
+def normal_gamma_logpdf(x, mu, nu, alpha, beta):
+    """Returns the logprobability of x given the pars.
+
+    """
+    constant = beta ** alpha * np.sqrt(nu)
 
 
 if __name__ == '__main__':

@@ -146,7 +146,7 @@ The previous time table was interrupted by the possibility of the new project. N
   >{\hsize=0.2\hsize\linewidth=\hsize}X|
   >{\hsize=0.2\hsize\linewidth=\hsize}X}
 End Date & Result & A priori comments & A posteriori comments \\ \hline \hline
-30.04.2021 & Lit. research on savings and deadaptation & Are there many with contextual cues? & \\ \hline
+30.04.2021 & Lit. research on savings and deadaptation & Are there many with contextual cues? & I found a lot of evidence. Moving on.\\ \hline
 07.05.2021 & Finding model pars to explain observations & This is mostly already done &  \\\hline
 14.05.2021 & Looking into error-clamp behavior & Maybe there's something to it. If there is, an extra week should be allocated to simulations. &  \\\hline
 --- & Start writing the paper. & & \\ \hline
@@ -544,7 +544,299 @@ participants show slower de-adaptation during an error-clamp phase, compared to
 participants in which the force was suddenly increased during adaptation. They
 also showed that participants alter their learning rates to better fit the
 volatility of the environment, regardless of the direction of adaptation.
+
+
+
+
+\section{Notes on savings, quick deadaptation and contextual cues}
+In \citep{Kojima_Memory_2004}, Figure 1a-b, we can see that de-adaptation was a
+bit faster than adaptation for the gain-increase experiment, and much faster
+for the gain-decrease experiment. It seems like there is no contextual cue
+available to the monkey, as all trials (over 1k) were presented one after the
+other with no breaks. Poor monkey.
+
+\citep{Kojima_Memory_2004} additionally show savings in the form of
+re-adaptation that, for a few hundred trials, is much faster than the original
+adaptation (control adaptation). This can be better seen in Figure3a-b. They
+discuss that there is even a point of inflection in test-adaptation that
+clearly marks the end of savings and resuming of adaptation. The duration of
+the savings phase changed from experiment to experiment, from monkey to
+monkey. The authors do not check whether the past-facilitation rate of learning
+is similar to that of the end of the control adaptation phase, which would
+indicate that the monkey quickly went back to where it had left off.
+
+Finally, they show that savings seem to disappear after a period of
+error-clamp-like trials, in which the ISS is set to zero, thus allowing the
+monkey hundreds of trials in which his adapted saccades (gain != 1) yielded
+correct results. In contrast, savings do not disappear after the monkey head
+was covered with a black cloth, placing him in total darkness (no feedback for
+his saccades).
+
+Given the lack of contextual cues, context identification could be very slow in
+monkeys, which would explain the facilitation period. During normometric
+saccades after adaptation (error-clamp-like trials), context inference could
+have been cimented to the point that it became difficult for the monkey to
+shift away from it once test adaptation began, thus removing savings from the
+equation. During darkness trials, in contrast, there is no contextual evidence
+in any direction, and thus the precision over context does not change. In this
+case, savings are back on the table.
+
+\cite{Ethier_Spontaneous_2008} present a simple experiments with saccade
+adaptation in humans. In their paradigm, humans go through a O-A-B-E paradigm,
+in which the adaptation is forced by making the target move closer or further
+away than it was before, making participants believe that they had
+over/under-shot the target. While this study does not quite talk about savings,
+there is evidence of context-based savings in their paradigm, as adaptation
+trials were done in blocks of 60 trials, with 30s pauses between blocks, in
+which participants closed their eyes. In their figure 2, they show that each
+pause caused a dip in the observed adaptation. While this pause does not
+provide any clues as to the identity of the following block, it does indicate
+that a new block will start, which could make participants revert to using
+their priors over contexts to make the first decision in the following block
+and consequently using the feedback to perform context inference, explaining
+the quick dip after each pause.
+
+Their study does show quick de-adaptation during a second block of trials in
+which the desired gain is opposite of the adaptation trials. However, it is
+difficult to interpret these savings in terms of the context-based learner, as
+learning in the original adaptation is also quite fast, and the B context had
+not been introduced in advance. However, the fact that group 2 (which has
+longer pauses) shows faster de-adaptation supports the idea of context-based
+learning, as the longer pause before de-adaptation causes context inference to
+rely more on priors and thus make the jump from model A to model O almost
+immediately, and then summoning model B and learning at the same speed as model
+A was learned.
+
+Importantly, the effect of these pauses speak for continuity-based priors,
+which are based on previous trials and not on prior beliefs regarding which
+contexts would, in general, be encountered more often in the world.
+
+\cite{Huang_Persistence_2009} presents interesting data, but I can't interpret
+it for now.
+
+\cite{Lee_Dual_2009} present a study that is very useful to us. In it,
+participants have to use a joystick to move a cursor from its initial position
+to a target, under different visuomotor rotations (tasks A, B, C and D). Of
+special significance is the fact that participants were provided with very
+clear contextual cues, as the target area was in a position that uniquely
+identified the rotation. The effects of these cues can be seen in their figure
+6, in which they show how participants very quickly learn the adaptations
+during an A-B-A phase, with very quick jump from A to B and from B to A. Then,
+participants enter a phase in which tasks C and D are randomly chosen every
+trial. Because of the unambiguity of the contextual cues, even during learning
+participants display very clear switching of internal models. This is so far
+the most clear example of contextual cues causing immediate ``deadaptation''
+(which we know is really switching, but don't tell anybody).
+
+\cite{Forano_Timescales_2020} present a study with humans and a mechanical arm,
+in which participants have to perform forward reaching movements under
+different forces. During their experimental sessions, their complications for
+which are endless and unnecessary, there is a baseline phase, in which
+participants perform no-force-field movements in two different workspaces
+(strong contextual cues). Then an adaptation phase starts, in which
+participants do eight trials in context A, eight in B (with random Es thrown in
+for good measure). Awful things happen later on, of which we do not
+speak. During de-adaptation, they follow the same 8-8 structure, but the cues
+are flipped; this phase ends when the adaptation is taken back to zero. Finally
+the error-clamp trials start, with a contextual cue that is the same as the
+first one they got during the adaptation phase. They do not speak of savings,
+and savings cannot be seen in their plot, but quick de-adaptation is clearly
+seen in their figures 6 and 7. However, it is not as quick as it could be, and
+I believe this to be due to the strength of the cues, which cause a lot of
+conflict in the participant as the force-feedback and contextual cues are so at
+odds with each other. I would argue that the slow decay (still fast compared to
+adaptation) is evidence of yet another phenomenon: the devaluation (or
+re-evaluation) of contextual cues, in which the precision with which they are
+treated decays over time as a consequence of the apparently false information
+they provide. I expect this to interact with the following error-clamp trials,
+in which \cite{Forano_Timescales_2020} show small-but-significant spontaneous
+recovery. I believe that if those de-adaptation trials were removed, the
+increased strength of the contextual cues would make the spontaneous recovery
+larger.
+
+\cite{Davidson_Scaling_2004} tested quick de-adaptation more thoroughly than is
+usual, with the explicit goal of checking whether there was something special
+about A-O de-adaptation that made it quick, or if A-B de-adaptation would also
+be quick. Additionally, they explored the question of which one is faster. They
+used the typical curling-force mechanical arm for their experiment with human
+participants. Their results can be groupped into two: (1) De-adaptation from A
+to O is slower than de-adaptation from A to 1/3A. (2) De-adaptation from A to
+3A is perhaps a bit faster than from A to -A, but, more importantly,
+re-adaptation to A is faster coming from 3A than from -A. The first result can
+be explained simply: de-adapting from A to A/3 implies less ``travel''
+(i.e. adaptation) than from A to 0, and thus motor error takes longer to go
+down when de-adapting to O. This is precisely why \cite{Davidson_Scaling_2004}
+performed their second experiment from which (2) was obtained. Their second
+result can be explained by switching internal models, if action selection is
+done via a weighted sum of the actions generated by each possible model (where
+the weights are the posterior probabilities of the models). In effect, the
+assymetry is caused by the existance of O. In this account, going from 3A to A
+more quickly reduces motor error because the contributions of 3A and O to motor
+output ``cancel out'', as they point in opposite directions relative to A,
+leaving only the contributions of A. When coming from -A, the contributions of
+-A and O point in the same (incorrect) direction (relative to the real
+generating process A), thus making motor error be bigger.
+
+Re-adaptation in \cite{Davidson_Scaling_2004} differs greatly between -A and
+2A. While the explanation above could be enough, I believe that an extra factor
+would be the fact that while adapting to forces in different directions,
+different muscles must be used. The transfer from using a model that uses a set
+of muscles to another that uses another set of muscles might come with its own
+perils. More research into this could be useful.
+
+Interestingly, \cite{Davidson_Scaling_2004} calculated that re-adaptation from
+3A to A was not significantly different in experiments 1 and 2, even though
+participants in experiment 2 had already learned the A environment, while those
+in experiment 1 had not. This can perhaps be explained as a fluke in the
+switching mechanism, where the weight of the A model in experiment 2 made its
+contribution to action lie square in the middle of those from 3A and O. This
+might need further consideration.
+
+\cite{Zarahn_Explaining_2008} performed a typical experiment with visuomotor
+modifications (screen, hand position, axis rotation) to show that in their
+O-A-W-A trial, where W are washout trials, savings still existed, even after
+the fast-slow learner predicted that savings should have disappeared. They
+showed the same with O-A-(-A)-A and who knows what else. Their figure 3 is a
+nice poster child. Note that while they did not have any contextual cues, their
+transformations are HUGE. In their O-A-W-A experiment, A = 45°. A = 30° in their
+other experiment. This in stark contrast with many other studies that use
+10°-20° ranges.
+
+\cite{Kim_Neural_2015} present savings with very informative and clear
+cues. Their savings are beautifully portraited in their figure
+2A. Additionally, they present imaging results based on regressors obtained
+from the fast-slow linear models.
+
+\section{Notes on the effects of context inference on learning}
+
+\cite{Herzfeld_memory_2014} present what is possibly (so far) the most
+compelling evidence for the effects of contex-inference on learning itself,
+uncoupled from motor responses. The authors make the point (with a model and
+experiment) that the brain adjusts its sensitivity to errors based on the
+volatility of the environment. Moreover, this sensitivity depends on the size
+of the error, such that a participants' learning might be faster when facing
+small errors than with large ones. In their first experiment, the authors
+divided participants into three groups that differed only on the volatility of
+the environment, group 1 facing the most stable environment, where the
+probability that the perturbation changed from 13 to -13 (N s/m) was 0.1; group
+2 had a probability of 0.5 and group3 of 0.9. \cite{Herzfeld_memory_2014}
+labeled these groups as 0.9, 0.5 and 0.1, respectively. Here I keep with these
+labels.
+
+\cite{Herzfeld_memory_2014} showed in their figure 1D that the stable
+environment of group 0.9 made participants learn more quickly from errors, with
+the effects being lower for groups 0.5 and 0.1, in that order. In my model, the
+interpretation of these results is fairly straightforward: more volatile
+environments lead to less precise (and more often incorrect) context inference,
+which would slow down learning. In particular, in the mathematical
+implementations of the model so far (see \ref{sec:model-instance}), the
+precision with which observations are taken in depends on the precision of the
+context inference, which should create behavior like that observed by
+\cite{Herzfeld_memory_2014}. Note that the authors' results in experiment 2 are
+explained by my model in very much the same vein.
+
+One puzzling result from \citep{Herzfeld_memory_2014} is that sensitivity to
+error depends on the size of the error. With some effort (invested in
+understanding their paper...), this can be very nicely explained by the
+context-inference model. First, to put some of their numbers in perspective,
+their second experiment implies errors roughly in the range of -2 to 2 (which
+matches the x-axis in Figure 2). An error the size of -2 or 2 very clearly
+signals the change from one context to the other (0.9 gain to 1.1, or vice
+versa; it is unclear in the paper). Because the direction of the change is
+clear evidence from the previous and current contexts, context inference right
+after such a switch becomes very clear (the maximum of the posterior $>>$ the
+minimum of the posterior), which makes learning somewhat fast and does not
+depend on the volatility of the environment, at least in the first trial after
+a switch; during the next trials, the uncertainty increases again due to
+volatility. The smaller the error is (in absolute value), the less clearly it
+can be attributed to a switch in the environment, to the extreme where changes
+are minuscule and thus must be attributed to the motor adaptation's error; it
+is because of this that small errors have a higher effect on learning. Now, for
+smaller errors, there is a clear effect of volatility on learning. I believe
+this can be explained by the context-learner: Because of the overall slower
+learning in volatile environments, the internal models are, for any given
+trial, not as well learned for the high-volatility groups, which leads to many
+errors being misinterpreted as context switches (for which no learning might
+occur), making the average look worse than it is (except, as explained above,
+when the error is close to 2 or -2, which makes switches very evident).
+
+In fact, this introduces important confounds: errors of exactly 2 and -2 can
+only ocurr when the participant has learned both internal models perfectly and
+simply predicted the wrong one, thus adapting in the incorrect direction. In
+this case, learning should be exactly 0. However, errors very close to, but not
+exactly, 2 and -2 can be attributed to bad context inference plus the need to
+adapt the ``other'' model, i.e. the model that was not predicted. In this case,
+depending on how smart the participant is, the other model might be updated
+with an error sensitivity as high as that of the near zero error. On the other
+hand, participants observing an error close to zero might interpret this as a
+signal to update an internal model (in which case the sensitivity should be
+high), but they might also falsely (or even correctly) accuse the context of
+having changed, but with low precision, making learning of the ``other'' model
+very low (due to low precision on context), or even zero, if the participant is
+so unsure that she does not want to learn from this. Because of this, a more
+correct version of Figure 2E would take into account how well the internal
+models have been learned at each trial, how many trials were spent in
+perfect-model land, how many times the participant took a near-2 error as a
+switch (correctly and incorrectly), how many times near-2 errors occurred when
+the models been already fully learned, etc.
+
+The third experiment by \cite{Herzfeld_memory_2014} has too many
+confounds. They conclude that they can independently manipulate sensitivity to
+big and small errors, but I believe their experimental design has unwanted
+consequences because 8N and -8N were shown a lot during the fast-switch part,
+but 4N and -4N were not. It's such a mess that I don't want to touch it.
+
+
+
+\section{Notes on error-clamp weirdness}
+\cite{Kojima_Memory_2004} have error-clamp-like trials, but not at the end. No
+weirdness here. Also no cues.
+
+\cite{Smith_Interacting_2006} speak of error-clamp weirdness and presents a
+model to explain it. Their data is limited, however, and might not be specially
+useful for me.
+
+\cite{Ethier_Spontaneous_2008} have error-clamp weirdness and their
+within-block pauses might be useful for my interpretations.
 \end{chapter}
+
+\cite{Forano_Timescales_2020} has spontaneous recovery and slow tapering off
+during error-clamp trials, but it's quite small. Maybe because of the large
+de-adaptation that devalues contextual cues?
+
+\cite{Vaswani_Decay_2013} explores in detail the motor decay observed during EC
+trials after adaptation trials. They conclude, among other things, that the
+motor adaptation decays across as many as hundreds of trials, but never goes
+back to zero. Additionally, there is a lag before decay starts (all their
+experiments end in A-E, so no baseline before), and it depends on the
+participant, as well as how noticeable the transition to error-clamp trials
+is. They have some clever experiments.
+
+
+\section{Notes on implicit vs explicit, and strategies.}
+The idea behind strategies in motor adaptation is simple: participants can be
+told how to perform in a novel environment. Then, when the novel environment
+kicks in, there is no period of adaptation before performance is near-perfect.
+
+For example, \cite{Taylor_Flexible_2011,Mazzoni_Implicit_2006} showed that in a
+visuomotor rotation task, participants can be given the hint to ``do as if you
+were aiming for this other target'', which allows them to complensate almost
+perfectly from trial 1. However, the authors also found interesting effects:
+while at first participants have zero error, they slowly drift away from this,
+overcompensating for the visuomotor rotation. The authors showed that this
+overcompensation goes away, given sufficient trials.
+
+\cite{Taylor_Flexible_2011} present a computational model based on the linear,
+prediction-error based models \citep[e.g.][]{Smith_Interacting_2006} by making
+prediction error incorporate some element of the strategy. This model is fine
+and explains the observed phenomena, but I believe that they overlooked the
+mismatch between propriosceptive and visual feedback. This mismatch, which is
+independent of reward, would explain their results (at least qualitatively). I
+would speculate that the effect of the strategy given to the participants by
+\cite{Taylor_Flexible_2011} makes them not adapt their motor rotations, but
+rather shift the goal of the trial. Then, as trials go by, the propiosceptive
+feedback does not match what is observed on the screen, and that causes motor
+adaptation. Perhaps more recent studies have tested this.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -688,6 +980,7 @@ time, no forces are applied to the hand, but the hand must remain in the
 starting position.
  
 \section{The model}
+\label{sec:model-instance}
 The model is an implementation of \ref{subsec:proposal}. The generalized state
 is given by:
 \begin{equation}
@@ -879,6 +1172,40 @@ NormalGamma, and the parameters are updated after one time step via:
                   1}\frac{\left(x - \mu_f^{(t-1)}\right)^2}{2}
 \end{align}
 
+The effect of the hyperparameters of the priors are worth a note or two, as they are complex.
+
+Naturally, $\mu$ affects the initial estimate of the adaptation, in the same
+units as the necessary adaptation. $\nu$ encodes how stable this hyperprior is:
+higher values (e.g. 10000) all but guarantee that the hypermean will not move
+in the face of evidence; In principle, enough evidence should still move it,
+but that won't happen during an experiment. Smaller values (e.g. 1 / force\_sd,
+as is the default on the code) make the hypermean (and thus the mean) follow
+evidence more freely. Note that as more observations are accumulated, $\nu$
+becames bigger and bigger, solidifying the value of the hypermean.
+
+The hyperparameters $\alpha$ and $\beta$ are a bit more complex. Note that the
+mean of a Gamma distribution is $\beta / (\alpha \nu)$; this mean is being used
+as the standard deviation of a Gaussian by the rest of the agent (cheating),
+which makes it an important measure of uncertainty. While setting the default
+hyperparameters, the values used are $\alpha = 0.5 / \sigma_0$ and
+$\beta = 0.5$, where $\sigma_0$ is the \textit{a priori} estimate of the
+standard deviation of the force exerted by the environment (force\_sds in the
+code), which controls the initial learning rate. This makes the initial
+standard deviation equal $\sigma_0$, which makes it consistent with the
+fixed-force model in its interface. The 0.5 values ensure that uncertainty is
+large at the beginning and during the experiment is greatly reduced, but never
+to a point where it's ``visually'' too small. Changing this 0.5 would make the
+standard deviation change more quickly, making the model more or less precise
+in its predictions, independently of the volatility of the mean of the
+adaptation (via the hypermean).
+
+The baseline model defaults to different values that make it a lot more
+stable. The hyperstd of the mean is set to 10,000, which makes the mean
+entirely stable during the duration of the experiment. The values of $\alpha$
+and $\beta$ are fixed regardless of $\sigma_0$ such that the standard deviation
+is 0.001 (compare that to the size of the adaptations, around 0.0125), and the
+hyperparameters of the standar deviation are stable during the experiment.
+
 \section{Parametrization of the task and the model}
 Some of the parameters of the model can be fixed by the physics and scales of
 the simulated experiment.
@@ -924,6 +1251,48 @@ noise (see XXX) and context noise (see XXX) play an important role. In
 particular, keeping the prediction noise below 0.2 seems to be necessary for
 the correct identification of the context, for all the used values of context
 noise. It could be good to check this.
+
+\subsubsection{Example: LR model with bad cues}
+Using the LR models with only two contexts (baseline, red) creates slow
+adaptation (across 400 trials or so), with fast-but-not-immediate switch back
+to baseline when provided with false cues: after the adaptation block ends, a
+baseline block ends but the cue still points to the adaptation block.
+
+Simulations from this can be seen in the function
+slow\_context\_inference\_badcues of /adaptation/code/simulations.py
+
+The agent parameters are as follows:
+
+\begin{center}
+\begin{tabularx}{0.8\textwidth}{ c | c | X}
+  Variable & Value & Description \\ \hline
+  prediction\_noise & 0 & Setting this to a nonzero value screws everything up. May be a bug. \\  
+  cue\_noise & 0.015 & Changing this by 0.001 creates slower or faster context inference \\
+  force\_sds & 0.0002 & Changing this makes the model learn more quickly or slowly. With this value, the agent barely finishes adaptation by the time the adaptation block is over. \\
+  context\_noise & 0 & Higher numbers make context inference more uncertain after evidence accumulation.
+\end{tabularx}
+\end{center}
+
+\subsubsection{Example: LR model with no cues}
+Using the LR models with only two contexts (baseline, red) creates slow
+adaptation (across 400 trials or so), with fast-but-not-immediate switch back
+to baseline when no cues are provided. After each block (A or O), a slow switch
+can be observed, which is based entirely on the internal models producing noisy
+predictions.
+
+Simulations from this can be seen in the function
+slow\_context\_inference\_badcues of /adaptation/code/simulations.py
+
+\begin{center}
+\begin{tabularx}{0.8\textwidth}{ c | c | X}
+  Variable & Value & Description \\ \hline
+  prediction\_noise & 3 & The bigger this is, the slower correct inference is. Only with no cues, though. \\  
+  cue\_noise & 0.5 & Creates uninformative cues.
+  force\_sds & 0.0002 & Changing this makes the model learn more quickly or slowly. With this value, the agent barely finishes adaptation by the time the adaptation block is over.
+  context\_noise & 0 & Higher numbers make context inference more uncertain after evidence accumulation.  
+\end{tabularx}
+\end{center}
+
 
 
 \subsection{Context inference requires a new likelihood}
@@ -972,24 +1341,6 @@ standard deviation could be used that is proportional to the mean, which would
 put the cue and predictive modalities on the same playing ground, depending on
 the proportionality constant chosen.
 
-\subsection{Parameter values to look into}
-By visual inspection of the results of simulations, these are the parameter values that seem promising:
-
-\begin{tabularx}{\textwidth}{
-  >{\hsize=.2\hsize\linewidth=\hsize}X|
-  >{\hsize=.1\hsize\linewidth=\hsize}X|
-  >{\hsize=.1\hsize\linewidth=\hsize}X|
-  l}
-% {l|{\hsize=.4\hsize}X|{\hsize=0.3\hsize}X|{\hsize=0.3\hsize}X}
-Agent & Obs noise & Cue noise & Notes \\ \hline \hline
-LR    & 1.2       & 0.04      & Slow fake-context inference. Maybe the priors coming from the previous stage are messing things up. \\ \hline
-1 & 1 & 1 & 1
-\end{tabularx}
->>>>>>> adc91ff996e45d6eaf8974cd33ea69b5d380ed07
-
-
-\subsection{Adaptation}
-Adaptation happens mostly very quickly for all agents. For the current $\Delta t = \dt$, adaptation happens within 20 to 30 time steps, although many times (depending on agent and parametrization) it happens much more quickly. For example, for the LR agent with prediction noise of 0.15, cue noise and context noise of 0, and assumed force variability of 0.25, within 15-20 time steps the adaptation is complete.
 \section{Conclusions}
 
 

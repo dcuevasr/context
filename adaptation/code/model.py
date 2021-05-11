@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/model.py
 
-# import ipdb
+import ipdb
 
 import numpy as np
 from scipy import stats
@@ -70,7 +70,7 @@ class LeftRightAgent(object):
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
-                 reset_after_change=None, force_sds=None):
+                 reset_after_change=None, force_sds=None, max_force=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
@@ -83,6 +83,9 @@ class LeftRightAgent(object):
             self.cue_noise = cue_noise
         if angles:
             self.angles = np.array(angles)
+            self.num_contexts = len(angles)
+        else:
+            self.num_contexts = 3
         if context_noise:
             self.context_noise = context_noise
         if prediction_noise:
@@ -91,15 +94,18 @@ class LeftRightAgent(object):
             self.reset_after_change = reset_after_change
         if force_sds is not None:
             self.force_sds = force_sds
+        if max_force:
+            self.max_force = max_force
 
-        self.num_contexts = 3
         _, self.magnitudes = self.__init_contexts()
         self.magnitude_history = [self.magnitudes]
         self.decision_history = []
         self.hand_position_history = [0]
         self.hand_position = 0
         self.action_history = [0]
-        self.log_context = np.log([0.8, 0.1, 0.1])
+        exp_log_context = 0.2 / self.num_contexts * np.ones_like(self.angles)
+        exp_log_context[0] = 0.8
+        self.log_context = np.log(exp_log_context)
         self.log_context_history = [self.log_context]
         self.cue_history = [-1]
 
@@ -139,11 +145,6 @@ class LeftRightAgent(object):
         The decision is returned and also saved into self.decision_history.
 
         """
-        c_pos = self.hand_position
-        c_context = self.sample_context('mode')
-        c_force = self.magnitudes[c_context][0]
-        action_mu = -c_pos - c_force
-        # action = self.sample_norm() * self.action_sd + action_mu
         action = self._make_decision_mixed()
         if abs(action) > self.max_force:
             action = action / abs(action) * self.max_force
@@ -151,7 +152,7 @@ class LeftRightAgent(object):
         self.action_history.append(action)
         return action
 
-    def _make_decision_mixed(self, sampled=True):
+    def _make_decision_mixed(self, sampled=False):
         r"""Creates a distribution which is the weighted sum of a Gaussian distribution
         for each context:
 
@@ -203,7 +204,8 @@ class LeftRightAgent(object):
         """
         ix_context = self.sample_context(t=-2)
         mu_p, sd_p = self.magnitudes[ix_context]
-        mu_l, sd_l = self.predict_outcome()[1][ix_context]
+        p_con = np.argmax(self.log_context_history[-2]) # called after infer_context
+        mu_l, sd_l = self.predict_outcome(previous_context=p_con)[1][ix_context]
         mu_l = mu_p + self.hand_position - mu_l
         mu_post = (mu_l * sd_p ** 2 + mu_p * sd_l ** 2) / \
             (sd_l ** 2 + sd_p ** 2)
@@ -213,7 +215,8 @@ class LeftRightAgent(object):
         self.magnitudes = c_con
         self.magnitude_history.append(self.magnitudes)
 
-    def predict_outcome(self, hand_position=None, action=None):
+    def predict_outcome(self, hand_position=None, action=None,
+                        previous_context=None):
         """Given an action, generates a probability distribution over all
         possible outcomes.
 
@@ -240,6 +243,8 @@ class LeftRightAgent(object):
         action_sd = self.action_sd
         if hand_position is None:
             hand_position = self.hand_position_history[-2]
+        if previous_context is None:
+            previous_context = np.argmax(self.log_context_history[-1])
         funs = []
         posterior_pars = []
         for ix_context in range(self.num_contexts):
@@ -261,7 +266,9 @@ class LeftRightAgent(object):
 
         """
         if not self.is_reset:
-            lh_fun, lh_pars = self.predict_outcome()
+            previous_context = np.argmax(self.log_context_history[-1])
+            lh_fun, lh_pars = self.predict_outcome(
+                previous_context=previous_context)
             # Hand position likelihood:
             log_li_hand = np.array([lh_fun(hand_position, ix_context)
                                     for ix_context in range(self.num_contexts)])
@@ -280,6 +287,8 @@ class LeftRightAgent(object):
             cue_li = self.cue_noise * np.ones(self.num_contexts)
             cue_li[cue] = 1 - (self.num_contexts - 1) * self.cue_noise
             log_cue = np.log(cue_li)
+        # if np.argmax(log_cue) != np.argmax(log_li_hand):
+        #     ipdb.set_trace()
         prior = np.exp(self.log_context - self.log_context.max()) + \
             self.context_noise
         log_prior = np.log(prior / prior.sum())
@@ -357,19 +366,22 @@ class LeftRightAgent(object):
         actions = self.action_history
         trial_number = np.arange(context.shape[0]) - 1
         aggregate = np.stack([*context.T,
-                              cues,
-                              max_context, *mag_mu.T,
+                              *mag_mu.T,
                               *mag_sd.T,
-                              hand,
+                              cues, max_context, hand,
                               actions,
                               trial_number],
                              axis=1)
+        columns = []
+        all_base_strings = ['con{}', 'mag_mu_{}', 'mag_sd_{}']
+        for mastr in all_base_strings:
+            for idx in range(self.num_contexts):
+                columns.append(mastr.format(idx))
+
         pandata = pd.DataFrame(aggregate,
-                               columns=['con0', 'con1', 'con2',
+                               columns=[*columns,
                                         'cue',
                                         'con_t',
-                                        'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
-                                        'mag_sd_0', 'mag_sd_1', 'mag_sd_2',
                                         'hand', 'action', 'trial'])
         pandata.reset_index(drop=True, inplace=True)
         pandata.set_index('trial', inplace=True)
@@ -381,8 +393,6 @@ class LeftRightAgent(object):
         inference, makes a decision.
 
         """
-        # if len(self.hand_position_history) >= 12:
-        #     ipdb.set_trace()
         if not (cue is None):
             self.cue_history.append(cue)
         self.hand_position = hand_position
@@ -496,12 +506,31 @@ class LRMeanSD(LeftRightAgent):
     """
     name = 'LRMS'
 
-    def __init__(self, *args, **kwargs):
-        """Initializes hyperparameters and calls LeftRightAgent.__init__ """
+    def __init__(self, hyper_sd=None, *args, **kwargs):
+        """Initializes hyperparameters and calls LeftRightAgent.__init__
+
+        Note: The hyperparameters are initialized such that the mean of the
+        magnitude is taken from self.angles, and the mean of the hyperpriors
+        over the standard deviation equals self.force_sds. The hyper-std of the
+        mean is set to 1 except for the baseline, which is set to a very high
+        number to make it difficult to update.
+
+        """
+        if hyper_sd is None:
+            hyper_sd = 0.5
         super().__init__(*args, **kwargs)
-        self.mag_hypers = [[angle, 1, sd / 0.01, 0.001]
+        self.mag_hypers = [[angle, 1 / sd, hyper_sd / sd, hyper_sd]
                            for angle, sd in zip(self.angles, self.force_sds)]
+        self.mag_hypers[0][1] = 10000  # Baseline model does not move
+        self.mag_hypers[0][2] = 10 / 0.001
+        self.mag_hypers[0][3] = 10
         self.mag_hypers_history = [self.mag_hypers]
+        prior_mags = []
+        for ix_con, c_hypers in enumerate(self.mag_hypers):
+            sds = c_hypers[3] / (c_hypers[2] - 0.5) / c_hypers[1]
+            prior_mags.append([c_hypers[0], sds])
+        self.magnitudes = prior_mags
+        self.magnitude_history[0] = prior_mags
 
     def update_magnitudes(self):
         r"""Updates all four hyperparameters of the force magnitudes, using
@@ -511,12 +540,13 @@ class LRMeanSD(LeftRightAgent):
         deviation is saved to self.magnitudes (and the rest of the code will
         treat these values as the mean and standard deviation of a
         Gaussian). The mean is simply the first hyperparameter and the standard
-        deviation is $\beta / (\nu \alpha)$, where the hyperparameters are
-        $\mu, \nu, \alpha, \beta$.
+        deviation is the mean of the Gamma distribution, namely $\beta / (\nu
+        \alpha)$, where the hyperparameters are $\mu, \nu, \alpha, \beta$.
 
         """
         ix_context = self.sample_context()
-        mu_l, sd_l = self.predict_outcome()[1][ix_context]
+        p_con = np.argmax(self.log_context_history[-2])  # called after infer_context        
+        mu_l, sd_l = self.predict_outcome(previous_context=p_con)[1][ix_context]
         mag_pars = self.mag_hypers[ix_context]
         mu_l = mag_pars[0] + self.hand_position - mu_l
         post_mag = [(mag_pars[0] * mag_pars[1] + mu_l) / (mag_pars[1] + 1),
@@ -530,7 +560,8 @@ class LRMeanSD(LeftRightAgent):
         self.mag_hypers_history.append(mag_hypers)
         magnitudes = np.array(self.magnitudes)
         magnitudes[ix_context][0] = post_mag[0]
-        magnitudes[ix_context][1] = post_mag[3] / post_mag[2]
+        magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
+        # post_mag[3] / post_mag[2] / post_mag[1]
         self.magnitudes = magnitudes
         self.magnitude_history.append(magnitudes)
 
@@ -564,30 +595,48 @@ class LRMeanSD(LeftRightAgent):
     def pandify_data(self):
         """Pandifies the history of the agent."""
         context = np.exp(self.log_context_history)
+        cues = self.cue_history
         max_context = np.argmax(context, axis=1)
         magnitudes = np.array(self.mag_hypers_history)
         mag_mu_mu = magnitudes[..., 0]
         mag_mu_sd = magnitudes[..., 1]
         mag_sd_mu = magnitudes[..., 2]
         mag_sd_sd = magnitudes[..., 3]
+        mag_sd = mag_sd_sd / mag_sd_mu
         hand = self.hand_position_history
         actions = self.action_history
         trial_number = np.arange(context.shape[0]) - 1
-        aggregate = np.stack([*context.T, max_context,
-                              *mag_mu_mu.T, *mag_mu_sd.T,
-                              *mag_sd_mu.T, *mag_sd_sd.T, hand, actions,
+        aggregate = np.stack([*context.T, *mag_mu_mu.T, *mag_mu_sd.T,
+                              *mag_sd.T, *mag_sd_mu.T, *mag_sd_sd.T,
+                              cues, max_context,
+                              hand, actions,
                               trial_number],
                              axis=1)
+        columns = []
+        all_base_strings = ['con{}', 'mag_mu_{}', 'mag_nu_{}', 'mag_sd_{}',
+                            'mag_alpha_{}', 'mag_beta_{}']
+        for mastr in all_base_strings:
+            for idx in range(self.num_contexts):
+                columns.append(mastr.format(idx))
         pandata = pd.DataFrame(aggregate,
-                               columns=['con0', 'con1', 'con2',
-                                        'con_t',
-                                        'mag_mu_0', 'mag_mu_1', 'mag_mu_2',
-                                        'mag_nu_0', 'mag_nu_1', 'mag_nu_2',
-                                        'mag_alpha_0', 'mag_alpha_1',
-                                        'mag_alpha_2',
-                                        'mag_beta_0', 'mag_beta_1',
-                                        'mag_beta_2',
-                                        'hand', 'action', 'trial'])
+                               columns=[*columns,
+                                        'cue', 'con_t', 'hand',
+                                        'action', 'trial'])
         pandata.reset_index(drop=True, inplace=True)
         pandata.set_index('trial', inplace=True)
         return pandata
+
+
+class LRSpawn(LeftRightAgent):
+    """Identical to LeftRightAgent, except internal models are spawned as needed,
+    models are updated proportional to their posterior probability and the
+    baseline model is never updated.
+
+    """
+    name = 'LRS'
+
+    def update_magnitudes(self, ):
+        """At the beginning of each trial, updates each model proportionally to
+        its posterior probability. Additionally, """
+        pass
+

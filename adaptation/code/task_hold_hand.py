@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/task_hold_hand.py
-# import ipdb
+import ipdb
 from datetime import datetime
 
 import numpy as np
@@ -25,6 +25,8 @@ def run(agent=None, save=False, filename=None, pars=None):
     outs = []
     hand_position = 0
     for c_trial, do_break in enumerate(pars['breaks']):
+        # if c_trial > 520:
+        #     ipdb.set_trace()
         if do_break:
             agent.reset()
             hand_position = 0
@@ -104,6 +106,8 @@ def sample_observation(hand_position, pars):
     except TypeError:
         pass
     scale = pars['obs_noise']
+    if scale == 0:
+        return hand_position
     loc = hand_position
     distri = stats.norm(loc=loc, scale=scale)
     return distri.rvs()
@@ -125,7 +129,7 @@ def join_pandas(pandata, pandagent):
     into one big panda, aligned by trial number. Returns the panda.
 
     """
-    pandagent = pandagent.drop(['action', 'hand'], axis=1)
+    pandagent = pandagent.drop(['action'], axis=1)
     pandagent = pandagent.iloc[pandagent.index != -1]
     return pd.concat([pandata, pandagent], axis=1)
 
