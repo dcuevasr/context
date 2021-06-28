@@ -1,0 +1,41 @@
+\documentclass{report}
+\usepackage{graphicx}
+\usepackage{breakcites}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage[margin=1.5cm]{geometry}
+\usepackage{tabularx}
+\bibliographystyle{apalike}
+
+% Remember to start reftex-mode
+
+\begin{document}
+\section*{Brief project description}
+The idea of the project is the following: We will create an agent that learns to control an arm in environment A (say, the real world carrying nothing), and learns how to control the arm in environment B (say, with high winds). The agent then learns to recognize environments A and B and to deploy the right controller for each environment depending on this recognition.
+
+We will argue that this is how humans do it and present evidence (based on literature research) for the predictions this model makes, as well as try to make new predictions.
+
+After this methods paper is done, model validation can be carried out in future studies.
+
+
+\section*{Time plan for the arm movement project.}
+
+\begin{tabularx}{\textwidth}{
+  l|
+  >{\hsize=.4\hsize\linewidth=\hsize}X|
+  >{\hsize=.2\hsize\linewidth=\hsize}X|
+  >{\hsize=.2\hsize\linewidth=\hsize}X}
+% {l|{\hsize=.4\hsize}X|{\hsize=0.3\hsize}X|{\hsize=0.3\hsize}X}
+End Date & Milestone & A priori comments & A posteriori comments \\ \hline \hline
+12.02.2021 & Learn about published models on arm-movement planning, especially those that can be used as generative models & & \\ \hline
+19.02.2021 & Learn about measures for how practiced a movement is. Reaction times? Speed profiles? Trajectories? & & \\\hline
+12.03.2021 & Implement the best model/s and do some testing as to its capabilities. & Without inference &   \\ \hline
+19.03.2021 & Add the sequential goals as another level in the hierarchy. & Still no inference. & \\ \hline
+02.04.2021 & Run some exploratory simulations & How well does the model behave? Are there bad cases? & \\ \hline
+09.04.2021 & Talk a  bout possible predictions that can be made with the model. & This includes a meeting. & \\ \hline
+--- & Run final simulations and write paper. & & \\ \hline
+
+\end{tabularx}
+
+
+\end{document}
