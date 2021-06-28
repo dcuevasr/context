@@ -152,6 +152,21 @@ End Date & Result & A priori comments & A posteriori comments \\ \hline \hline
 --- & Start writing the paper. & & \\ \hline
 
 \end{tabularx}
+
+\section{Results}
+
+\begin{enumerate}
+\item Quick de-adaptation/savings: gradual evidence accumulation during context inference will make the switching between internal models not be immediate.
+\item Learning: The speed in which the internal models are adjusted given errors depends on how certain the inference is. More uncertain context inference will lead to slower learning.
+\item Action selection: Action selection is sampled from the existing (relevant) internal models, weighted by their posterior probability during this trial.
+\item Cue reliability adjustments: As more bad-cue trials are observed, the agent will lower the estimated reliability of the cue.
+\item Error-clamp tappering off: Hundreds of error-clamp trials make adaptation seem to slowly disappear, but it never fully goes away.
+\item Error-clamp lag: For a while, the tappering off does not begin, depending on how clear it is that error-clamp trials have started.
+\end{enumerate}
+
+
+
+
 \end{chapter}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -792,25 +807,127 @@ but 4N and -4N were not. It's such a mess that I don't want to touch it.
 \cite{Kojima_Memory_2004} have error-clamp-like trials, but not at the end. No
 weirdness here. Also no cues.
 
-\cite{Smith_Interacting_2006} speak of error-clamp weirdness and presents a
-model to explain it. Their data is limited, however, and might not be specially
-useful for me.
+\cite{Smith_Interacting_2006} present a typical mechanical arm task with a
+O-A-(-A)-E structure, with random E trials thrown in throughout all. Half of
+the trials were with outward movements and half with the inward movement, with
+the latter almost being E trials and not used for analysis. The experiment has
+no cues, but it was a design in which blocks of 60 trials were used, presumably
+with pauses in the middle, though they do not explicitly say this. The authors
+find that during the E block at the end, participants' responses show
+spontaneous recovery, where they seem to be moving towards A for a few trials,
+but never quite reaching it, and then taper off to
+zero. \cite{Smith_Interacting_2006} only show data aggregated over all
+participants, so it's difficult to extract too much information, but their
+figure 3D suggests that some participants assume -A during E, while most assume
+A.
 
-\cite{Ethier_Spontaneous_2008} have error-clamp weirdness and their
-within-block pauses might be useful for my interpretations.
-\end{chapter}
+\cite{Ethier_Spontaneous_2008} present a saccade study (movements of 15° with
+adaptation of +-5°) in which participants go through E-A-(-A)-E blocks, each
+divided into sets of 60 trials (some blocks have different sets). Between each
+set (and block), a pause of 30s happened. There are no cues, although the size
+of the adaptations is big. It is important to note that the way the error clamp
+works in this paradigm probably gives no indication to the participant that an
+error has occured; contrast this with mechanical-arm paradigms, or
+visuorotation reaching paradigms, in which proprioceptive information gives
+feedback to the participant regardless of rewards.
+
+Figure 2 in \cite{Ethier_Spontaneous_2008} contains all the results relevant to
+this section. First of all, it is clear from the first E block that spontaneous
+recovery and slow tapering off do not exist if no adaptation has been learned;
+instead, behavior during these trials is the same as during baseline. Second,
+spontaneous recovery happens always in the direction of the first adaptation A,
+and never in the direction of -A, which is the block right before the last E
+block. The context-inference-based model explains these findings by noting that
+the -A block is very short, ending when participants reach 0 adaptation (during
+``de-adaptation'') or a little bit beyond zero (towards -A). This is important
+because, since adaptation was not finished, during the first trial of the E
+block the participant expected an error, but no error was observed. This leads
+the participant to think that a change in the context has occured, and context
+inference kicks in, taking the lack of an error as evidence in favor of either
+baseline or the previous adaptation A. Given that the action by the participant
+on this trial is more consistent with baseline than with A, why would A play
+any role in future responses? The answer lies in the structure of the
+experiment, as no baseline trials were ever performed in front of the screen,
+which makes baseline have very low priors.
 
 \cite{Forano_Timescales_2020} has spontaneous recovery and slow tapering off
 during error-clamp trials, but it's quite small. Maybe because of the large
 de-adaptation that devalues contextual cues?
 
 \cite{Vaswani_Decay_2013} explores in detail the motor decay observed during EC
-trials after adaptation trials. They conclude, among other things, that the
-motor adaptation decays across as many as hundreds of trials, but never goes
-back to zero. Additionally, there is a lag before decay starts (all their
-experiments end in A-E, so no baseline before), and it depends on the
-participant, as well as how noticeable the transition to error-clamp trials
-is. They have some clever experiments.
+trials after adaptation trials in a viscous field paradigm. They conclude,
+among other things, that the motor adaptation decays across as many as hundreds
+of trials, but never goes back to zero. Additionally, there is a lag before
+decay starts (all their experiments end in A-E, so no baseline before), and it
+depends on the participant, as well as how noticeable the transition to
+error-clamp trials is. They have some clever experiments.
+
+More precisely, \cite{Vaswani_Decay_2013} have an experiment 1 in which
+participants learn an adaptation and then go through hundreds of trials of
+error clamp. Participants are divided into four groups: groups 1.1 and 1.4
+learn adaptation A and -A, respectively, and then go to EC trials. Group 1.2
+performs the task in baseline and then in A. Group 1.3 performs the task in
+-A/2, then A and then EC. In their results, all groups show ``adaptation'' that
+starts high (consistent with A) and, after some lag, goes down to an adaptation
+of almost zero, but decidedly positive. Group 1.3, in particular, decays faster
+than the other groups but does not seem to get closer to zero even at the end
+of the experiment. Group 1.4 is just like 1.1 and 1.2, but with its sign
+flipped.
+
+Our simulations can easily show these results to be a direct consequence of
+context inference, which starts by assuming that no change has happened after
+EC starts (thus staying with A), but eventually the evidence points towards a
+change. However, because no model explains EC fully, actions are taken by doing
+a weighted average of all available models, where the weights are given by the
+posterior over contexts. This explains both the lag, the fact that EC
+adaptation never reaches zero and that group 1.3 adapted faster, as the -A/2
+model pulls the average down faster than baseline. The fact that no difference
+is observed between 1.1 and 1.2 is due to the fact that the baseline model
+exists, regardless of whether participants trained on it or not. Just like the
+results from \cite{Davidson_Scaling_2004}, these results point toward motor
+output being a weighted average of all the available models, with weights being
+the posterior over contexts.
+
+The conclusions of experiments 2 and 3 by \cite{Vaswani_Decay_2013} reinforce
+the context-inference-based account: the more difficult it is to notice that EC
+has started, the less decay participants show, to the extreme of experiment 3
+in which most participants showed no decay at all.
+
+\cite{Pekny_Protection_2011} present a series of experiments in which they set
+out to determine whether A-B-E paradigms make the brain forget about A when
+learning B, or whether the brain protects A. The authors mention that there is
+a lot of literature that has used savings as a way to measure the protection of
+A and found that A is not being protected; however, the authors argue that
+classical conditioning experiments instead use spontaneous recovery during E
+trials to measure protection of memories during extinction, and the literature
+in that field has demonstrated that memories are indeed
+protected. \cite{Pekny_Protection_2011} present a series of experiments with
+mechanical arms to show the protection of memories. Their results, specifically
+those in their Figures 3 and 5, strongly support not only the
+context-inference-based motor learner, but also the idea that action selection
+happens through a weighted average, much like the results from
+\cite{Herzfeld_memory_2014}.
+
+In figure 3A, one group (red) went through O-A-b (where lowercase ``b'' means
+very few trials, used as extinction), and another group (black) went through
+O-B-A-b. When comparing the force compensation between those two groups, one
+can see that the introduction of B in the black group has the effect of pulling
+their response during E closer to baseline, as compared with the red
+group. This is because B has, for this group, been introduced as a potential
+context of importance equal that of A (although a longer time ago, as B is
+presented before A). This increased the prior probability of context B during
+the E trials in the minds of participants, which draws the weighted average
+closer to baseline, as $B = -A$. The same interpretation can be given to all of
+Figure 3 and Figure 5 as well.
+
+Additionally, \cite{Pekny_Protection_2011} present an experiment in which
+changes in context are presented gradually (see their figure 1 for
+details). They argue that because the changes are presented gradually,
+participants do not get a strong prediction error that can guide context
+inference towards the correct context. However, there is a caveat they do not
+discuss: in an experiment where context switches slowly, small changes become
+big evidence. For this reason, their Figure 5B has the same effect as that seen
+in Figure 3.
 
 
 \section{Notes on implicit vs explicit, and strategies.}
@@ -838,6 +955,8 @@ rather shift the goal of the trial. Then, as trials go by, the propiosceptive
 feedback does not match what is observed on the screen, and that causes motor
 adaptation. Perhaps more recent studies have tested this.
 
+
+\end{chapter}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1287,8 +1406,8 @@ slow\_context\_inference\_badcues of /adaptation/code/simulations.py
 \begin{tabularx}{0.8\textwidth}{ c | c | X}
   Variable & Value & Description \\ \hline
   prediction\_noise & 3 & The bigger this is, the slower correct inference is. Only with no cues, though. \\  
-  cue\_noise & 0.5 & Creates uninformative cues.
-  force\_sds & 0.0002 & Changing this makes the model learn more quickly or slowly. With this value, the agent barely finishes adaptation by the time the adaptation block is over.
+  cue\_noise & 0.5 & Creates uninformative cues. \\
+  force\_sds & 0.0002 & Changing this makes the model learn more quickly or slowly. With this value, the agent barely finishes adaptation by the time the adaptation block is over. \\
   context\_noise & 0 & Higher numbers make context inference more uncertain after evidence accumulation.  
 \end{tabularx}
 \end{center}
@@ -1340,6 +1459,34 @@ of the inference over the magnitudes to calculate $p(C | s, a)$. Instead, a
 standard deviation could be used that is proportional to the mean, which would
 put the cue and predictive modalities on the same playing ground, depending on
 the proportionality constant chosen.
+
+\subsection{\cite{Davidson_Scaling_2004} results}
+Running simulations I realized that the model, as is, will not be able to
+reproduce the results from \cite{Davidson_Scaling_2004}. To do so, the model
+would need to be modified to create new models online, but only one at a
+time. A model would be created and kept at an adaptation of zero with very high
+standard deviation, and this model would very naturally learn any adaptation
+that is not explained by any other model.
+
+The biggest problem is in reproducing experiment 2, group 1 of
+\cite{Davidson_Scaling_2004}, in which the adaptations that will be presented
+are A and 3A. In this case, at the beginning there should be an empty model
+that learns A. Once this model is far away from baseline, a new empty model
+should be created (and kept ``on call''), which eventually would pick up on
+3A. If the two empty models are created at the same time, both will learn A,
+and later only one of them (picked randomly) will learn 3A, while the other
+stays at A; this is fine for simulations but difficult to explain from a
+mechanistic point of view: why would the brain train two models to do the same
+thing?
+
+Possible solutions to this would be: (1) as said before, that only one empty
+model exists at any time. (2) any model would have an empty counterpart that
+can always learn faster. (3) Context inference would be able to pick up on low
+model evidence (e.g. when no internal model explains the observations at all)
+and trigger the creation of a new model, either always as a copy of baseline or
+as a copy of the closest to the observations.
+
+This is work for future studies.
 
 \section{Conclusions}
 
