@@ -433,6 +433,10 @@ def baseline_bias(fignum=9):
     """This reproduces the experiments in Davidson_Scaling_2004, plotting the
     results for all their groups and experiments in one big pot of lovin.
 
+    Note: for now, this does not work. The model would need some additions to
+    handle the creation of new models and it goes beyond the scope of the
+    paper.
+
     """
     fig, axes = plt.subplots(2, 4, gridspec_kw={'height_ratios': (3, 1)},
                              num=fignum, clear=True)
@@ -457,6 +461,7 @@ def baseline_bias(fignum=9):
                            cue_noise=1 / 3, context_noise=0.0,
                            force_sds=0.02 * np.ones(3),
                            max_force=1, hyper_sd=0.005)
+    agent.all_learn = True
     pars_task = pars.task_davidson_2_1
     sim_and_plot(agent, pars_task, axes=[axes[0, 2], axes[1, 2]])
 
@@ -471,31 +476,6 @@ def baseline_bias(fignum=9):
     axes[0, 1].get_legend().remove()
     axes[0, 2].get_legend().remove()
     axes[0, 3].get_legend().remove()
-
-
-def test():
-    agent = model.LRMeanSD(angles=[0, 0, 0],
-                           prediction_noise=1,
-                           cue_noise=1 / 3, context_noise=0.0,
-                           force_sds=0.02 * np.ones(3),
-                           max_force=1, hyper_sd=0.5)
-    pars_task = pars.task_davidson_2_1
-    pandota, agent = sim_and_plot(agent, pars_task, return_data=True)
-
-    manorm = stats.norm.logpdf
-    mag_hist = np.array(agent.magnitude_history)
-    probs = manorm(0.005, loc=mag_hist[..., 0], scale=mag_hist[:, :, 1])
-    probs = probs[1:, ...]
-    probs = np.exp((probs.T - probs.max(axis=1)).T)
-    pandota[['probs_0', 'probs_1', 'probs_2']] = probs
-    return pandota, agent
-
-
-def normal_gamma_logpdf(x, mu, nu, alpha, beta):
-    """Returns the logprobability of x given the pars.
-
-    """
-    constant = beta ** alpha * np.sqrt(nu)
 
 
 if __name__ == '__main__':

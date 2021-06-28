@@ -68,6 +68,8 @@ class LeftRightAgent(object):
 
     sample_norm = stats.norm().rvs
 
+    all_learn = False
+
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
                  reset_after_change=None, force_sds=None, max_force=None):
@@ -544,26 +546,40 @@ class LRMeanSD(LeftRightAgent):
         \alpha)$, where the hyperparameters are $\mu, \nu, \alpha, \beta$.
 
         """
-        ix_context = self.sample_context()
+        mag_hypers = self.mag_hypers.copy()
+        magnitudes = np.array(self.magnitudes)
+        if not self.all_learn:
+            ix_context = self.sample_context()
+            post_mag = self._update_magnitude(ix_context)
+            mag_hypers[ix_context] = post_mag
+            magnitudes[ix_context][0] = post_mag[0]
+            magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
+        else:
+            pos_con = np.exp(self.log_context)
+            for ix_context in range(self.num_contexts):
+                post_mag = self._update_magnitude(ix_context,
+                                                  pos_con[ix_context])
+                mag_hypers[ix_context] = post_mag
+                magnitudes[ix_context][0] = post_mag[0]
+                magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
+        self.mag_hypers = mag_hypers
+        self.mag_hypers_history.append(mag_hypers)
+        # post_mag[3] / post_mag[2] / post_mag[1]
+        self.magnitudes = magnitudes
+        self.magnitude_history.append(magnitudes)
+
+    def _update_magnitude(self, ix_context, data_weight=1):
+        """Updates the magnitude of the given context. """
         p_con = np.argmax(self.log_context_history[-2])  # called after infer_context        
         mu_l, sd_l = self.predict_outcome(previous_context=p_con)[1][ix_context]
         mag_pars = self.mag_hypers[ix_context]
         mu_l = mag_pars[0] + self.hand_position - mu_l
-        post_mag = [(mag_pars[0] * mag_pars[1] + mu_l) / (mag_pars[1] + 1),
-                    mag_pars[1] + 1,
-                    mag_pars[2] + 0.5,
-                    mag_pars[3] + mag_pars[1] *
-                    (mu_l - mag_pars[0]) ** 2 / 2 / (mag_pars[1] + 1)]
-        mag_hypers = self.mag_hypers.copy()
-        mag_hypers[ix_context] = post_mag
-        self.mag_hypers = mag_hypers
-        self.mag_hypers_history.append(mag_hypers)
-        magnitudes = np.array(self.magnitudes)
-        magnitudes[ix_context][0] = post_mag[0]
-        magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
-        # post_mag[3] / post_mag[2] / post_mag[1]
-        self.magnitudes = magnitudes
-        self.magnitude_history.append(magnitudes)
+        post_mag = [(mag_pars[0] * mag_pars[1] + data_weight * mu_l) / (mag_pars[1] + data_weight),
+                    mag_pars[1] + data_weight,
+                    mag_pars[2] + 0.5 * data_weight,
+                    mag_pars[3] + data_weight * mag_pars[1] *
+                    (mu_l - mag_pars[0]) ** 2 / 2 / (mag_pars[1] + data_weight)]
+        return post_mag
 
     def sample_force(self, mode=None):
         """This function defines the logic to obtain a single number from
