@@ -1,0 +1,168 @@
+\documentclass[a4paper,doc,floatsintext,natbib]{apa6}
+% \documentclass{article, a4paper}
+\usepackage[font=small]{caption}
+\usepackage{lscape}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{authblk}
+\usepackage[utf8]{inputenc}
+\usepackage{nameref}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{soul}
+
+% Remember to start reftex-mode
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+  }
+
+\setlength{\parskip}{1em}
+\def \fref #1{Figure \ref{#1}}     % Reference figures
+\def \tref #1{Table \ref{#1}}      % Reference tables
+\def \eref #1{Equation \ref{#1}}   % Reference equations
+\def \sref #1{Section '\nameref{#1}'}    % Reference sections
+\def \supmat {the Supplementary Materials}
+
+% For revision
+\DeclareRobustCommand{\newcontent}[1]{#1}
+
+\title{The effects of context inference on motor learning: savings, de-adaptation and spontaneous recovery}
+\shorttitle{Context-inference-dependent motor learning}
+\author[1]{Cuevas Rivera, Darío}
+\author[1]{Kiebel, Stefan J.}
+\affil[1]{Chair of Neuroimaging, Faculty of Psychology. Technische Universität Dresden, 01062 Dresden, Germany.}
+\affiliation{~}
+
+\begin{document}
+
+\maketitle
+
+\abstract{Abstract}
+% \tableofcontents
+
+\section{Introduction}
+yeah
+
+\section{Results}
+In this work, we present a motor adaptation model in which the agent (e.g. a human learning a motor task) updates an existing model of the environment based on error signals produced by the need of adaptation. Several models exist for error-based motor adaptation, but we expand on the existing models by adding an explicit component of context inference which guides the selection of the adequate internal model, its updating and the sampling of actions.
+
+In what follows, we introduce the different parts of the model and explain how they work together. In addition, we will highlight experimental findings in motor adaptation from previous works for which our model provides explanations that are otherwise unavailable.
+
+\subsection{The model}
+The model we present has three main components: (1) a context-inference component; (2) a motor adaptation component; (3) an action selection component. Each of these components informs the ones that follow: motor adaptation is informed by context inference, and action selection is informed directly by both motor adaptation and by context inference.
+
+Based on the Bayesian brain hypothesis, we chose to cast both context inference and motor adaptation as Bayesian inference, in effect using a unified mechanism for the preparation of motor commands in new environments.
+
+We now describe the three components of the model separately. We begin by describing the motor adaptation part for clarity, as the definition of ``context'' (used in context inference) is better described in terms of motor adaptation.
+
+\subsubsection{Motor adaptation}
+Motor adaptation refers to the ability of humans and other animals to learn from observed errors. For example, we can learn to perform a reaching movement in front of us --a movement that any person has been practicing all their lives-- underwater, where the relatively high viscosity of water means that the motor commands we have learned all our lives no longer produce the desired effect.
+
+It is widely accepted that in order to adapt motor commands to a novel environment, we create and update internal forward models of the outcomes of control signals. While a number of models for motor adaptation exist, we chose to make use of an exact Bayesian learner. As we discuss below, a Bayesian learner has the advantage of not only fitting experimental data on motor adaptation, but also does away with the need for explicit multiple time scales of learning. We show that this adaptation mechanism can deal with adaptation after any number of trials, ranging from a handful of trials in an experiment to the level of expertise a professional dancer has accrued through years of practicing the same movements.
+
+To describe this component of the model, let us return to reaching movements. Throughout our lives, we have learned the equivalence between a motor command and its outcomes in the form of a forward model. We can write this forward model as follows:
+\begin{equation}
+p(\vartheta | s, c) = f(s, c; \beta)
+\end{equation}
+where $\vartheta$ are the outcomes of an action (in the example, direction and velocity of the reach movement), $s$ is the current state (e.g. the current position of the hand), $c$ is a motor command and $\beta$ are the parameters of the forward model $f(\cdot)$. Throughout our lives, the parameters $\beta$ have been fine tuned to produce an accurate forward model $f$ to guide our movements.
+
+As a day progresses, and especially if the day included a lot of physical activity of the arm, muscle exhaustion leads to a different response of the muscles in the arm to motor commands. However, we are still able to produce accurate reach movements. This happens through adaptation, where the observed error signals of a moment are used to temporarily update the parameters $\beta$ of the forward model. To describe this adaptation process, our model makes uses of Bayesian inference, such that:
+\begin{equation}
+q(\beta | \vartheta, s, c) \propto p(\vartheta | s, c, \beta)p(\beta)
+\end{equation}
+where $q(\beta | ...)$ represents the new estimate of $\beta$ after having observed the outcome $\vartheta$ of the previous motor command $c$. $p(\vartheta | s, c, \beta)$ is the \textit{a priori} probability of observing the outcome $\vartheta$ as predicted by the forward model $f$.
+
+In this account of motor adaptation, the prediction error signal takes the form of an observed outcome $\vartheta$ that differs from that of the most likely outcome predicted by the forward model. The amount of adaptation that happens after observing an error will depend not only on the size of the error (how far away from the most likely outcome) it is, but also of how precise the existing estimate of $\beta$ is. We will discuss this further below.
+
+Not only is the internal model for everyday movements not fixed (i.e. adaptation is possible), it is also not unique. Multiple internal models are used and updated, depending on the task at hand. For example, a person might have an internal model for baseline reaching movements (e.g. with empty hands) $f_B$, and a different one for reaching movements while holding a heavy object, $f_H$. A key aspect of motor adaptation is to select the relevant model to update, should a prediction error arise.
+
+\subsection{Context inference}
+In our model, the idea of context is quite general. The context comprises the relevant elements of hte environment (e.g. high winds when walking), as well as the task at hand. Previous models have focused on the elements of the context which are directly related to the internal models: given a past action, the different internal models (e.g. $f_B$ and $f_H$ from the previous section) make different predictions for the outcome of that action; the model that best predicts that action is deemed to be the ``correct'' model, i.e. the model that best represents the context.
+
+In this work, we focus on the idea that the context can be inferred by integrating several sources of information, an idea with great intuitive appeal. Through this idea, we explain many previously-unexplained phenomena from different experiments with humans.
+
+Identifying any possible context with a categorical variable $\zeta$, the identification of a context can be done through Bayesian inference:
+\begin{equation}
+q(\zeta | \vartheta_t, \vartheta_{t-1}, c_{t-1}) \propto p(\vartheta_t | \vartheta_{t-1}, c_{t-1})p(\zeta)
+\end{equation}
+where the prior distribution over contexts $p(\zeta)$ includes information from two sources: (1) an expectation of continuity, encoding the expectation that the context does not change from instant to instant, and (2) an overall estimation of observing any one context, if the context did change. Below, we discuss how these two components effect different experimentally observed phenomena.
+
+In the previous section, we used the variable $\vartheta$ to refer to the outcomes of actions. In this section, we expand the definition of an observation $\vartheta$ to include any information given to the decision-making agent by the environment. This includes, as before, the outcomes of actions, but also any other sensory information that might be indirectly related to actions, or even completely intependent from them. For this section, the most important component of $\vartheta$ is contextual information, i.e. information that might directly help infer the identity of the current context.
+
+In experimental settings, the contextual information can take the form of a visual cue [EGS], the place where the task must be carried out [EGS] or even the start of a new block of trials [EGS]. All these sources of information, alongside the outcomes of previous actions and the priors $p(\vartheta$ form part of $p(\vartheta_t | \vartheta_{t-1}, c_{t-1})$ and are integrated together to identify a context.
+
+\subsection{Action selection}
+Action selection is affected by the current context via the context-dependent forward model that is used. In our model, action selection is made by building a distribution over available actions which is a weighted sum of the distributions given by the existing forward models, where the weights are obtained by the context inference component of the model. In other words, a distribution is created as follows:
+\begin{equation}
+p(c_t) \propto \displaystyle\sum_{\zeta \in \Phi}q(\zeta | \vartheta_t, \vartheta_{t-1}, c_{t-1}) p(c_t | \zeta)
+\end{equation}
+From this distribution, the current action (motor command $c_t$) can be sampled and carried out.
+
+\section{Experimental results}
+In this section, we go through a number of experimentally-observed phenomena and show how imperfect context inference, as done in our model, provides a parsimonious explanation for all of them.
+
+In what follows, we show numerical results obtained the model outlined above. The full mathematical implementation of the model can be found in XXX.
+
+Before discussing these phenomena, let us introduce terminology. As an example, we will use a typical motor adaptation task in which participants have to make forward-backward reaching movements while holding the handle of a mechanical arm that exerts a force. Depending on the trial (and experiment), the arm might exert a curl force in a clockwise or counter-clockwise direction, or no force at all. Let us define the baseline context O as that in which the mechanical arm exerts no force. Context A can be defined as that in which the arm exerts the clockwise curl force and context B counter-clockwise. Additionally, abusing notation, it can be said that $B = (-A)$, as the forces point (approximately) in opposite directions. Finally, we represent error-clamp trials with the letter E.
+
+With this terminology, a typical experiment [EG] would have a block structure of O-A-B-E (or O-A-(-A)-E), which means that the participant goes through a block of trials with no external force applied (O), a number of trials with a clockwise curl force (A), a block with counter-clockwise forces, and finally a block with error-clamp trials.
+
+\subsection{Savings and quick de-adaptation}
+Savings refers to the ability of humans and other animals to remember a previously-learned adaptation, and apply it without having to re-learn it. Savings is almost-universally observed in human participants [A THOUSAND CITATIONS; c.f. that one paper with single-internal-model], but animal experiments have shown mixed results [EG].
+
+In an O-A-O-A experiment, for example, savings would be seen in the second A block in the form of an apparent adaptation rate might higher than that observed during the first A block.
+
+On the other hand, quick de-adaptation refers to the observation that in an O-A-O paradigm, the adaptation from O to A is much slower than that from A back to O.
+
+Importantly, neither savings nor quick de-adaptation are immediate, but instead manifest as a much increased adaptation speed. In this section, we will show that both phenomena are the two sides of a coin, and the speed at which this quick adaptation/de-adaptation happens is related to the availability and reliability of contextual cues, as well as to the quality of the prediction errors.
+
+We can categorize experiments performed with human participants by looking at the amount of contextual information that is available. In some experiments [EGssss], the context is clearly cued to the participant, either in the form of visual cues on in changes to the location of the task. We call these cued-context experiments. In other experiments, partial information is available to participants [EGsss]; we refer to these as partially-cued experiments. While there are no experiments in which no contextual information is available, there are some experiments which contain blocks in which this is the case and participants have no way of inferring the current context. Abusing our notation, we call these experiments (or rather, these sections of the experiments) uncued experiments. In this section, we focus on the two former categories, while the latter is left for the next sections.
+
+Note that, because context inference integrates information from many sources, many experiments in which no intentional, overt contextual cues are available indeed contain contextual information that the participant can use. For example, in curl-force-field experiments with mechanical arms, the force feedback provided by the mechanical arm always gives participants a sense for the current context, although error-clamp trials are difficult to distinguish from adaptation trials based on force feedback alone. Additionally, the sudden appearance of large motor errors can itself be a cue for contextual change.
+
+To see the effects of context inference on savings and quick de-adaptation, we contrast the two former types of experiments.
+
+In FIGURE XXX, data from representative experiments from each category are shown. It can be seen that in cued-context experiments, savings take the form of an immediate switch from the adaptation at trial $t$ to that in trial $t-1$, to the level that was learned before. In contrast, in partially-cued experiments, the switch is fast (compared to the initial adaptation), but not immediate. Our model explains this difference via context inference: in the cued-context experiments, context inference relies on the very reliable information of visual cues and the change in context is identified immediately; because of this, the model can re-activate the forward model adequate for the context from the first trial after the change occured. In contrast, in partially-cued experiments, the model needs to accumulate evidence in favor of the correct context throughout a number of trials, and the actions selected by the model are combinations of the actions that correspond to all the possible contexts (we discuss this in the following sections).
+
+In FIGURE XXX, we show the same effects described above, but in the frame of quick de-adaptation. The explanation for these effects given by the model is the same for savings and quick de-adaptation, namely that the participant slowly accumulates evidence in favor of a switch in context.
+
+
+\section{The effects on the rate of adaptation}
+In our model, adaptation is gated by the uncertainty on the current context (see Methods). More specifically, a prediction error observed at trial $t$ will effect motor adaptation with a magnitude proportional to the size of the error, where the proportionality constant is related to the uncertainty over the context in which the error was observed: the higher the uncertainty, the lower the size of the adaptation, given a fixed size of prediction error.
+
+The most direct evidence for the effects of context inference on the rate of adaptation come from the experiments by \cite{Herzfeld_memory_2014}. The authors showed that the volatility of the environment, expressed in terms of unpredictable, stochastic transitions between O and A (and vice versa) change the speed at which adaptation occurs.
+
+\cite{Herzfeld_memory_2014} used an experimental paradigm in which the force that a mechanical arm exerts on the participant's hand can change from trial to trial between two possibilities: no force (baseline O) and some force (context A). They divided participants into three groups for which the transition from one trial to the next were very uncommon, somewhat common and almost every trial. Importantly, these transitions were uncued, and the participant could only infer that a transition had occurred when a motor error is observed.
+
+\cite{Herzfeld_memory_2014} found that the volatility of the environment affects learning. The more volatile the environment, the less participants can adapt their motor responses. In FIGURE XXX, we show results adapted from \cite{Herzfeld_memory_2014} alongside results obtained with our model. In our model, learning is gated by context inference: the higher the uncertainty on the context in which an error occured, the lower the effect of this error on future trials (i.e. adaptation).
+
+To account for volatility, the model includes a term in context inference which assumes a transition from the previous context to all other possible contexts (see Methods). Effectively, this transition term gives the model uncertainty on the current context, regardless of observations. The higher the volatility, the higher the uncertainty.
+
+\section{Action selection}
+As with learning, our model selects actions (motor commands) based on context inference. Is the identity of the current context is known, the forward model for this context is used to select the current action. However, if some uncertainty exists, the selected action is influenced by all the possible current contexts, with a weight directly related to how likely each one of those contexts is.
+
+
+
+
+\section{Behavior in error-clamp blocks}
+
+
+
+
+
+
+\section{Discussion}
+\begin{enumerate}
+\item The effect of pauses?
+\end{enumerate}
+
+
+
+\bibliography{../MyLibrary}
+
+
+\end{document}
