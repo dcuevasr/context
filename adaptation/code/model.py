@@ -70,6 +70,8 @@ class LeftRightAgent(object):
 
     all_learn = False
 
+    threshold_learn = 0.1  # if p(context) lower than this, no learning happens
+
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
                  reset_after_change=None, force_sds=None, max_force=None):
@@ -206,8 +208,7 @@ class LeftRightAgent(object):
         """
         ix_context = self.sample_context(t=-2)
         mu_p, sd_p = self.magnitudes[ix_context]
-        p_con = np.argmax(self.log_context_history[-2]) # called after infer_context
-        mu_l, sd_l = self.predict_outcome(previous_context=p_con)[1][ix_context]
+        mu_l, sd_l = self.predict_outcome()[1][ix_context]
         mu_l = mu_p + self.hand_position - mu_l
         mu_post = (mu_l * sd_p ** 2 + mu_p * sd_l ** 2) / \
             (sd_l ** 2 + sd_p ** 2)
@@ -217,8 +218,7 @@ class LeftRightAgent(object):
         self.magnitudes = c_con
         self.magnitude_history.append(self.magnitudes)
 
-    def predict_outcome(self, hand_position=None, action=None,
-                        previous_context=None):
+    def predict_outcome(self, hand_position=None, action=None):
         """Given an action, generates a probability distribution over all
         possible outcomes.
 
@@ -245,8 +245,6 @@ class LeftRightAgent(object):
         action_sd = self.action_sd
         if hand_position is None:
             hand_position = self.hand_position_history[-2]
-        if previous_context is None:
-            previous_context = np.argmax(self.log_context_history[-1])
         funs = []
         posterior_pars = []
         for ix_context in range(self.num_contexts):
@@ -268,9 +266,7 @@ class LeftRightAgent(object):
 
         """
         if not self.is_reset:
-            previous_context = np.argmax(self.log_context_history[-1])
-            lh_fun, lh_pars = self.predict_outcome(
-                previous_context=previous_context)
+            lh_fun, lh_pars = self.predict_outcome()
             # Hand position likelihood:
             log_li_hand = np.array([lh_fun(hand_position, ix_context)
                                     for ix_context in range(self.num_contexts)])
@@ -521,15 +517,15 @@ class LRMeanSD(LeftRightAgent):
         if hyper_sd is None:
             hyper_sd = 0.5
         super().__init__(*args, **kwargs)
-        self.mag_hypers = [[angle, 1 / sd, hyper_sd / sd, hyper_sd]
+        self.mag_hypers = [[angle, 1, hyper_sd / (sd + self.obs_sd), 2 * hyper_sd]
                            for angle, sd in zip(self.angles, self.force_sds)]
-        self.mag_hypers[0][1] = 10000  # Baseline model does not move
-        self.mag_hypers[0][2] = 10 / 0.001
-        self.mag_hypers[0][3] = 10
+        self.mag_hypers[0][1] = 10000
+        self.mag_hypers[0][2] = 100000 / (self.force_sds[0] + self.obs_sd)
+        self.mag_hypers[0][3] = 100000
         self.mag_hypers_history = [self.mag_hypers]
         prior_mags = []
         for ix_con, c_hypers in enumerate(self.mag_hypers):
-            sds = c_hypers[3] / (c_hypers[2] - 0.5) / c_hypers[1]
+            sds = c_hypers[3] / c_hypers[2] / c_hypers[1]
             prior_mags.append([c_hypers[0], sds])
         self.magnitudes = prior_mags
         self.magnitude_history[0] = prior_mags
@@ -553,15 +549,18 @@ class LRMeanSD(LeftRightAgent):
             post_mag = self._update_magnitude(ix_context)
             mag_hypers[ix_context] = post_mag
             magnitudes[ix_context][0] = post_mag[0]
-            magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
+            magnitudes[ix_context][1] = post_mag[3] / post_mag[2]  # / post_mag[1]
         else:
             pos_con = np.exp(self.log_context)
             for ix_context in range(self.num_contexts):
+                c_pos_con = pos_con[ix_context]
+                if c_pos_con < self.threshold_learn:
+                    c_pos_con = 0
                 post_mag = self._update_magnitude(ix_context,
-                                                  pos_con[ix_context])
+                                                  c_pos_con)
                 mag_hypers[ix_context] = post_mag
                 magnitudes[ix_context][0] = post_mag[0]
-                magnitudes[ix_context][1] = post_mag[3] / (post_mag[2] - 0.5) / post_mag[1]
+                magnitudes[ix_context][1] = post_mag[3] / post_mag[2] # / post_mag[1]
         self.mag_hypers = mag_hypers
         self.mag_hypers_history.append(mag_hypers)
         # post_mag[3] / post_mag[2] / post_mag[1]
@@ -570,8 +569,7 @@ class LRMeanSD(LeftRightAgent):
 
     def _update_magnitude(self, ix_context, data_weight=1):
         """Updates the magnitude of the given context. """
-        p_con = np.argmax(self.log_context_history[-2])  # called after infer_context        
-        mu_l, sd_l = self.predict_outcome(previous_context=p_con)[1][ix_context]
+        mu_l, sd_l = self.predict_outcome()[1][ix_context]
         mag_pars = self.mag_hypers[ix_context]
         mu_l = mag_pars[0] + self.hand_position - mu_l
         post_mag = [(mag_pars[0] * mag_pars[1] + data_weight * mu_l) / (mag_pars[1] + data_weight),

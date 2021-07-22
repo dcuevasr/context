@@ -64,6 +64,27 @@ def _define_breaks():
     return vector
 
 
+def define_contexts(structure):
+    """Given a list with elements [context_id, num_trials], it will piece together
+    the entire sequence of trial types for the experiment.
+
+    Example:
+    structure_dict = [[0, 10], [1, 20], [0, 5], [2, 100]]
+    This will create an experiment with 10 + 20 + 5 + 100 = 135 trials, the
+    first 10 being of context 0, the next 20 with context 1, etc.
+
+    Returns
+    -------
+    contexts : ndarray size=(total_trials, )
+    Context for each trial in the experiment.
+
+    """
+    context_list = []
+    for block in structure:
+        context_list.append(block[0] * np.ones(block[1], dtype=int))
+    return np.concatenate(context_list)
+
+
 # Parameters common to agent and task:
 delta_t = 0.05
 obs_noise = 0.0001

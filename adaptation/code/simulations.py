@@ -9,7 +9,6 @@ import glob
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
-from scipy import stats
 
 import model
 import task_hold_hand as thh
@@ -372,7 +371,8 @@ def plot_adaptation(pandata, axis=None, fignum=5):
     plt.draw()
 
 
-def sim_and_plot(agent, pars_task, return_data=False, axes=None, fignum=6):
+def sim_and_plot(agent, pars_task, return_data=False,
+                 force_labels=None, axes=None, fignum=6):
     """Simulates the agent playing and makes a nice plot with context inference and
     adaptation and colors everywhere.
 
@@ -384,12 +384,12 @@ def sim_and_plot(agent, pars_task, return_data=False, axes=None, fignum=6):
     plot_adaptation(pandota, axis=axes[0])
     plot_contexts(pandota, axis=axes[1])
 
-    fake_forces = [-pars_task['forces'][1][1], 0, pars_task['forces'][1][1]]
-    real_forces = [-pars.forces[1], 0, pars.forces[1]]
+    fake_forces = np.array([-pars_task['forces'][1][1], 0, pars_task['forces'][1][1]])
 
     axes[0].set_ylabel('Adaptation (N)')
-    axes[0].set_yticks(ticks=fake_forces)
-    axes[0].set_yticklabels(real_forces)
+    # axes[0].set_yticks(ticks=fake_forces * 1.2)
+    if force_labels is not None:
+        axes[0].set_yticklabels(force_labels)
     axes[0].legend()
 
     axes[1].set_xlabel('Trial')
@@ -478,5 +478,216 @@ def baseline_bias(fignum=9):
     axes[0, 3].get_legend().remove()
 
 
+def oh_2019(plot=True, axes=None, fignum=10):
+    """Simulates the experiments from Oh and Schweighoffer 2019.
+
+    Parameters
+    ----------
+    plot : bool
+    Whether to simulate and plot. If True, will create the agent
+    with the parameters agent_pars and simulate with sim_and_plot().
+
+    Returns
+    -------
+    task_20 : dictionary
+    Parameters for the task with adaptation=20. To be used directly
+    as the input for tth.run().
+
+    task_10 : dictionary
+    Same as --task_20-- but for adaptation=10.
+
+    agent_pars : dictionary
+    Parameters for the agent for both tasks. To be used directly with
+    agent.RLMeanSD(). Note that it will not work for the other agents.
+
+    """
+    task_20 = task_pars.copy()
+    task_20['obs_noise'] = 1.5
+    task_20['force_noise'] = 1 * np.ones(2)
+    task_20['forces'] = [[0, 0], [1, 20]]
+    contexts_20 = [[0, 20], [1, 60], [0, 40], [1, 50], [0, 20],
+                   [1, 30], [0, 40], [1, 50], [pars.CLAMP_INDEX, 120]]
+    task_20['context_seq'] = pars.define_contexts(contexts_20)
+    task_20['breaks'] = np.zeros(len(task_20['context_seq']))
+    task_20['cues'] = np.zeros(len(task_20['context_seq']), dtype=int)
+
+    agent_pars = {'angles': [0, 0],
+                  'cue_noise': 1 / 2,
+                  'max_force': 50,
+                  'hyper_sd': 1,
+                  'obs_sd': 2.5,
+                  'context_noise': 0.05,
+                  'force_sds': np.ones(2),
+                  'prediction_noise': 1}
+
+    task_10 = task_20.copy()
+    task_10['forces'] = [[0, 0], [1, 10]]
+    if plot:
+        if axes is None:
+            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
+                                     sharex=True, sharey=False)
+
+        agent = model.LRMeanSD(**agent_pars)
+
+        agent.all_learn = True
+        sim_and_plot(agent, task_20, axes=axes[:, 0],
+                     force_labels=[-20, 0, 20])
+        axes[0, 0].set_title('Adaptation: 20')
+        agent = model.LRMeanSD(**agent_pars)
+        agent.all_learn = True
+        sim_and_plot(agent, task_10, axes=axes[:, 1],
+                     force_labels=[-10, 0, 10])
+        axes[0, 1].set_title('Adaptation: 10')
+
+    return task_20, task_10, agent_pars
+
+
+def kim_2015(plot=True, axis=None, fignum=11):
+    """Simulates an experiment from Kim et al. 2015.
+
+    Parameters
+    ----------
+    plot : bool
+    Whether to simulate and plot. If True, will create the agent
+    with the parameters agent_pars and simulate with sim_and_plot().
+
+    Returns
+    -------
+    task : dictionary
+    Parameters for the task. To be used directly as the input for tth.run().
+
+    agent_pars : dictionary
+    Parameters for the agent for both tasks. To be used directly with
+    agent.RLMeanSD(). Note that it will not work for the other agents.
+
+    """
+    task = task_pars.copy()
+    task['obs_noise'] = 3
+    task['force_noise'] = 0.01 * np.ones(3)
+    task['forces'] = [[0, 0], [-1, 40], [1, 40]]
+    blocks = [0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0, 0, 2, 1, 2, 1,
+              0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0]
+    contexts = [[idx, 30] for idx in blocks]
+    task['context_seq'] = pars.define_contexts(contexts)
+    task['breaks'] = np.zeros(len(task['context_seq']))
+    task['cues'] = task['context_seq']
+
+    agent_pars = {'angles': [0, -1, 1],
+                  'prediction_noise': 0,
+                  'cue_noise': 0.0001,
+                  'context_noise': 0.1,
+                  'force_sds': np.ones(3),
+                  'max_force': 60,
+                  'hyper_sd': 1,
+                  'obs_sd': 3}
+    if plot:
+        agent = model.LRMeanSD(**agent_pars)
+        sim_and_plot(agent, task, force_labels=[-40, 0, 40],
+                     fignum=fignum)
+    return task, agent_pars
+
+
+def herzfeld_2014(plot=True, axes=None, fignum=12):
+    """Simulates something like the experiments from Herzfeld et al. 2014.
+
+    This does two conditions: high uncertainty and low uncertainty, where
+    the uncertainty is over the current context given the previous one. In
+    the high uncertainty condition, there's a 50/50 chance of a context
+    change. In the low uncertainty, there is a 0.1 chance of change.
+
+    """
+    num_trials = 300
+    task = task_pars.copy()
+    task['obs_noise'] = 2
+    task['force_noise'] = 0.01 * np.ones(3)
+    task['forces'] = [[0, 0], [-1, 13], [1, 13]]
+    task['breaks'] = np.zeros(num_trials, dtype=int)
+    task['cues'] = np.zeros(num_trials, dtype=int)
+
+    task_high = task.copy()
+    contexts = np.random.choice([1, 2], size=num_trials)
+    task_high['context_seq'] = contexts
+    task_low = task.copy()
+    switches = np.random.choice([0, 1], p=(0.99, 0.01), size=num_trials)
+    switches_ct = np.concatenate([[0], np.nonzero(switches)[0], [num_trials]])
+    switches_delta = np.diff(switches_ct)
+    contexts = [[(idx % 2) + 1, switch] for idx, switch in enumerate(switches_delta)]
+    task_low['context_seq'] = pars.define_contexts(contexts)
+
+    agent_pars_high = {'angles': [0, -5, 5],
+                       'prediction_noise': 0.1,
+                       'cue_noise': 1 / 3,
+                       'context_noise': 0.25,
+                       'force_sds': 0.1 * np.ones(3),
+                       'max_force': 20,
+                       'hyper_sd': 1000,
+                       'obs_sd': 2}
+    agent_pars_low = agent_pars_high.copy()
+    agent_pars_low['context_noise'] = 0.1
+    if plot:
+        if axes is None:
+            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
+                                     sharex=True, sharey=False)
+
+        agent = model.LRMeanSD(**agent_pars_high)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_high, axes=axes[:, 0])
+        agent = model.LRMeanSD(**agent_pars_low)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_low, axes=axes[:, 1])
+        
+    return task_high, task_low, agent_pars_high, agent_pars_low
+
+
+def davidson_2004(plot=True, axes=None, fignum=13):
+    """Simulates the second experiment in Davidson_Scaling_2004."""
+    task_m8 = task_pars.copy()
+    task_m8['obs_noise'] = 0.1
+    task_m8['force_noise'] = 0.5 * np.ones(3)
+    task_m8['forces'] = [[0, 0], [1, 4], [-1, 4]]
+    task_m8['context_seq'] = pars.define_contexts([[0, 10],
+                                                   [1, 100],
+                                                   [2, 100]])
+    task_m8['cues'] = np.zeros(len(task_m8['context_seq']), dtype=int)
+    task_m8['breaks'] = np.zeros(len(task_m8['context_seq']), dtype=int)
+
+    task_p8 = task_m8.copy()
+    task_p8['forces'] = [[0, 0], [1, 4], [1, 12]]
+
+    agent_pars = {'angles': [0, 5, 0],
+                  'cue_noise': 1 / 3,
+                  'max_force': 20,
+                  'hyper_sd': 1,
+                  'obs_sd': 2,
+                  'context_noise': 0.05,
+                  'force_sds': 0.5 * np.ones(3),
+                  'prediction_noise': 0}
+    if plot:
+        if axes is None:
+            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
+                                     sharex=True, sharey=False)
+
+        agent = model.LRMeanSD(**agent_pars)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_m8, axes=axes[:, 0])
+        axes[0, 0].set_title('-8 group')
+        axes[0, 0].set_ylim([-12, 12])
+        agent = model.LRMeanSD(**agent_pars)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_p8, axes=axes[:, 1])
+        axes[0, 1].set_title('+8 group')
+        axes[0, 1].set_ylim([-12, 12])
+
+    return task_m8, task_p8, agent_pars
+
+
 if __name__ == '__main__':
     grid_sims()
+
+# Huang_2011
+# Zarahn_2008 (huge adaptation)
+# Sing_2010 weighted actions anterograde inference

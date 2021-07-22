@@ -25,7 +25,7 @@ def run(agent=None, save=False, filename=None, pars=None):
     outs = []
     hand_position = 0
     for c_trial, do_break in enumerate(pars['breaks']):
-        # if c_trial > 520:
+        # if c_trial >= 111:
         #     ipdb.set_trace()
         if do_break:
             agent.reset()
