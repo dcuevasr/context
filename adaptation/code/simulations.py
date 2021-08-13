@@ -504,7 +504,7 @@ def oh_2019(plot=True, axes=None, fignum=10):
     task_20['force_noise'] = 1 * np.ones(2)
     task_20['forces'] = [[0, 0], [1, 20]]
     contexts_20 = [[0, 20], [1, 60], [0, 40], [1, 50], [0, 20],
-                   [1, 30], [0, 40], [1, 50], [pars.CLAMP_INDEX, 120]]
+                   [1, 30], [0, 40], [1, 50]]
     task_20['context_seq'] = pars.define_contexts(contexts_20)
     task_20['breaks'] = np.zeros(len(task_20['context_seq']))
     task_20['cues'] = np.zeros(len(task_20['context_seq']), dtype=int)
@@ -530,10 +530,12 @@ def oh_2019(plot=True, axes=None, fignum=10):
         agent.all_learn = True
         sim_and_plot(agent, task_20, axes=axes[:, 0])
         axes[0, 0].set_title('Adaptation: 20')
+        axes[0, 0].set_ylim((-25, 25))
         agent = model.LRMeanSD(**agent_pars)
         agent.all_learn = True
         sim_and_plot(agent, task_10, axes=axes[:, 1])
         axes[0, 1].set_title('Adaptation: 10')
+        axes[0, 1].set_ylim((-12, 12))
 
     return task_20, task_10, agent_pars
 
@@ -583,7 +585,7 @@ def kim_2015(plot=True, axis=None, fignum=11):
     return task, agent_pars
 
 
-def herzfeld_2014(plot=True, axes=None, fignum=12):
+def herzfeld_2014(num_trials=150, plot=True, axes=None, fignum=12):
     """Simulates something like the experiments from Herzfeld et al. 2014.
 
     This does two conditions: high uncertainty and low uncertainty, where
@@ -592,9 +594,8 @@ def herzfeld_2014(plot=True, axes=None, fignum=12):
     change. In the low uncertainty, there is a 0.1 chance of change.
 
     """
-    num_trials = 300
     task = task_pars.copy()
-    task['obs_noise'] = 2
+    task['obs_noise'] = 3
     task['force_noise'] = 0.01 * np.ones(3)
     task['forces'] = [[0, 0], [-1, 13], [1, 13]]
     task['breaks'] = np.zeros(num_trials, dtype=int)
@@ -607,16 +608,18 @@ def herzfeld_2014(plot=True, axes=None, fignum=12):
     switches = np.random.choice([0, 1], p=(0.99, 0.01), size=num_trials)
     switches_ct = np.concatenate([[0], np.nonzero(switches)[0], [num_trials]])
     switches_delta = np.diff(switches_ct)
-    contexts = [[(idx % 2) + 1, switch] for idx, switch in enumerate(switches_delta)]
+    contexts = [[(idx % 2) + 1, switch]
+                for idx, switch in enumerate(switches_delta)]
     task_low['context_seq'] = pars.define_contexts(contexts)
 
-    agent_pars_high = {'angles': [0, -5, 5],
-                       'prediction_noise': 0.1,
+    agent_pars_high = {'angles': [0, -1, 1],
+                       'prediction_noise': 0.2,
                        'cue_noise': 1 / 3,
                        'context_noise': 0.25,
                        'force_sds': 0.1 * np.ones(3),
                        'max_force': 20,
                        'hyper_sd': 1000,
+                       'learn_rate': 10,
                        'obs_sd': 2}
     agent_pars_low = agent_pars_high.copy()
     agent_pars_low['context_noise'] = 0.1
@@ -643,41 +646,42 @@ def davidson_2004(plot=True, axes=None, fignum=13):
     task_m8['obs_noise'] = 0.1
     task_m8['force_noise'] = 0.5 * np.ones(3)
     task_m8['forces'] = [[0, 0], [1, 4], [-1, 4]]
-    task_m8['context_seq'] = pars.define_contexts([[1, 20],
-                                                   [2, 100]])
+    task_m8['context_seq'] = pars.define_contexts([[2, 160],
+                                                   [1, 160]])
     task_m8['cues'] = np.zeros(len(task_m8['context_seq']), dtype=int)
     task_m8['breaks'] = np.zeros(len(task_m8['context_seq']), dtype=int)
 
     task_p8 = task_m8.copy()
     task_p8['forces'] = [[0, 0], [1, 4], [1, 12]]
 
-    agent_pars = {'angles': [0, 4, 0],
-                  'cue_noise': 1 / 3,
-                  'max_force': 20,
-                  'hyper_sd': 1,
-                  'obs_sd': 2,
-                  'context_noise': 0.05,
-                  'force_sds': 0.5 * np.ones(3),
-                  'prediction_noise': 0}
+    agent_pars_m8 = {'angles': [0, 4, -4],
+                     'cue_noise': 1 / 3,
+                     'max_force': 20,
+                     'hyper_sd': 100,
+                     'obs_sd': 2.2,
+                     'context_noise': 0.01,
+                     'force_sds': 0.5 * np.ones(3),
+                     'prediction_noise': 0.5,
+                     'learn_rate': 0.5,
+                     'all_learn': True,
+                     'threshold_learn': 0.2}
+    agent_pars_p8 = agent_pars_m8.copy()
+    agent_pars_p8['angles'] = [0, 4, 12]
     if plot:
         if axes is None:
             fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
                                      sharex=True, sharey=False)
 
-        agent = model.LRMeanSD(**agent_pars)
-        agent.all_learn = True
-        agent.threshold_learn = 0.2
+        agent = model.LRMeanSD(**agent_pars_m8)
         sim_and_plot(agent, task_m8, axes=axes[:, 0])
         axes[0, 0].set_title('-8 group')
         axes[0, 0].set_ylim([-12, 12])
-        agent = model.LRMeanSD(**agent_pars)
-        agent.all_learn = True
-        agent.threshold_learn = 0.2
+        agent = model.LRMeanSD(**agent_pars_p8)
         sim_and_plot(agent, task_p8, axes=axes[:, 1])
         axes[0, 1].set_title('+8 group')
         axes[0, 1].set_ylim([-12, 12])
 
-    return task_m8, task_p8, agent_pars
+    return task_m8, task_p8, agent_pars_m8, agent_pars_p8
 
 
 def vaswani_2013(plot=True, axes=None, fignum=14):
@@ -704,7 +708,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     """
     num_trials = 400
     task_common = task_pars.copy()
-    task_common['obs_noise'] = 0.1
+    task_common['obs_noise'] = 0.01
     task_common['breaks'] = np.zeros(num_trials, dtype=int)
     task_common['cues'] = np.zeros(num_trials, dtype=int)
     task_common['forces'] = [[0, 0], [1, 1], [-1, 1], [-1, 0.5]]
@@ -730,8 +734,8 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     agent_pars = {'max_force': 20,
                   'hyper_sd': 1,
                   'obs_sd': 0.1,
-                  'context_noise': 0.1,
-                  'prediction_noise': 0,
+                  'context_noise': 0.09,
+                  'prediction_noise': 0.3,
                   'action_sd': 1.1}
 
     agent_1 = agent_pars.copy()
@@ -742,7 +746,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     agent_2 = agent_1.copy()
 
     agent_3 = agent_pars.copy()
-    agent_3['angles'] = [0, -0.5, 1]
+    agent_3['angles'] = [0, 1, -0.5]
     agent_3['cue_noise'] = 1 / 3
     agent_3['force_sds'] = force_sds * np.ones(3)
 

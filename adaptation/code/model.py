@@ -504,7 +504,8 @@ class LRMeanSD(LeftRightAgent):
     """
     name = 'LRMS'
 
-    def __init__(self, hyper_sd=None, *args, **kwargs):
+    def __init__(self, hyper_sd=None, learn_rate=1, all_learn=False,
+                 threshold_learn=0.2, *args, **kwargs):
         """Initializes hyperparameters and calls LeftRightAgent.__init__
 
         Note: The hyperparameters are initialized such that the mean of the
@@ -517,7 +518,8 @@ class LRMeanSD(LeftRightAgent):
         if hyper_sd is None:
             hyper_sd = 0.5
         super().__init__(*args, **kwargs)
-        self.mag_hypers = [[angle, 1, hyper_sd / (sd + self.obs_sd), 2 * hyper_sd]
+        self.mag_hypers = [[angle, learn_rate, hyper_sd / (sd + self.obs_sd),
+                            2 * hyper_sd]
                            for angle, sd in zip(self.angles, self.force_sds)]
         self.mag_hypers[0][1] = 10000
         self.mag_hypers[0][2] = 100000 / (self.force_sds[0] + self.obs_sd)
@@ -529,6 +531,8 @@ class LRMeanSD(LeftRightAgent):
             prior_mags.append([c_hypers[0], sds])
         self.magnitudes = prior_mags
         self.magnitude_history[0] = prior_mags
+        self.all_learn = all_learn
+        self.threshold_learn = threshold_learn
 
     def update_magnitudes(self):
         r"""Updates all four hyperparameters of the force magnitudes, using
