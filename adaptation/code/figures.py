@@ -29,7 +29,8 @@ def oh_2019_kim_2015(fignum=1, show=True):
     paper.
 
     """
-    fig, axes = plt.subplots(3, 2, clear=True, num=fignum)
+    figsize = (5, 6)
+    fig, axes = plt.subplots(3, 2, clear=True, num=fignum, figsize=figsize)
 
     # a)
     task_kim, agent_pars = sims.kim_2015(plot=False)
@@ -104,6 +105,8 @@ def oh_2019_kim_2015(fignum=1, show=True):
                     transform=axes[2, 0].transAxes,
                     fontdict={'size': 14})
 
+    fig.tight_layout()
+
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
     if show:
@@ -115,12 +118,13 @@ def herzfeld_2014(fignum=2, show=True):
     """Reproduces the results from Herzfeld et al 2014.
 
     """
+    figsize = (3, 4)
     colors = {'high': np.array((95, 109, 212)) / 256,
               'low': np.array((212, 198, 95)) / 256}
     optimal = -13
     repeats = 300  # participants * (number of blocks)
     num_trials = 30
-    fig = plt.figure(clear=True, num=fignum)
+    fig = plt.figure(clear=True, num=fignum, figsize=figsize)
     fig, axes = plt.subplots(2, 1, squeeze=True, clear=True,
                              num=fignum, sharex=True)
 
@@ -188,7 +192,7 @@ def herzfeld_2014(fignum=2, show=True):
     sns.lineplot(data=sensitive_panda, y='sensi', x='bin_trial',
                  hue='z_label', palette=colors, ax=axes[1])
     axes[1].set_xlabel('Trials')
-    axes[1].set_ylabel('Sensitivity to error (a.u.)')
+    axes[1].set_ylabel('Sensitivity\nto error (a.u.)')
     yticks = axes[1].get_yticks()
     axes[1].set_yticks(yticks[[0, -1]])
     axes[1].set_yticklabels([0, ''])
@@ -197,6 +201,8 @@ def herzfeld_2014(fignum=2, show=True):
     axes[1].text(x=-0.1, y=1, s='B',
                  transform=axes[1].transAxes,
                  fontdict={'size': 14})
+
+    fig.tight_layout()
 
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
@@ -210,12 +216,13 @@ def davidson_2004(fignum=3, show=True):
     subplot to put in the results from their paper.
 
     """
+    figsize = (4, 3)
     colors = [np.array((95, 109, 212)) / 256,
               np.array((212, 198, 95)) / 256]
     ran = [161, 200]
 
     fig, axes = plt.subplots(1, 2, num=fignum, clear=True, squeeze=True,
-                             sharex=True, sharey=True)
+                             figsize=figsize, sharex=True, sharey=True)
     task_m8, task_p8, agent_pars_m8, agent_pars_p8 = sims.davidson_2004(plot=False)
 
     agent_m8 = model.LRMeanSD(**agent_pars_m8)
@@ -234,8 +241,14 @@ def davidson_2004(fignum=3, show=True):
     axes[0].set_xlabel('Trials after switch')
     axes[1].set_xlabel('Trials after switch')
     axes[0].set_ylabel('Error (a.u.)')
-    axes[0].set_title('Results from our model')
-    axes[1].set_title('Results adapted from\nDavidson et al. 2004')
+    axes[0].text(x=-0.1, y=1.05, s='A',
+                 transform=axes[0].transAxes,
+                 fontdict={'size': 14})
+    axes[1].text(x=-0.1, y=1.05, s='B',
+                 transform=axes[1].transAxes,
+                 fontdict={'size': 14})
+
+    fig.tight_layout()
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
     if show:
@@ -253,45 +266,41 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
     colors = ['blue', 'green', 'red', 'c']
     context_colors = ['black', 'tab:orange', 'tab:purple', 'tab:brown',
                       'tab:olive']
-    mags = gs.GridSpec(3, 4, height_ratios=[0.15, 0.15, 0.7], hspace=0.3)
+    mags = gs.GridSpec(3, 4, height_ratios=[0.4, 0.2, 0.2])
     fig = plt.figure(num=fignum, clear=True, figsize=figsize)
-    axes_ada = [fig.add_subplot(mags[0, idx]) for idx in range(4)]
-    axes_con = [fig.add_subplot(mags[1, idx]) for idx in range(4)]
-    axes_sum = [fig.add_subplot(mags[2, 0:2]), ]
-    axes_sum.append(fig.add_subplot(mags[2, 2:4], sharex=axes_sum[0]))
-
+    axes_con = [fig.add_subplot(mags[1, 0])]
+    axes_con.append(fig.add_subplot(mags[1, 1], sharey=axes_con[0]))
+    axes_con.append(fig.add_subplot(mags[2, 0], sharey=axes_con[0]))
+    axes_con.append(fig.add_subplot(mags[2, 1], sharey=axes_con[0]))
+    axes_sum = [fig.add_subplot(mags[0, 0:2]), ]
+    axes_sum.append(fig.add_subplot(mags[0, 2:4], sharex=axes_sum[0]))
+    axes_lag = fig.add_subplot(mags[1:3, 2:4])
     tasks, agents = sims.vaswani_2013(plot=False)
 
     all_pandas = []
-    names = ['Group {}'.format(group) for group in [1.1, 1.2, 1.3, 1.4]]
+    names = [1.1, 1.2, 1.3, 1.4]
     named_colors = {name: color for name, color in zip(names, colors)}
     for idx, (task, agent_par) in enumerate(zip(tasks, agents)):
-        for _ in range(reps):
+        for ix_rep in range(reps):
             agent = model.LRMeanSD(**agent_par)
             pandata, pandagent, _ = thh.run(agent=agent,
                                             pars=task)
             c_pandota = thh.join_pandas(pandata, pandagent)
             c_pandota['group'] = names[idx]
+            c_pandota['run'] = idx * reps + ix_rep  # to separate all runs
             all_pandas.append(c_pandota)
     pandota = pd.concat(all_pandas, axis=0)
     adaptation = -pandota['pos(t)'] - pandota['action']
     pandota['adaptation'] = adaptation
     pandota.loc[pandota['group'] == 'Group 1.4', ['adaptation']] *= -1
-    # Plot adaptation
-    # return pandota
-    for group, color, ax in zip(names, colors, axes_ada):
-        c_pandota = pandota.query('group == @group')
-        sns.lineplot(x='trial', y='adaptation', data=c_pandota,
-                     color=color, ax=ax)
-        ax.set_ylabel('')
-
     # Plot context inference
     for idx, (group, color, ax) in enumerate(zip(names, colors, axes_con)):
         c_panda = pandota.query('group == @group')
         real_con = np.array(c_panda.groupby('trial').mean()['ix_context'])
         con_breaks = np.nonzero(np.diff(real_con))[0] + 1
         con_breaks = np.concatenate([[0], con_breaks, [len(real_con) - 1]])
-        cons = np.array([real_con[one_break] for one_break in con_breaks])
+        cons = np.array([real_con[one_break] for one_break in con_breaks],
+                        dtype=int)
         # plot real context
         for c_con, n_con, ix_con in zip(con_breaks, con_breaks[1:], cons):
             if ix_con == pars.CLAMP_INDEX:
@@ -313,51 +322,68 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
             # End little hack.
             sns.lineplot(data=c_panda, x='trial', y=con,
                          color=context_colors[c_con],
-                         ax=axes_con[idx])
-            # axes_con[idx].plot(c_panda.groupby('trial').mean()[con],
-            #                    color=context_colors[c_con])
+                         ax=axes_con[idx], ci='sd')
+    for idx in range(4):
+        axes_con[idx].set_title('Group {}'.format(names[idx]))
+        axes_con[idx].set_xlabel('')
+        axes_con[idx].set_ylabel('')
+        axes_con[idx].set_xticks([])
+        axes_con[idx].set_yticks([])
+        axes_con[idx].set_ylim([0, 1])
+    axes_con[0].text(x=-0.3, y=1.1, s='C',
+                     transform=axes_con[0].transAxes,
+                     fontdict={'size': 14})
+    axes_con[0].set_yticks([0, 1])
 
-    # Summary adaptation:
-    pandota_e = pandota.query('trial >= 75 and trial <= 175')
+    # Plot summary adaptation:
+    condi = 'trial >= 75 and trial <= 175 and group != 1.4'
+    pandota_e = pandota.query(condi)
     pandota_e.reset_index('trial', inplace=True)
     pandota_e.loc[:, 'trial'] -= 100
     sns.lineplot(x='trial', y='adaptation', hue='group',
                  palette=named_colors, data=pandota_e,
-                 ax=axes_sum[0])
-    axes_sum[0].legend()
+                 ax=axes_sum[0], ci='sd')
+    # labels = [name[-3:] for name in names[:-1]]
+    # axes_sum[0].legend(ncol=3, labels=labels)
     y_range = axes_sum[0].get_ylim()
     axes_sum[0].plot([0, 0], y_range, linestyle='dashed',
                      color='black', alpha=0.3)
     axes_sum[1].plot([0, 0], y_range, linestyle='dashed',
                      color='black', alpha=0.3)
-    for idx in range(4):
-        for ax in [axes_con, axes_ada]:
-            ax[idx].set_xlabel('')
-            ax[idx].set_ylabel('')
-            ax[idx].set_xticks([])
-            ax[idx].set_yticks([])
-        axes_ada[idx].set_title(names[idx])
-        axes_con[idx].set_ylim([0, 1])
-        axes_ada[idx].set_ylim([-0.3, 1.1])
-    axes_con[0].set_xlabel('Trial')
-    axes_ada[0].set_xticks([0, 100])
-    axes_con[0].set_yticks([0, 1])
-    axes_ada[0].set_yticks([0, 1])
     axes_sum[0].set_ylim(y_range)
     axes_sum[1].set_ylim(y_range)
     axes_sum[1].set_yticks([])
     axes_sum[0].set_xlabel('Trials since start of error-clamp')
     axes_sum[1].set_xlabel('Trials since start of error-clamp')
-    axes_ada[0].set_ylabel('Ad. index')
     axes_sum[0].set_ylabel('Adaptation index')
-    axes_con[0].set_ylabel('p(ctx)')
 
-    axes_sum[0].text(x=-0.05, y=1, s='E',
+    axes_sum[0].text(x=-0.1, y=1, s='A',
                      transform=axes_sum[0].transAxes,
                      fontdict={'size': 14})
-    axes_sum[1].text(x=-0.05, y=1, s='F',
+    axes_sum[1].text(x=-0.1, y=1, s='B',
                      transform=axes_sum[1].transAxes,
                      fontdict={'size': 14})
+
+    # Plot lags
+    panda_lag = pandota.query('trial > 90 and trial <= 140')
+    panda_lag.reset_index('trial', inplace=True)
+    panda_lag.loc[:, 'trial'] -= 100
+    axes_lag.set_ylabel('p(ctx)')
+    axes_lag.text(x=-0.1, y=1.033, s='D',
+                  transform=axes_lag.transAxes,
+                  fontdict={'size': 14})
+    
+    for run in np.unique(pandota['run']):
+        datum = panda_lag.query('run == @run')
+        axes_lag.plot(datum['trial'], datum['con1'],
+                      color='black', alpha=0.3)
+    axes_lag.set_xlabel('Trials since start of error-clamp')
+    mags.tight_layout(fig)
+    # Kidnapped from top to run after tight layout
+    axes_con[2].set_xticks([0, 100])
+    axes_con[2].set_xlabel('Trial')
+    axes_con[0].set_ylabel('p(ctx)')
+
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
 

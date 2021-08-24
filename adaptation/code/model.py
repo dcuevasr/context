@@ -61,6 +61,7 @@ class LeftRightAgent(object):
 
     sample_context_mode = 'mode'
     sample_force_mode = 'mode'
+    sample_action = False  # Whether actions are sampled or deterministic
 
     max_force = pars['max_force']  # Maximum force the agent can exert
 
@@ -74,7 +75,8 @@ class LeftRightAgent(object):
 
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
-                 reset_after_change=None, force_sds=None, max_force=None):
+                 reset_after_change=None, force_sds=None, max_force=None,
+                 sample_action=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
@@ -100,6 +102,8 @@ class LeftRightAgent(object):
             self.force_sds = force_sds
         if max_force:
             self.max_force = max_force
+        if sample_action:
+            self.sample_action = sample_action
 
         _, self.magnitudes = self.__init_contexts()
         self.magnitude_history = [self.magnitudes]
@@ -149,7 +153,7 @@ class LeftRightAgent(object):
         The decision is returned and also saved into self.decision_history.
 
         """
-        action = self._make_decision_mixed()
+        action = self._make_decision_mixed(sampled=self.sample_action)
         if abs(action) > self.max_force:
             action = action / abs(action) * self.max_force
         self.action = action
@@ -177,9 +181,10 @@ class LeftRightAgent(object):
         probs /= probs.sum()
         if not sampled:
             return (bests * probs).sum() / probs.sum()
-        sampled_context = np.random.choice(np.arange(len(probs)), p=probs)
-        sampled_decision = bests[sampled_context] + \
-            self.action_sd * self.sample_norm()
+        # sampled_context = np.random.choice(np.arange(len(probs)), p=probs)
+        # sampled_decision = bests[sampled_context] + \
+        #     self.action_sd * self.sample_norm()
+        sampled_decision = bests.dot(probs) + self.action_sd * self.sample_norm()
         return sampled_decision
 
     def _best(self, context):

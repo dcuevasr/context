@@ -512,11 +512,14 @@ def oh_2019(plot=True, axes=None, fignum=10):
     agent_pars = {'angles': [0, 0],
                   'cue_noise': 1 / 2,
                   'max_force': 50,
-                  'hyper_sd': 1,
-                  'obs_sd': 2.5,
-                  'context_noise': 0.05,
+                  'hyper_sd': 10,
+                  'obs_sd': 3.5,
+                  'context_noise': 0.01,
                   'force_sds': np.ones(2),
-                  'prediction_noise': 1}
+                  'prediction_noise': 0.1,
+                  'action_sd': 2,
+                  'all_learn': True,
+                  'sample_action': True}
 
     task_10 = task_20.copy()
     task_10['forces'] = [[0, 0], [1, 10]]
@@ -527,15 +530,13 @@ def oh_2019(plot=True, axes=None, fignum=10):
 
         agent = model.LRMeanSD(**agent_pars)
 
-        agent.all_learn = True
         sim_and_plot(agent, task_20, axes=axes[:, 0])
         axes[0, 0].set_title('Adaptation: 20')
         axes[0, 0].set_ylim((-25, 25))
         agent = model.LRMeanSD(**agent_pars)
-        agent.all_learn = True
         sim_and_plot(agent, task_10, axes=axes[:, 1])
         axes[0, 1].set_title('Adaptation: 10')
-        axes[0, 1].set_ylim((-12, 12))
+        axes[0, 1].set_ylim((-25, 25))
 
     return task_20, task_10, agent_pars
 
@@ -577,7 +578,10 @@ def kim_2015(plot=True, axis=None, fignum=11):
                   'force_sds': np.ones(3),
                   'max_force': 60,
                   'hyper_sd': 1,
-                  'obs_sd': 3}
+                  'obs_sd': 3,
+                  'all_learn': True,
+                  'learn_rate': 10,
+                  'sample_action': True}
     if plot:
         agent = model.LRMeanSD(**agent_pars)
         sim_and_plot(agent, task, force_labels=[-40, 0, 40],
@@ -620,7 +624,8 @@ def herzfeld_2014(num_trials=150, plot=True, axes=None, fignum=12):
                        'max_force': 20,
                        'hyper_sd': 1000,
                        'learn_rate': 10,
-                       'obs_sd': 2}
+                       'obs_sd': 2,
+                       'sample_action': True}
     agent_pars_low = agent_pars_high.copy()
     agent_pars_low['context_noise'] = 0.1
     if plot:
@@ -664,7 +669,8 @@ def davidson_2004(plot=True, axes=None, fignum=13):
                      'prediction_noise': 0.5,
                      'learn_rate': 0.5,
                      'all_learn': True,
-                     'threshold_learn': 0.2}
+                     'threshold_learn': 0.2,
+                     'sample_action': True}
     agent_pars_p8 = agent_pars_m8.copy()
     agent_pars_p8['angles'] = [0, 4, 12]
     if plot:
@@ -706,7 +712,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     agent.RLMeanSD(). Note that it will not work for the other agents.
 
     """
-    num_trials = 400
+    num_trials = 300
     task_common = task_pars.copy()
     task_common['obs_noise'] = 0.01
     task_common['breaks'] = np.zeros(num_trials, dtype=int)
@@ -715,19 +721,19 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     task_common['force_noise'] = 0.01 * np.ones(4)
 
     task_1 = task_common.copy()
-    contexts = [[1, 100], [pars.CLAMP_INDEX, 300]]
+    contexts = [[1, 100], [pars.CLAMP_INDEX, num_trials - 100]]
     task_1['context_seq'] = pars.define_contexts(contexts)
 
     task_2 = task_common.copy()
-    contexts = [[0, 50], [1, 50], [pars.CLAMP_INDEX, 300]]
+    contexts = [[0, 50], [1, 50], [pars.CLAMP_INDEX, num_trials - 100]]
     task_2['context_seq'] = pars.define_contexts(contexts)
 
     task_3 = task_common.copy()
-    contexts = [[3, 50], [1, 50], [pars.CLAMP_INDEX, 300]]
+    contexts = [[3, 50], [1, 50], [pars.CLAMP_INDEX, num_trials - 100]]
     task_3['context_seq'] = pars.define_contexts(contexts)
 
     task_4 = task_common.copy()
-    contexts = [[2, 100], [pars.CLAMP_INDEX, 300]]
+    contexts = [[2, 100], [pars.CLAMP_INDEX,  num_trials - 100]]
     task_4['context_seq'] = pars.define_contexts(contexts)
 
     force_sds = 0.1
@@ -735,8 +741,10 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
                   'hyper_sd': 1,
                   'obs_sd': 0.1,
                   'context_noise': 0.09,
-                  'prediction_noise': 0.3,
-                  'action_sd': 1.1}
+                  'prediction_noise': 5.0,
+                  'action_sd': 0.17,
+                  'sample_action': True,
+                  'learn_rate': 1}
 
     agent_1 = agent_pars.copy()
     agent_1['angles'] = [0, 1]
@@ -749,6 +757,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     agent_3['angles'] = [0, 1, -0.5]
     agent_3['cue_noise'] = 1 / 3
     agent_3['force_sds'] = force_sds * np.ones(3)
+    agent_3['context_noise'] *= 2 / 3
 
     agent_4 = agent_1.copy()
     agent_4['angles'] = [0, -1]
