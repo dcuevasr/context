@@ -21,7 +21,9 @@ import pars
 FIGURE_FOLDER = '../article/figures/'
 
 
-def oh_2019_kim_2015(fignum=1, show=True):
+# Note: Figure 1 is made by hand in inkscape
+
+def oh_2019_kim_2015(fignum=2, show=True):
     """Reproduces the results from Oh_Minimizing_2019 and kim_neural_2015 and plots
     them in a format similar to their plots.
 
@@ -114,7 +116,7 @@ def oh_2019_kim_2015(fignum=1, show=True):
         plt.show(block=False)
 
 
-def herzfeld_2014(fignum=2, show=True):
+def herzfeld_2014(fignum=3, show=True):
     """Reproduces the results from Herzfeld et al 2014.
 
     """
@@ -211,7 +213,7 @@ def herzfeld_2014(fignum=2, show=True):
         plt.show(block=False)
 
 
-def davidson_2004(fignum=3, show=True):
+def davidson_2004(fignum=4, show=True):
     """Reproduces the results from Davidson_Scaling_2004, leaving an empty
     subplot to put in the results from their paper.
 
@@ -256,7 +258,7 @@ def davidson_2004(fignum=3, show=True):
         plt.show(block=False)
 
 
-def vaswani_2013(fignum=4, show=True, pandota=None):
+def vaswani_2013(fignum=5, show=True, pandota=None):
     """Reproduces the results from Vaswani_Decay_2013, especifically their
     figures 2a-c.
 
