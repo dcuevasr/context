@@ -218,10 +218,11 @@ def davidson_2004(fignum=4, show=True):
     subplot to put in the results from their paper.
 
     """
+    repeats = 8  # No. of participants per group
     figsize = (4, 3)
-    colors = [np.array((95, 109, 212)) / 256,
-              np.array((212, 198, 95)) / 256]
-    ran = [161, 200]
+    colors = {'-8': np.array((95, 109, 212)) / 256,
+              '+8': np.array((212, 198, 95)) / 256}
+    ran = [161, 201]
 
     fig, axes = plt.subplots(1, 2, num=fignum, clear=True, squeeze=True,
                              figsize=figsize, sharex=True, sharey=True)
@@ -233,13 +234,24 @@ def davidson_2004(fignum=4, show=True):
     tasks = [task_m8, task_p8]
     agents = [agent_m8, agent_p8]
     names = ['-8', '+8']
+    data = {name: [] for name in names}
     for idx, (task, agent, name) in enumerate(zip(tasks, agents, names)):
-        pandata, pandagent, _ = thh.run(agent, pars=task)
-        pandota = thh.join_pandas(pandata, pandagent)
-        error = np.abs(pandota['pos(t)'])[ran[0]:ran[1]]
-        axes[0].plot(np.arange(ran[1] - ran[0] + 1), error, color=colors[idx],
-                     label=name)
-    axes[0].legend()
+        for idx in range(repeats):
+            pandata, pandagent, _ = thh.run(agent, pars=task)
+            pandota = thh.join_pandas(pandata, pandagent)
+            data[name].append(pandota)
+        data[name] = pd.concat(data[name])
+        data[name]['pos(t)'] = np.abs(data[name]['pos(t)'])
+    data = pd.concat(data, axis=0, names=['Group', 'trial'])
+    data.reset_index('Group', inplace=True)
+    sns.lineplot(data=data, x='trial', y='pos(t)', ax=axes[0],
+                 hue='Group', palette=colors, ci='sd')
+    axes[0].set_xlim(ran)
+    ticks = np.array(axes[0].get_xticks(), dtype=int) - ran[0] + 1
+    axes[0].set_xticklabels(ticks)
+    # axes[0].plot(np.arange(ran[1] - ran[0] + 1), error[name], color=colors[idx],
+    #              label=name)
+    # axes[0].legend()
     axes[0].set_xlabel('Trials after switch')
     axes[1].set_xlabel('Trials after switch')
     axes[0].set_ylabel('Error (a.u.)')

@@ -183,12 +183,12 @@ Experimental evidence supporting this view can be found in experiments with cont
 
 Our model offers a different explanation for the observed results: the asymmetry is due to the existence of the baseline context. As discussed above, action selection in our model is done via a weighted average (see \eref{eq:action-selection}). In experiments without cued contexts, the baseline model $m_O$ has a non-zero probability $p(m | s_t ...)$. When a new block of trials starts (e.g. in the transition from 3A to A), a switch is inferred by the model (given feedback after the first trial) and $m_O$ becomes more likely (given that $m_{3A}$ has been ruled out. Therefore, in these first trials, action selection has a component guided by the baseline model, in which no extra compensatory force is applied, effectively ``pulling'' adaptation towards zero (no compensatory force). In the first group, this initial pull towards zero accelerates the transition towards A because $3A > A > 0$, but on the second group, it slows down the switch because $A > 0 > -A$.
 
-We simulated data with our model fitting the experimental structure in \cite{Davidson_Scaling_2004}. We show the results in \fref{fig:davidson-2004}, alongside the experimental results from \cite{Davidson_Scaling_2004}. It can be seen that the agent exposed to the -8 context shifts back to 4 more slowly than the one exposed to +8, qualitatively reproducing the data from \cite{Davidson_Scaling_2004}, shown in \fref{fig:davidson-2004}B.
+We simulated data with our model fitting the experimental structure in \cite{Davidson_Scaling_2004}. We show the results in \fref{fig:davidson-2004}, alongside the experimental results from \cite{Davidson_Scaling_2004}. It can be seen that the agent exposed to the -8 context shifts back to 4 more slowly than the one exposed to +8, qualitatively reproducing the data from \cite{Davidson_Scaling_2004}, shown in \fref{fig:davidson-2004}B. In our simulations, the difference between the groups, as well as the variability within each group, is smaller than in the experimental data. However, the effect can be reproduced with any number of simulated runs (each one representing one participant), pointing towards a reliable effect.
 
 \begin{figure}
 \centering
 \includegraphics{./figures/figure_4.png}
-\caption{Motor error when switching back to a previously learned adaptation. Following the block structure from \cite{Davidson_Scaling_2004}, the first 40 trials of the switch from +8 (yellow) or -8 (blue) to 4 is shown. (A) Simulations from our model, with the task parameters from \cite{Davidson_Scaling_2004}. On the y axis, the error is shown in arbitrary units, related to centimeters through a monotonically increasing transformation with the same origin. (B) Data adapted from \cite{Davidson_Scaling_2004}, showing the error in the same trials as (A).}
+\caption{Motor error when switching back to a previously learned adaptation. Following the block structure from \cite{Davidson_Scaling_2004}, the first 40 trials of the switch from +8 (yellow) or -8 (blue) to 4 is shown. (A) Simulations from our model, with the task parameters from \cite{Davidson_Scaling_2004}, running eight simulations per group, each simulation representing one participant. On the y axis, the error is shown in arbitrary units, related to centimeters through a monotonically increasing transformation with the same origin. The shaded area is the SEM across simulated runs (participants). (B) Data adapted from \cite{Davidson_Scaling_2004}, showing the error in the same trials as (A).}
 \label{fig:davidson-2004}
 \end{figure}
 
@@ -506,7 +506,7 @@ is 0.001 (compare that to the size of the adaptations, around 0.0125), and the
 hyperparameters of the standard deviation are stable during the experiment.
 
 
-\bibliography{MyLibrary}
+\bibliography{../../MyLibrary}
 
 
 \end{document}
