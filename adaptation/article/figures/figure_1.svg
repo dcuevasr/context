@@ -17,7 +17,7 @@
    version="1.1"
    id="svg5"
    sodipodi:docname="figure_1.svg"
-   inkscape:export-filename="/home/dario/proj_glove/adaptation/article/figures/figure_model.png"
+   inkscape:export-filename="/home/dario/proj_glove/adaptation/article/figures/figure_1.png"
    inkscape:export-xdpi="600"
    inkscape:export-ydpi="600">
   <metadata
@@ -57,13 +57,7 @@
      fit-margin-top="1"
      fit-margin-left="1"
      fit-margin-right="1"
-     fit-margin-bottom="1">
-    <sodipodi:guide
-       position="143.99474,84.733377"
-       orientation="1,0"
-       id="guide11042"
-       inkscape:locked="false" />
-  </sodipodi:namedview>
+     fit-margin-bottom="1" />
   <defs
      id="defs2">
     <marker

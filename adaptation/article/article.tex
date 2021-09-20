@@ -64,7 +64,7 @@ Bayesian accounts of motor adaptation have also been previously presented, provi
 
 While these general models of adaptation explain the most common phenomena observed in experiments, a number of known phenomena remain outside of their scope. For example, it is known that adaptation rate is reduced in situations where the environment is unstable and unpredictable \citep{Herzfeld_memory_2014}, or situations in which errors are small \citep{Marko_Sensitivity_2012} and slowly introduced \citep{Huang_Persistence_2009}. Learning new adaptations has also been found to depend on the history of adaptations learned \citep{Vaswani_Decay_2013}.
 
-In this work, we show that these unexplained phenomena, alongside savings, de-adaptation, anterograde interference and spontaneous recovery, can be explained in terms of the concept of context, an idea that has recently been gaining traction in different fields \cite[e.g.][]{Sanders_Hippocampal_2020,Hunter_Contextsensitive_2021}.
+In this work, we show that these unexplained phenomena, alongside savings, de-adaptation, anterograde interference and spontaneous recovery, can be explained in terms of the concept of context, an idea that has recently been gaining traction in different fields \cite[e.g.][]{Sanders_Hippocampal_2020,Hunter_Contextsensitive_2021}. In mechanical arm experiments, we can think of one context in which the arm exerts no force and one in which it does. By identifying the current context, a participant can know how to counteract the mechanical arm and succeed in a reaching movement. In some experiments, the context is clearly identifiable via sensory cues \cite[e.g.][]{Gandolfo_Motor_1996,Shadmehr_Adaptive_1994,Ethier_Spontaneous_2008}. In many other experiments, the context is not directly observable, and context inference takes the form of an evidence-accumulating process. In this work, we propose that this process can be observed in behavioral data and can be used to explain the phenomena outlined above.
 
 To this end, we present a computational model for motor adaptation inspired by models such as MOSAIC \citep{Wolpert_Multiple_1998} and Bayesian switching models \citep{Kording_Bayesian_2004,Oh_Minimizing_2019}. We expand on these models by expanding the concept of context and introducing an explicit mechanism for inferring the context based on Bayesian inference. In our model, the context encompasses all the information relevant to making decisions, both environmental and internal to the agent making these decisions. To infer the current context, our model integrates several sources of information, including the predictions made by its internal forward models, an estimate of the reliability of these predictions, direct sensory information (such as visual contextual cues), proprioceptive information, and feedback provided by the environment. Having inferred the context, the model can choose the best-fitting internal model with which to make decisions.
 
@@ -104,7 +104,7 @@ where $\vartheta$ are the outcomes of an action (e.g. the final position of the 
 
 When an observed outcome does not match the predictions produced by $f$, the prediction error is used to update the parameters $\phi$ of the forward model. To describe this adaptation process, our model makes uses of Bayesian inference, such that
 \begin{equation}
-q(\phi | \vartheta, s, c) \propto p(\vartheta | s, c, \phi)p(\phi)
+q(\phi | \vartheta, s, c) \propto p(\vartheta | s, c, \phi)p(\phi) \label{eqn:update-mini}
 \end{equation}
 where $q(\phi | ...)$ represents the new estimated probability distribution over the possible values of $\phi$ after having observed the outcome $\vartheta$ of the previous motor command $c$. The likelihood $p(\vartheta | s, c, \phi)$ is the probability of observing the outcome $\vartheta$ as predicted by the forward model $f$, and $p(\phi)$ is the previous estimate of $\phi$.
 
@@ -116,6 +116,7 @@ Following the these ideas, our model performs context inference that integrates 
 Context is a categorical variable $\zeta$, where the identification of a context is done through Bayesian inference:
 \begin{equation}
 q(\zeta | \vartheta_t, \vartheta_{t-1}, c_{t-1}) \propto p(\vartheta_t | \vartheta_{t-1}, c_{t-1})p(\zeta)
+\label{eqn:context-inference-mini}
 \end{equation}
 where the prior distribution over contexts $p(\zeta)$ includes information from two sources: (1) an expectation of continuity, encoding the expectation that the context does not change from trial to trial, and (2) an overall expectation of observing any one context, if the context did change. Below, we discuss how these two sources of information effect different experimentally observed phenomena.
 
@@ -130,7 +131,14 @@ Action selection is affected by the current context via the context-dependent fo
 p(c_t) \propto \displaystyle\sum_{\zeta \in \Phi}q(\zeta | \vartheta_t, \vartheta_{t-1}, c_{t-1}) p(c_t | \zeta) \label{eq:action-selection}
 \end{equation}
 where $p(c_t | \zeta)$ corresponds to \eref{eqn:forward-model}. From this distribution, the current action (motor command $c_t$) can be sampled and carried out.
-\todo{Maybe add a section with the progression of a trial}
+
+
+\subsection{From observation to action selection}
+Each trial starts with a new observation $\vartheta_t$, which comprises contextual sensory information (when available), as well as the outcome of the previously-selected action.
+
+The first step in the model is to perform context inference using the current observation $\vartheta_t$ according to \eref{eqn:context-inference-mini} and \eref{eqn:estimated-context}. Once a probability distribution over contexts has been created, all models are updated according to \eref{eqn:update-mini} and \eref{eqn:update-full}, based on the distribution over contexts. Finally, action selection is performed using the distribution over contexts as well as the updated forward models, following \eref{eq:action-selection}.
+
+
 \section{Experimental results}
 In this section, we present experimentally-observed phenomena in four sections, and show that context inference, as done in our model, provides a unifying explanation for all of them. In the first section, we discuss switches between contexts, and how slow context inference affects these switches. In the second section, we focus on the effects of volatility in the environment on motor adaptation. In the third section, we discuss the effects of slow context inference on action selection. Finally, in the fourth section we discuss context inference during error-clamp trials, and its effect on behavior.
 
@@ -187,7 +195,7 @@ As with learning, our model selects actions (motor commands) based on context in
 
 Experimental evidence supporting this view can be found in experiments with context switching. For example, \cite{Davidson_Scaling_2004} reported an experiment in which participants had to switch from 3A to A in one group, with a block sequence A-3A-A-3A, and from -A to A in another group, with a block sequence A-(-A)-A-(-A). After A and 3A (or -A in the other group) had been learned in the first two blocks, the authors found that the switch from 3A to A was faster than that from -A to A. The authors interpreted this as evidence that switching between adaptations happens more quickly if it is in the same direction as the current adaptation (e.g. both counter-clockwise), and more slowly if they are in the opposite direction (e.g. clockwise to counter-clockwise).
 
-Our model offers a different and more parsimonious\todo{Is this the right word?} explanation for the observed results: the asymmetry is due to the existence of the baseline context. As discussed above, action selection in our model is done via a weighted average (see \eref{eq:action-selection}). In experiments without cued contexts, the baseline context O and its associated forward model $m_O$, have a non-zero probability $p(\zeta | s_t ...)$. When a new block of trials starts (e.g. in the transition from 3A to A), a switch is inferred by the model (given feedback after the first trial) and $m_O$ becomes more likely (given that $m_{3A}$ has been ruled out. Therefore, in these first trials, action selection has a component guided by the baseline model, in which no extra compensatory force is applied, effectively ``pulling'' adaptation towards zero (no compensatory force). In the first group, this initial pull towards zero accelerates the transition towards A because $3A > A > 0$, but on the second group, it slows down the switch because $A > 0 > -A$.
+Our model offers a different explanation of the observed results, based on context inference: the asymmetry is due to the existence of the baseline context. As discussed above, action selection in our model is done via a weighted average (see \eref{eq:action-selection}). In experiments without cued contexts, the baseline context O and its associated forward model $m_O$, have a non-zero probability $p(\zeta | s_t ...)$. When a new block of trials starts (e.g. in the transition from 3A to A), a switch is inferred by the model (given feedback after the first trial) and $m_O$ becomes more likely (given that $m_{3A}$ has been ruled out. Therefore, in these first trials, action selection has a component guided by the baseline model, in which no extra compensatory force is applied, effectively ``pulling'' adaptation towards zero (no compensatory force). In the first group, this initial pull towards zero accelerates the transition towards A because $3A > A > 0$, but on the second group, it slows down the switch because $A > 0 > -A$.
 
 We simulated data with our model fitting the experimental structure in \cite{Davidson_Scaling_2004}. We show the results in \fref{fig:davidson-2004}, alongside the experimental results from \cite{Davidson_Scaling_2004}. It can be seen that the agent exposed to the -8 context shifts back to 4 more slowly than the one exposed to +8, qualitatively reproducing the data from \cite{Davidson_Scaling_2004}, shown in \fref{fig:davidson-2004}B. In our simulations, the difference between the groups, as well as the variability within each group, is smaller than in the experimental data. However, the effect can be reproduced with any number of simulated runs (each one representing one participant), pointing towards a reliable effect. While we focused here on a specific, well-known experiment, we discuss experiments similar to that by \cite{Davidson_Scaling_2004} in the Discussion section.
 
@@ -231,14 +239,14 @@ We selected representative experimental studies that show savings, quick de-adap
 
 It is important to note that the most essential part of the model we presented is the concept of the context and the inclusion of a Bayesian inference scheme over the context, which integrates all the information that is available to the participant during the experiment. Most notably, we chose to make use of exact Bayesian inference for motor adaptation, with conjugate priors to derive exact update equations. This choice greatly simplifies our simulations and provides intuitive interpretations of experimental results. However, we expect the results we presented here to hold using alternative models for motor adaptation, such as Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}. A well established family of models for motor adaptation is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, however, these models do not incorporate uncertainty in the estimate of the parameters of the internal models, which would limit their implementation in our hierarchical model.
 
-In what follows, we dive deeper\todo{Rephrase} into the experimental literature to highlight the importance of contextual information and its effects on observed behavior during motor learning tasks, as shown by our model. In addition, we discuss several predictions that our model makes, which could be verified experimentally in future studies.
+In what follows, we review the experimental literature to highlight the importance of contextual information and its effects on observed behavior during motor learning tasks, as shown by our model. In addition, we discuss several predictions that our model makes, which could be verified experimentally in future studies.
 
 \subsection{Alternative explanations}
 For each of the representative studies presented in the Results section, the authors put forward explanations for the phenomena they observed in their data. While our model provides a single explanation for all these phenomena, it is not necessarily at odds with those presented by the respective authors and might instead act on top of the explanations the authors presented.
 
-\cite{Oh_Minimizing_2019} posited that the difference between their two groups (~\fref{fig:oh-2019}B and C) can be explained by considering that the smaller visual rotation of 10 degrees caused participants to update their baseline forward model instead of creating a new forward model for the context. If such an account were true, it would predict that when participants walk away from the experiment they would have trouble adapting to the no-rotation reality, having to re-learn it. Our model instead would suggest that participants would immediately switch back to their baseline movements the moment they walk away from the computer screen, as that is a clear indication that the context has switched back to baseline.\todo{@Stefan: You: It's reasonable to speak of adaptable learning rates, but their model (and, in general, the many-state linear models) have a fixed learning rate, which does not change when going back to baseline. It has been tested before they came up with the many-state models.} More generally, our model predicts that the observed difference between the two groups would disappear if clear sensory contextual cues were added to the experiment. While we believe our model provides a more general explanation for the observations by \cite{Oh_Minimizing_2019}, the effect the authors describe has been documented before in chimpanzees \citep{Kojima_Memory_2004}\todo{Maybe find more citations}; however, to our knowledge such an effect has not been observed in humans in tasks like that by \cite{Oh_Minimizing_2019}.
+\cite{Oh_Minimizing_2019} posited that the difference between their two groups (~\fref{fig:oh-2019}B and C) can be explained by considering that the smaller visual rotation of 10 degrees caused participants to update their baseline forward model instead of creating a new forward model for the context. If such an account were true, it would predict that when participants walk away from the experiment they would have trouble adapting to the no-rotation reality, having to re-learn it. Our model instead would suggest that participants would immediately switch back to their baseline movements the moment they walk away from the computer screen, as that is a clear indication that the context has switched back to baseline.\todo{@Stefan: It's reasonable to speak of adaptable learning rates, but their model (and, in general, the many-state linear models) have a fixed learning rate, which does not change when going back to baseline. It has been tested before they came up with the many-state models.} More generally, our model predicts that the observed difference between the two groups would disappear if clear sensory contextual cues were added to the experiment. We believe our model provides a more general and principled explanation for the observations by \cite{Oh_Minimizing_2019} and, to our knowledge, such an effect has not been observed in humans in tasks like that by \cite{Oh_Minimizing_2019}.
 
-The paradigm by \cite{Herzfeld_memory_2014} was designed to test the hypothesis that a memory of errors affected the speed with which participants adapted to curl forces. While it has been shown that sensitivity to error can be modulated \cite{Marko_Sensitivity_2012}, and indeed in our model it depends on the amount of experience (see \sref{sec:interpreting-hyperparameters}), to our knowledge there are no other experiments suggesting that it depends on the history of errors. As before, the introduction of clear sensory contextual cues would allow us to gauge the importance of context inference and of previous errors in the observed data. The same can be said of the experiments by \cite{Davidson_Scaling_2004}, in which different contexts involve movement in different directions, which requires the use of different muscles. This alone could cause delays in switching unrelated to context inference\todo{Need citation for this, but maybe use task switching literature instead?}, but we expect the effects to be insufficient to explain the observed data.
+The paradigm by \cite{Herzfeld_memory_2014} was designed to test the hypothesis that a memory of errors affected the speed with which participants adapted to curl forces. While it has been shown that sensitivity to error can be modulated \cite{Marko_Sensitivity_2012}, and indeed in our model it depends on the amount of experience (see \sref{sec:interpreting-hyperparameters}), to our knowledge there are no other experiments suggesting that it depends on the history of errors. As before, the introduction of clear sensory contextual cues would allow us to gauge the importance of context inference and of previous errors in the observed data. The same can be said of the experiments by \cite{Davidson_Scaling_2004}.
 
 \subsection{Further experimental evidence}
 Context is often directly observable, either via environmental cues or via feedback observed after actions. In many behavioral experiments, for example, the context of the current block of trials is easily identifiable by the color of a cue light \citep[e.g.][]{Ethier_Spontaneous_2008}, the posture of the hand \citep[e.g.][]{Gandolfo_Motor_1996}, the target of the movement \citep[e.g.][]{Lee_Dual_2009} or by the workspace in which the task is being performed \citep[e.g.][]{Shadmehr_Adaptive_1994}. The context can also be selected by the agent itself. For example, a person can decide the level of care devoted to moving an egg or a lead ball around, which determines the way in which the person would move their hands. In these cases, the context is clearly determined and known to the agent and switches between different adaptations are immediate.
@@ -340,9 +348,11 @@ each time interval, the context is inferred combining the contextual
 information and the prediction error of the outcome of the previous motor
 command. This yields:
 \begin{align}
+  \begin{split}
   q(\zeta_t) &= q(\zeta_t | \omega_t)q(\zeta_t | s_t, s_{t-1}, c_{t-1}) \\ \label{eqn:estimated-context}
   q(\zeta_t | \omega_t) &\propto p(\omega_t | \zeta_t)p(\zeta_t) \\
   q(\zeta_t | s_t, s_{t-1}, c_{t-1}) &\propto p(s_t | \zeta_t, s_{t-1}, c_{t-1})p(x_t)p(s_{t-1})p(\zeta_t)
+  \end{split}
 \end{align}
 The terms $p(\zeta_t)$ refer to the prior probability of the context at the
 beginning of the trial: at the first trial, this refers to prior beliefs over
@@ -467,11 +477,13 @@ which makes $\nu_f$ a parameter to estimate. Each one of the forward models can
 be updated at every trial, depending on context inference (see main text). The
 updated parameters for any one forward model $i$ are given by:
 \begin{align}
+  \begin{split}
   \mu_\phi^{(t)} &= \frac{\nu_\phi^{(t-1)} \mu_\phi^{(t-1)} + q(\zeta_i)s_t}{\nu_\phi^{(t-1)} + q(\zeta_i)} \\
   \nu_\phi^{(t)} &= \nu_\phi^{(t-1)} + q(\zeta_i) \\
   \alpha_\phi^{(t)} &= \alpha_\phi^{(t-1)} + q(\zeta_i) / 2 \\
   \beta_\phi^{(t)} &= \beta_\phi^{(t-1)} + \frac{q(\zeta_i)\nu_\phi^{(t-1)}}{\nu_\phi^{(t-1)} +
-                  q(\zeta_i)}\frac{\left(s_t - \mu_\phi^{(t-1)}\right)^2}{2}
+    q(\zeta_i)}\frac{\left(s_t - \mu_\phi^{(t-1)}\right)^2}{2}  \label{eqn:update-full}
+  \end{split}
 \end{align}
 where $q(\zeta_i)$ is the posterior probability of context $\zeta_i$ from
 \eref{eqn:estimated-context}. Note that when $q(\zeta_i) = 0$, the model $i$ is not
@@ -479,44 +491,43 @@ updated.
 
 \subsubsection{Interpreting the hyperparameters}
 \label{sec:interpreting-hyperparameters}
-\todo{Remove references to code}
-Naturally, $\mu$ affects the initial estimate of the adaptation, in the same
-units as the necessary adaptation. $\nu$ encodes how stable this hyperprior is:
-higher values (e.g. 10,000) all but guarantee that the hypermean will not move
-in the face of evidence; In principle, enough evidence should still move it,
-but that will not happen during an experiment. Smaller values (e.g. 1 / force\_sd,
-as is the default on the code) make the hypermean (and thus the mean) follow
-evidence more freely. Note that as more observations are accumulated, $\nu$
-becomes bigger and bigger, solidifying the value of the hypermean.
+$\mu$ determines the initial estimate of the adaptation, in the same units as
+the necessary adaptation. $\nu$ encodes how stable this hyperprior is: higher
+values (e.g. 10,000) all but guarantee that the hypermean will not change its
+value after observations; In principle, enough evidence should still modify it,
+but that would not happen during an experiment. Smaller values (i.e. $\sim 1$)
+make the hypermean follow evidence more freely. Note that as more observations
+are accumulated, $\nu$ becomes bigger and bigger, stabilizing the value of the
+hypermean.
 
-The hyperparameters $\alpha$ and $\beta$ have a more complex effect. Note that the
-mean of a Gamma distribution is $1 / (\alpha \nu)$; this mean is being used
-as the standard deviation of a Gaussian by the rest of the agent,
-which makes it an important measure of uncertainty. While setting the default
-hyperparameters, the values used are $\alpha = 0.5 / \sigma_0$ and
-$\beta = 0.5$, where $\sigma_0$ is the \textit{a priori} estimate of the
-standard deviation of the force exerted by the environment (force\_sds in the
-code), which controls the initial learning rate. This makes the initial
-standard deviation equal $\sigma_0$, which makes it consistent with the
-fixed-force model in its interface. The 0.5 values ensure that uncertainty is
-large at the beginning and during the experiment is greatly reduced, but never
-to a point where it is too small. Changing this 0.5 would make the
-standard deviation change more quickly, making the model more or less precise
-in its predictions, independently of the volatility of the mean of the
-adaptation (via the hypermean).
+The hyperparameters $\alpha$ and $\beta$ have a more complex effect. Note that
+the mean of a gamma distribution is $1 / (\alpha \nu)$; this mean is being used
+as the standard deviation of a Gaussian by the rest of the agent, which makes it
+an important measure of uncertainty. While setting the default hyperparameters,
+the values used are $\alpha = 0.5 / \sigma_0$ and $\beta = 0.5$, where
+$\sigma_0$ is the \textit{a priori} estimate of the standard deviation of the
+force exerted by the environment, which controls the initial learning rate. This
+makes the initial standard deviation equal $\sigma_0$, which makes it consistent
+with the fixed-force model. The 0.5 values ensure that uncertainty is large at
+the beginning and is greatly reduced during the experiment, but never to a point
+where it is so small that it makes trial-to-trial variation in the environment
+surprising. Changing this 0.5 would make the standard deviation change more
+quickly, making the model more or less precise in its predictions, independently
+of the volatility of the mean of the adaptation (via the hypermean).
 
 The baseline model defaults to different values that make it a lot more
-stable. The hyperstd of the mean is set to 10,000, which makes the mean
-entirely stable during the duration of the experiment. The values of $\alpha$
-and $\beta$ are fixed regardless of $\sigma_0$ such that the standard deviation
-is 0.001 (compare that to the size of the adaptations, around 0.0125), and the
-hyperparameters of the standard deviation are stable during the experiment.
+stable. The hyper-standard deviation of the mean is set to 10,000, which makes
+the mean entirely stable during the duration of the experiment. The values of
+$\alpha$ and $\beta$ are fixed regardless of $\sigma_0$ such that the standard
+deviation is 0.001 (compared that to the size of the adaptations in mechanical
+arm experiments, around 0.0125), and the hyperparameters of the standard
+deviation are stable during the experiment.
 
 
 \section{Aknowledgement}
 Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
-\bibliography{MyLibrary}
+\bibliography{../../MyLibrary}
 
 
 
