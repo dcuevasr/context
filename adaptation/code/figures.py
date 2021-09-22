@@ -31,8 +31,19 @@ def oh_2019_kim_2015(fignum=2, show=True):
     paper.
 
     """
-    figsize = (5, 6)
+    context_color = np.ones(3) * 0.5
+    figsize = (6, 6)
     fig, axes = plt.subplots(3, 2, clear=True, num=fignum, figsize=figsize)
+    # fig = plt.figure(figsize=figsize, clear=True, num=fignum)
+    # axes_00 = fig.add_subplot(3, 2, 1)
+    # axes_01 = fig.add_subplot(3, 2, 2, sharey=axes_00)
+    # axes_10 = fig.add_subplot(3, 2, 3)
+    # axes_11 = fig.add_subplot(3, 2, 4, sharex=axes_10, sharey=axes_10)
+    # axes_20 = fig.add_subplot(3, 2, 5, sharex=axes_10)
+    # axes_21 = fig.add_subplot(3, 2, 6, sharex=axes_10, sharey=axes_20)
+    # axes = np.array([[axes_00, axes_01],
+    #                  [axes_10, axes_11],
+    #                  [axes_20, axes_21]])
 
     # a)
     task_kim, agent_pars = sims.kim_2015(plot=False)
@@ -43,8 +54,8 @@ def oh_2019_kim_2015(fignum=2, show=True):
     contexts[contexts == pars.CLAMP_INDEX] = 0
     contexts[contexts == 1] = -40
     contexts[contexts == 2] = 40
-    axes[0, 0].plot(contexts, color='black')
-    axes[0, 1].plot(contexts, color='black')
+    axes[0, 0].plot(contexts, color=context_color)
+    axes[0, 1].plot(contexts, color=context_color)
     axes[0, 0].plot(-pandota_kim['pos(t)'] - pandota_kim['action'])
     axes[0, 0].set_yticks([-40, 0, 40])
     axes[0, 0].set_ylabel('Adaptation')
@@ -54,6 +65,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
     ylim = axes[0, 0].get_ylim()
     axes[0, 1].set_xlim(xlim)
     axes[0, 1].set_ylim(ylim)
+
     # b)
     task_20, task_10, agent_pars = sims.oh_2019(plot=False)
 
@@ -65,13 +77,17 @@ def oh_2019_kim_2015(fignum=2, show=True):
     contexts[contexts == pars.CLAMP_INDEX] = 0
     contexts[contexts == 1] = 20
     contexts_20 = contexts
-    axes[1, 1].plot(contexts_20, color='black')
+    switches = np.nonzero(np.diff(contexts_20))[0]
+    switches = np.concatenate([[0], switches, [len(contexts)]])
+    axes[1, 0].plot(contexts, color=context_color)
+    axes[1, 1].plot(contexts_20, color=context_color)
     axes[1, 0].plot(-pandota_20['pos(t)'] - pandota_20['action'])
 
-    axes[1, 0].plot(contexts, color='black')
     axes[1, 0].set_ylabel('Adaptation')
     xlim = axes[1, 0].get_xlim()
     ylim = axes[1, 0].get_ylim()
+    ylim = (-5, ylim[1])
+    axes[1, 0].set_ylim(ylim)
     axes[1, 1].set_xlim(xlim)
     axes[1, 1].set_ylim(ylim)
 
@@ -84,19 +100,32 @@ def oh_2019_kim_2015(fignum=2, show=True):
     contexts[contexts == pars.CLAMP_INDEX] = 0
     contexts[contexts == 1] = 10
     contexts_10 = contexts
-    axes[2, 0].plot(contexts_10, color='black')
-    axes[2, 1].plot(contexts_10, color='black')
+    axes[2, 0].plot(contexts_10, color=context_color)
+    axes[2, 1].plot(contexts_10, color=context_color)
     axes[2, 0].plot(-pandota_10['pos(t)'] - pandota_10['action'])
     axes[2, 0].set_xlabel('Trials')
     axes[2, 0].set_ylabel('Adaptation')
     xlim = axes[2, 0].get_xlim()
     ylim = axes[2, 0].get_ylim()
+    ylim = (-3, ylim[1])
+    axes[2, 0].set_ylim(ylim)
     axes[2, 1].set_xlim(xlim)
     axes[2, 1].set_ylim(ylim)
 
     axes[2, 1].set_xlabel('Trials')
 
-    # Subplot levels
+    for idsw, (sw1, sw2) in enumerate(zip(switches, switches[1:])):
+        number = np.ceil((idsw + 1) / 2).astype(int)
+        letter = '$O_{}$' if idsw % 2 == 0 else r'$A_{}$'
+        label = letter.format(number)
+        x_pos = (sw2 + sw1) / 2
+        axeses = axes[1:, :].reshape(-1)
+        for axis in axeses:
+            y_pos = axis.get_ylim()[-1] * 0.88
+            axis.text(s=label, x=x_pos, y=y_pos, ha='center',
+                      fontsize=8)
+
+    # Subplot labels
     axes[0, 0].text(x=-0.1, y=1, s='A',
                     transform=axes[0, 0].transAxes,
                     fontdict={'size': 14})
@@ -106,9 +135,12 @@ def oh_2019_kim_2015(fignum=2, show=True):
     axes[2, 0].text(x=-0.1, y=1, s='C',
                     transform=axes[2, 0].transAxes,
                     fontdict={'size': 14})
-
+    for axis in axes[:, 1].reshape(-1):
+        axis.set_yticks([])
+    for axis in axes[1, :].reshape(-1):
+        axis.set_xticks([])
     fig.tight_layout()
-
+    fig.align_ylabels(axes[:, 0])
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
     if show:
@@ -120,7 +152,7 @@ def herzfeld_2014(fignum=3, show=True):
     """Reproduces the results from Herzfeld et al 2014.
 
     """
-    figsize = (3, 4)
+    figsize = (4, 5)
     colors = {'high': np.array((95, 109, 212)) / 256,
               'low': np.array((212, 198, 95)) / 256}
     optimal = -13
@@ -149,16 +181,13 @@ def herzfeld_2014(fignum=3, show=True):
     data['low'] = pd.concat(data['low'])  # .groupby('trial').mean()
     data['high'].reset_index('trial', inplace=True)
     data['low'].reset_index('trial', inplace=True)
-    grouped = {key: data[key].groupby('trial').mean()
-               for key in ['high', 'low']}
-    grouped['low'].reset_index('trial', inplace=True)
-    grouped['high'].reset_index('trial', inplace=True)
-
-    axes[0].plot(grouped['high']['mag_mu_1'] / optimal, color=colors['high'],
-                 label='z=0.5')
-    axes[0].plot(grouped['low']['mag_mu_1'] / optimal, color=colors['low'],
-                 label='z=0.9')
-    axes[0].legend()
+    all_data = pd.concat([data['high'], data['low']], keys=['high', 'low'],
+                         names=['eta'])
+    all_data.reset_index('eta', inplace=True)
+    all_data['mag_mu_1'] /= optimal
+    sns.lineplot(data=all_data, x='trial', y='mag_mu_1',
+                 hue='eta', ax=axes[0], palette=colors)
+    axes[0].legend(title='')
     axes[0].set_ylabel('Adaptation (% of optimal)')
     axes[0].set_title('Learning from error')
     axes[0].text(x=-0.1, y=1, s='A',
@@ -192,7 +221,8 @@ def herzfeld_2014(fignum=3, show=True):
                                           bins=trial_bins,
                                           labels=trial_bins[:-1])
     sns.lineplot(data=sensitive_panda, y='sensi', x='bin_trial',
-                 hue='z_label', palette=colors, ax=axes[1])
+                 hue='z_label', palette=colors, ax=axes[1],
+                 style='z_label', markers=True, dashes=False)
     axes[1].set_xlabel('Trials')
     axes[1].set_ylabel('Sensitivity\nto error (a.u.)')
     yticks = axes[1].get_yticks()
@@ -386,13 +416,22 @@ def vaswani_2013(fignum=5, show=True, pandota=None):
     axes_lag.text(x=-0.1, y=1.033, s='D',
                   transform=axes_lag.transAxes,
                   fontdict={'size': 14})
-    
-    for run in np.unique(pandota['run']):
-        datum = panda_lag.query('run == @run')
-        axes_lag.plot(datum['trial'], datum['con1'],
-                      color='black', alpha=0.3)
+
+    # for run in np.unique(pandota['run']):
+    #     datum = panda_lag.query('run == @run')
+    #     group_label = datum.iloc[0]['group']
+    #     c_group = int(group_label * 10 - 1.1 * 10)
+    #     if c_group == 3:
+    #         continue
+    #     color = colors[c_group]
+    #     axes_lag.plot(datum['trial'], datum['con1'],
+    #                   color=color, alpha=0.8)
+    sns.lineplot(data=panda_lag, x='trial', y='con1',
+                 hue='group', units='run', estimator=None,
+                 palette=colors)
     axes_lag.set_xlabel('Trials since start of error-clamp')
     mags.tight_layout(fig)
+
     # Kidnapped from top to run after tight layout
     axes_con[2].set_xticks([0, 100])
     axes_con[2].set_xlabel('Trial')
