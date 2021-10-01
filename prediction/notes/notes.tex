@@ -1,0 +1,94 @@
+\documentclass{report}
+\usepackage{graphicx}
+\usepackage{breakcites}
+\usepackage{natbib}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{tabularx}
+\usepackage[margin=1.5cm]{geometry}
+\usepackage{todonotes}
+\bibliographystyle{apalike}
+
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+
+
+% Defining parameters
+\def \fref #1{Figure \ref{#1}}     % Reference figures
+\def \tref #1{Table \ref{#1}}      % Reference tables
+\def \eref #1{Equation \ref{#1}}   % Reference equations
+\def \sref #1{Section '\nameref{#1}'}    % Reference sections
+
+% Remember to start reftex-mode
+
+\begin{document}
+
+\begin{chapter}{Introduction}
+
+\end{chapter}
+
+\begin{chapter}{Model}
+The full model consists of four components, all interconnected in a way that the agent is capable of single movements, as well as the planning and execution of squences of movements, all without the need for fast changes in the connectivity between the involved neurons.
+
+To describe the model, I will refer to the example of controlling a pointer (e.g. a hand) in a 2d space. However, the model can be extended to three physical dimmensions and, perhaps, to any number of joints. All in the future.
+
+\section{First layer: movement layer}
+To begin the description, we look at the outermost layer of the model, which will have a direct correspondence with the physical world. For simplicity, let us think of this layer as two populations of neurons. We refer to the average firing rate of each population as $x_1$ and $x_2$ respectively. To simplify, we normalize the firing rate such that $x_i \in [0, 1]$, where $i = {1, 2}$; 0 represents a population that is completely inactive, 1 represents the maximum possible activity (firing rate) of the population. We assume that the hand movements are made within a square space (e.g. a table in front of a participant) and the current position of the hand in this space is represented by $x$.
+
+The dynamics of $x$ will be given by the following equation:
+\begin{equation}
+\dot x = x - f(y) \label{eqn:first-layer}
+\end{equation}
+\todo{It might be better to use a different system of equations to match the experimental observation that the speed of movement peaks halfway there.}
+where $y$ represents another population of neurons (described below) and $f:R^{N_y}\rightarrow R^2$ is a function whose properties are yet to be determined. As will be discussed below, $y$ does not depend on $x$, and therefore the system \ref{eqn:first-layer} has an instantaneous stable equilibrium point located at $f(y)$
+
+\section{Second layer: control layer}
+The second layer is comprised of a large population of neurons, divided into subpopulations represented by $y_i$. As with $x$, $y_{ij}$ represents the average firing rate of population $i,j$. The subpopulations $y_{ij}$ can be thought of as being arranged in a lattice of size N by N, where $N^2$ equals the number of subpopulations. When a single population $y_{i^+j^*}$ is active, $f(y)$ creates a single equilibrium point in the $x$ space at the location with coordinates corresponding to the center of the $i,j$ lattice. With this mechanism, the hand can be moved to a desired location by activating the population $y_{ij}$ that corresponds to this location.
+
+The neurons of these layer do not have inherent dynamics. Their activity depends entirely on the third layer. We discuss their connections in the following section.
+
+In what follows, we will simplify the notation to $y_i$ unless the explicit reference to lattice positions is necessary, in which case it will be clearly stated.
+
+\section{Third layer: sequential planning}
+This layer is used for the learning and execution of sequences of actions. This is done by having a large number of subpopulations $z_i$, each one of them connected to one $y_j$. These connections are many-to-one: many $z_i$ could be connected to a single $y_j$. For coding efficiency, many-to-many connectivity could also be used, but we do not describe this possibility in detail.
+
+The dynamics of these subpopulations are such that when the population receives an external input that activates a set of subpopulations, a sequence of sets of subpopulations will ensue. To create these dynamics, we use a system similar to that in \citep{CuevasRivera_Modelling_2015}, to which we refer as cluster heteroclinic sequences, or CSHS.
+
+The CSHS is based on the generalized Lotka-Volterra (LV) equations, which can be written as follows:
+\begin{equation}
+\dot z_i = z_i(\alpha_i - \rho_{ij}z_j) + \xi \label{eqn:third-level}
+\end{equation}
+where $\alpha$ and $\rho$ have to be set as in \citep{CuevasRivera_Modelling_2015} to create CSHS dynamics. The term $\xi$, which was not present in the original model, is a signal given by the task monitoring layer (discussed below), which is zero except when a motion has ended (e.g. the hand has reached the next desired position). This feedback signal affects all neurons in the third layer equally, and its magnitude is constant. It serves as a jolt that will counteract the all-to-all inhibition (given by $\rho$) and allow the next cluster in the sequence to activate.
+
+By setting $\rho$ as in \cite{CuevasRivera_Modelling_2015}, we can create sequences of clusters, where each one of the clusters in a sequence activates one $y_i$, essentially creating sequences in the second layer. In general, the number of clusters, $N_\zeta$, is much larger than the number of subpopulations in the second layer $N_y$. This allows us to include a particular $y_i$ in as many different sequences as we want, without any interference between sequences. Note, however, that the number of clusters could vastly exceed the number of subpopulations on the third level, if we allow any one subpopulation to belong to more than one clusters, as was done in \citep{CuevasRivera_Modelling_2015}.
+
+We define $S_i$ as a sequence of clusters $\zeta_j$, where $j = i_1, i_2, ..., i_{K_i}$ and $K_i$ is the number of clusters in sequence $S_i$. The third layer can be embedded with as many sequences $S$ as desired, within the limits explored by \cite{CuevasRivera_Modelling_2015}. This is done by modifying $\rho$ from \eref{eqn:third-level}. We do not explore in this model the learning mechanisms that can lead to the modification of $\rho$. In order to execute a learned sequence of actions, the first cluster of the sequence $\zeta_{i_1}$ must be excited, which will excite the corresponding subpopulation $y_{i_1}$ and create a stable equilibrium point in the $x$ space, initiating movement. Due to the high all-to-all inhibition of the $z$ space, the system will remain there until a completion signal comes in, such that $\xi \ne 0$, which will jolt the entire system $z$, and the connectivity $\rho$ will make it go towards $\zeta_{i_2}$, and so on, executing the entire sequence of movements.
+
+Let us define $\lambda_{ij}$ as the connection strength between cluster $i$ in the third layer and subpopulation $y_j$ in the second cluster. With this, we can define the activity of subpopulation $y_i$ as follows:
+\begin{align}
+  \begin{split}
+  y_i &= \displaystyle\sum_{i = 1}^{N_\zeta} \lambda_{ij}\zeta_j \\ \label{eqn:second-level}
+  \zeta_j &= \frac{1}{M_j}\displaystyle\sum_{k=1}^{M_j}z_k
+  \end{split}
+\end{align}
+where $\zeta_j$ represents the average activation of all neurons belonging to cluster $j$, and $M_i$ is the number of subpopulations in cluster $i$.
+
+\section{Fourth layer: goals}
+This layer represents the overall goal of an agent, which is then carried out as a sequence of actions. For example, a typist might have the overall goal of typing a word. In order to do this, the agent will activate the sequence of clusters $S$ which will then carry out each action (e.g. typing each letter) until the goal is achieved. In this example, the third layer would be embedded with a sequence for each word that the agent can type, and in order to carry them out, only the initial cluster would need to be activated.
+
+The function of this layer can also be thought of as a context switcher. Let us present a thought experiment with human participants: the participant sits in front of a screen and a keyboard and must, at each trial, type a word. Which word she must type depends on the current context. The participant has learned to type five words, thus defining five contexts. After learning, the trials are groupped into blocks of ten, during each trial of which the same word must be typed, and correct/incorrect feedback is given after each trial. To inform participants of the current context, a visual cue is included, which is an image of the word to type (or symbol representing this word). When the image is perfectly clear, the current context is identified and the corresponding word can be typed successfuly. If the image is blurred or partially obscured, context inference can take place during a number of trials, in which the visual stimulus and the feedback after each trial are integrated over time.
+
+In this layer, each context is represented by a single population of neurons $w_i$, where $i = 1, 2, ..., N$, where $N$ is the number of contexts. If context $i$ is identified, $w_i$ becomes activated (average activity of 1) and stays active until the task has been completed (e.g. the word has been typed). $w_i$ will send constant activity to the first cluster of the adequate sequence $S_i$, and the CSHS will take care of the rest. 
+
+Furthermore, we think of the whole $w$ population as representing a probability distribution over contexts. This means that if the context is unclear, $w_i \ne 0$ for more than one $i$. This will create behavior that could be a mix of contexts, representing the participant's uncertainty over the context, or the model's uncertainty over the actions of the participant.
+
+It might prove useful to extend this paradigm and make $w_i$ also partially activate all the neurons that are involved in the sequence of actions associated with $w_i$, while keeping the first element with a higher activation, which is what triggers the sequence. This might have the effect of enabling interference between sequences when the context is unclear.
+
+
+
+\end{chapter}
+
+\bibliography{../../MyLibrary}
+
+\end{document}
+
