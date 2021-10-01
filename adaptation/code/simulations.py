@@ -663,14 +663,15 @@ def davidson_2004(plot=True, axes=None, fignum=13):
                      'cue_noise': 1 / 3,
                      'max_force': 20,
                      'hyper_sd': 100,
-                     'obs_sd': 2.2,
+                     'obs_sd': 2.5,
                      'context_noise': 0.01,
                      'force_sds': 0.5 * np.ones(3),
                      'prediction_noise': 0.5,
                      'learn_rate': 0.5,
                      'all_learn': True,
                      'threshold_learn': 0.2,
-                     'sample_action': True}
+                     'sample_action': True,
+                     'action_sd': 2}
     agent_pars_p8 = agent_pars_m8.copy()
     agent_pars_p8['angles'] = [0, 4, 12]
     if plot:

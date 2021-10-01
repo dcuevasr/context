@@ -34,16 +34,6 @@ def oh_2019_kim_2015(fignum=2, show=True):
     context_color = np.ones(3) * 0.5
     figsize = (6, 6)
     fig, axes = plt.subplots(3, 2, clear=True, num=fignum, figsize=figsize)
-    # fig = plt.figure(figsize=figsize, clear=True, num=fignum)
-    # axes_00 = fig.add_subplot(3, 2, 1)
-    # axes_01 = fig.add_subplot(3, 2, 2, sharey=axes_00)
-    # axes_10 = fig.add_subplot(3, 2, 3)
-    # axes_11 = fig.add_subplot(3, 2, 4, sharex=axes_10, sharey=axes_10)
-    # axes_20 = fig.add_subplot(3, 2, 5, sharex=axes_10)
-    # axes_21 = fig.add_subplot(3, 2, 6, sharex=axes_10, sharey=axes_20)
-    # axes = np.array([[axes_00, axes_01],
-    #                  [axes_10, axes_11],
-    #                  [axes_20, axes_21]])
 
     # a)
     task_kim, agent_pars = sims.kim_2015(plot=False)
@@ -148,110 +138,15 @@ def oh_2019_kim_2015(fignum=2, show=True):
         plt.show(block=False)
 
 
-def herzfeld_2014(fignum=3, show=True):
-    """Reproduces the results from Herzfeld et al 2014.
-
-    """
-    figsize = (4, 5)
-    colors = {'high': np.array((95, 109, 212)) / 256,
-              'low': np.array((212, 198, 95)) / 256}
-    optimal = -13
-    repeats = 300  # participants * (number of blocks)
-    num_trials = 30
-    fig = plt.figure(clear=True, num=fignum, figsize=figsize)
-    fig, axes = plt.subplots(2, 1, squeeze=True, clear=True,
-                             num=fignum, sharex=True)
-
-    agent = {}
-    data = {'high': [], 'low': []}
-    for idx in range(repeats):
-        outs = sims.herzfeld_2014(num_trials=num_trials, plot=False)
-        tasks = outs[:2]
-        agent_pars = outs[2:]
-
-        for name, t_pars, a_pars in zip(['high', 'low'], tasks, agent_pars):
-            agent[name] = model.LRMeanSD(**a_pars)
-            agent[name].all_learn = True
-            agent[name].threshold_learn = 0.2
-        for name, c_pars in zip(['high', 'low'], tasks):
-            pandata, pandagent, _ = thh.run(agent[name], pars=c_pars)
-            pandota = thh.join_pandas(pandata, pandagent)
-            data[name].append(pandota)
-    data['high'] = pd.concat(data['high'])  # .groupby('trial').mean()
-    data['low'] = pd.concat(data['low'])  # .groupby('trial').mean()
-    data['high'].reset_index('trial', inplace=True)
-    data['low'].reset_index('trial', inplace=True)
-    all_data = pd.concat([data['high'], data['low']], keys=['high', 'low'],
-                         names=['eta'])
-    all_data.reset_index('eta', inplace=True)
-    all_data['mag_mu_1'] /= optimal
-    sns.lineplot(data=all_data, x='trial', y='mag_mu_1',
-                 hue='eta', ax=axes[0], palette=colors)
-    axes[0].legend(title='')
-    axes[0].set_ylabel('Adaptation (% of optimal)')
-    axes[0].set_title('Learning from error')
-    axes[0].text(x=-0.1, y=1, s='A',
-                 transform=axes[0].transAxes,
-                 fontdict={'size': 14})
-
-    # Learning from error
-    sensitive = [[], []]
-    flag_flip = True
-    for idx, eta in enumerate(['low', 'high']):
-        error = data[eta]['hand'].values[1:] + 0.01
-        learning = np.diff(data[eta]['mag_mu_1'])
-        if flag_flip:
-            neg_error = error < 0
-            learning[neg_error] *= -1
-            error = np.abs(error)
-            learning = np.abs(learning)
-        error_sensitivity = learning / error / (-optimal)
-        sensitive[idx] = pd.DataFrame({'error': error,
-                                       'sensi': error_sensitivity,
-                                       'z_label': eta,
-                                       'trial': data[eta]['trial'].values[1:]})
-    sensitive_panda = pd.concat(sensitive)
-    bins = np.concatenate([np.arange(-30, -5), np.arange(-5, 5, 0.1),
-                           np.arange(5, 30)])
-    sensitive_panda['bin_error'] = pd.cut(sensitive_panda['error'],
-                                          bins=bins,
-                                          labels=bins[:-1])
-    trial_bins = np.linspace(0, num_trials, 7, endpoint=True)
-    sensitive_panda['bin_trial'] = pd.cut(sensitive_panda['trial'],
-                                          bins=trial_bins,
-                                          labels=trial_bins[:-1])
-    sns.lineplot(data=sensitive_panda, y='sensi', x='bin_trial',
-                 hue='z_label', palette=colors, ax=axes[1],
-                 style='z_label', markers=True, dashes=False)
-    axes[1].set_xlabel('Trials')
-    axes[1].set_ylabel('Sensitivity\nto error (a.u.)')
-    yticks = axes[1].get_yticks()
-    axes[1].set_yticks(yticks[[0, -1]])
-    axes[1].set_yticklabels([0, ''])
-    axes[1].get_legend().remove()
-    axes[1].set_title('Error sensitivity')
-    axes[1].text(x=-0.1, y=1, s='B',
-                 transform=axes[1].transAxes,
-                 fontdict={'size': 14})
-
-    fig.tight_layout()
-
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
-    if show:
-        plt.draw()
-        plt.show(block=False)
-
-
-def davidson_2004(fignum=4, show=True):
+def davidson_2004(fignum=3, show=True):
     """Reproduces the results from Davidson_Scaling_2004, leaving an empty
     subplot to put in the results from their paper.
 
     """
     repeats = 8  # No. of participants per group
     figsize = (4, 3)
-    colors = {'-8': np.array((95, 109, 212)) / 256,
-              '+8': np.array((212, 198, 95)) / 256}
+    colors = {'-A': np.array((95, 109, 212)) / 256,
+              '3A': np.array((212, 198, 95)) / 256}
     ran = [161, 201]
 
     fig, axes = plt.subplots(1, 2, num=fignum, clear=True, squeeze=True,
@@ -263,7 +158,7 @@ def davidson_2004(fignum=4, show=True):
 
     tasks = [task_m8, task_p8]
     agents = [agent_m8, agent_p8]
-    names = ['-8', '+8']
+    names = ['-A', '3A']
     data = {name: [] for name in names}
     for idx, (task, agent, name) in enumerate(zip(tasks, agents, names)):
         for idx in range(repeats):
@@ -291,7 +186,8 @@ def davidson_2004(fignum=4, show=True):
     axes[1].text(x=-0.1, y=1.05, s='B',
                  transform=axes[1].transAxes,
                  fontdict={'size': 14})
-
+    axes[0].set_title('Simulations')
+    axes[1].set_title('Exp. data')
     fig.tight_layout()
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
@@ -300,7 +196,7 @@ def davidson_2004(fignum=4, show=True):
         plt.show(block=False)
 
 
-def vaswani_2013(fignum=5, show=True, pandota=None):
+def vaswani_2013(fignum=4, show=True, pandota=None):
     """Reproduces the results from Vaswani_Decay_2013, especifically their
     figures 2a-c.
 
@@ -417,19 +313,15 @@ def vaswani_2013(fignum=5, show=True, pandota=None):
                   transform=axes_lag.transAxes,
                   fontdict={'size': 14})
 
-    # for run in np.unique(pandota['run']):
-    #     datum = panda_lag.query('run == @run')
-    #     group_label = datum.iloc[0]['group']
-    #     c_group = int(group_label * 10 - 1.1 * 10)
-    #     if c_group == 3:
-    #         continue
-    #     color = colors[c_group]
-    #     axes_lag.plot(datum['trial'], datum['con1'],
-    #                   color=color, alpha=0.8)
     sns.lineplot(data=panda_lag, x='trial', y='con1',
                  hue='group', units='run', estimator=None,
                  palette=colors)
     axes_lag.set_xlabel('Trials since start of error-clamp')
+
+    axes_sum[0].set_title('Simulations')
+    axes_sum[1].set_title('Exp. data')
+    axes_lag.set_title('Simulations')
+    
     mags.tight_layout(fig)
 
     # Kidnapped from top to run after tight layout
