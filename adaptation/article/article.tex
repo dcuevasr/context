@@ -1,4 +1,4 @@
-\documentclass[a4paper,doc,floatsintext,natbib]{article}
+\documentclass[a4paper,doc,floatsintext,natbib]{apa6}%article}
 % \documentclass{article}
 \usepackage[font=small]{caption}
 \usepackage{natbib}
@@ -9,7 +9,7 @@
 \usepackage{nameref}
 \usepackage{todonotes}
 \usepackage{authblk}
-\usepackage[nomarkers,figuresonly]{endfloat}
+% \usepackage[nomarkers,figuresonly]{endfloat}
 
 % Remember to start reftex-mode
 \bibliographystyle{ieeetr}
@@ -27,12 +27,12 @@
 \DeclareRobustCommand{\newcontent}[1]{#1}
 
 \title{The effects of ongoing context inference on motor learning}
-% \shorttitle{Context-inference-dependent motor learning}
+\shorttitle{Context-inference-dependent motor learning}
 \author[1,2]{Cuevas Rivera, Darío}
 \author[1,2]{Kiebel, Stefan J.}
 \affil[1]{Chair of Neuroimaging, Faculty of Psychology. Technische Universität Dresden, 01062 Dresden, Germany.}
 \affil[2]{Centre for Tactile Internet with Human-in-the-Loop (CeTI)}
-% \affiliation{~}
+\affiliation{~}
 
 \begin{document}
 
@@ -65,19 +65,19 @@ Before presenting our simulations, we will briefly go through the fundamentals o
 \subsection{Modeling context-dependent adaptation}
 The model we present has three main components: (1) context inference, (2) motor adaptation and (3) action selection. The processes defined by these component occur in this order, and each component informs the ones that follow.
 
-Central to the model is the concept of context, defined in terms of the task to be performed (see \fref{fig:model}A), the variables of the environment that are relevant to perform the task, the forward models used by the decision-making agent to perform the task, and the update mechanisms necessary to adapt these forward models to the changing environment. Together, these elements allow the agent to make predictions on future observations when this context is active, and these predictions are used to infer the context. For example, when lifting an object of unknown weight, an agent might have learned one context for heavy objects and one for light objects. When observing an object to be lifted, the agent can use its size and texture to estimate the weight of the object, which in turn allows the agent to infer the appropriate context and, with it, decide how to lift the object.
+Central to the model is the concept of context, defined in terms of the task to be performed, the variables of the environment that are relevant to perform the task, the forward models used by the decision-making agent to perform the task, and the update mechanisms necessary to adapt these forward models to the changing environment. Together, these elements allow the agent to make predictions on future observations when this context is active, and these predictions are used to infer the context. For example, when lifting an object of unknown weight, an agent might have learned one context for heavy objects and one for light objects. When observing an object to be lifted, the agent can use its size and texture to estimate the weight of the object, which in turn allows the agent to infer the appropriate context and, with it, decide how to lift the object.
+
+We now briefly describe the three components of the model separately. For clarity, we start with the second component (i.e. motor adaptation), in order to introduce the terminology that we use throughout this work. For an overview, we show in \fref{fig:model} how these three components affect each other.
 
 \begin{figure}
 \centering
 \includegraphics[]{./figures/figure_1.png}
-\caption{Description of the model. (A) Definition of a context in terms of its components. (B) Update equations for context inference, motor adaptation and action selection. $\zeta$ represents the identity of the context as a categorical variable, $\vartheta$ are observations, $c_t$ are motor commands at trial $t$, $\phi$ are the parameters of the forward model and $s$ are the hidden states of the environment (e.g. the position of the hand). (C) Schematic representation of the model. The arrows show flow of information, i.e. the dependencies in the update equations, as well as the flow of a single trial. The elements (e.g. $q(\zeta)$) are those shown in B. Trial $t$ starts at the top when an observation $\vartheta_t$ is received, from which the current context is inferred ($q(\zeta)$), which informs motor adaptation ($q(\phi)$), which informs action selection ($p(c)$). After an action is selected, a new observation $\vartheta_{t+1}$ is received and the process is repeated. The posteriors over $\zeta$ and $\phi$ are used as priors at the next trial.}
+\caption{Schematic representation of the model. $\zeta$ represents the identity of the context as a categorical variable, $\vartheta$ are observations, $c_t$ are motor commands at trial $t$, $\phi$ are the parameters of the forward model and $s$ are the hidden states of the environment (e.g. the position of the hand). The arrows show flow of information, i.e. the dependencies in the update equations, as well as the flow of a single trial. Trial $t$ starts at the top when an observation $\vartheta_t$ is received, from which the current context is inferred ($q(\zeta)$), which informs motor adaptation ($q(\phi)$), which informs action selection ($p(c)$). The update equations can be found in the Methods section. After an action is selected, a new observation $\vartheta_{t+1}$ is received and the process is repeated. The posteriors over $\zeta$ and $\phi$ are used as priors at the next trial.}
 \label{fig:model}
 \end{figure}
 
-We now briefly describe the three components of the model separately. For clarity, we start with the second component (i.e. motor adaptation), in order to introduce the terminology that we use throughout this work. For an overview, we show in \fref{fig:model}B and C how these three components affect each other.
-
 \subsubsection{Motor adaptation}
-It is widely accepted that in order to adapt motor commands to a novel environment, we create and update internal forward models of the outcomes of control signals \citep{Wolpert_Multiple_1998}. We used this principle and chose to make use of an exact Bayesian learner. To adapt to altered dynamics (e.g. a mechanical arm exerting a force on a participant's hand), our model updates the parameters $\phi$ (see Methods) of a context-specific forward model. These updates are done according to \eref{eqn:motor-adaptation}, using the difference between predictions made with the current parameters of the forward model, and the current observation. With this, a posterior estimate on $\phi$, $q(\phi)$ in \fref{fig:model}B and C, is calculated after each trial.
+It is widely accepted that in order to adapt motor commands to a novel environment, we create and update internal forward models of the outcomes of control signals \citep{Wolpert_Multiple_1998}. We used this principle and chose to make use of an exact Bayesian learner. To adapt to altered dynamics (e.g. a mechanical arm exerting a force on a participant's hand), our model updates the parameters $\phi$ (see Methods) of a context-specific forward model. These updates are done according to \eref{eqn:motor-adaptation}, using the difference between predictions made with the current parameters of the forward model, and the current observation. With this, a posterior estimate on $\phi$, $q(\phi)$ in \fref{fig:model}, is calculated after each trial.
 
 \subsubsection{Context inference}
 To infer the adequate forward model to deploy, most previous models \cite[e.g.][]{Wolpert_Multiple_1998,Imamizu_Neural_2008,Oh_Minimizing_2019} have focused on the elements of the context which are directly related to the forward models: the model that best predicts the current observation given the past is deemed to be the ``correct'' model, i.e. the model that best represents the current context. \cite{Imamizu_Explicit_2007} expanded on this idea by showing the effects of visual cues on model switching.
