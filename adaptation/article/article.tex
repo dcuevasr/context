@@ -30,7 +30,7 @@
 \shorttitle{Context-inference-dependent motor learning}
 \author[1,2]{Cuevas Rivera, Darío}
 \author[1,2]{Kiebel, Stefan J.}
-\affil[1]{Chair of Neuroimaging, Faculty of Psychology. Technische Universität Dresden, 01062 Dresden, Germany.}
+\affil[1]{Chair of Neuroimaging, Faculty of Psychology, Technische Universität Dresden, 01062 Dresden, Germany.}
 \affil[2]{Centre for Tactile Internet with Human-in-the-Loop (CeTI)}
 \affiliation{~}
 
@@ -39,7 +39,7 @@
 \maketitle
 
 \abstract{Abstract}
-Humans have been shown to adapt their movements when a sudden change to the dynamics of the environment is introduced, a phenomenon called motor adaptation. If the change is reverted, the adaptation is also quickly reverted. Human are also able to adapt to multiple changes in dynamics presented separately, and to be able to switch between adapted movements on the fly. Such switching relies on contextual information which is often noisy or misleading, which affects the switch between adaptations. In this work, we use a model to explain the behavioral phenomena effected by imperfect contextual information. Specifically, we present a hierarchical computational model for motor adaptation based on exact Bayesian inference. This model explicitly takes into account contextual information and how the dynamics of context inference affect adaptation and action selection. We show how the proposed model provides a unifying explanation for four different experimentally established phenomena: (i) effects of sensory cues and proprioceptive information on switching between tasks, (ii) the effects of previously-learned adaptations on switching between tasks, in addition to (iii) the well-studied savings, de-adaptation and spontaneous recovery.
+Humans have been shown to adapt their movements when a sudden change to the dynamics of the environment is introduced, a phenomenon called motor adaptation. If the change is reverted, the adaptation is also quickly reverted. Human are also able to adapt to multiple changes in dynamics presented separately, and to be able to switch between adapted movements on the fly. Such switching relies on contextual information which is often noisy or misleading, which affects the switch between adaptations. In this work, we introduce a computational model to explain the behavioral phenomena effected by imperfect contextual information. Specifically, we present a hierarchical model for motor adaptation based on exact Bayesian inference. This model explicitly takes into account contextual information and how the dynamics of context inference affect adaptation and action selection. We show how the proposed model provides a unifying explanation for four different experimentally established phenomena: (i) effects of sensory cues and proprioceptive information on switching between tasks, (ii) the effects of previously-learned adaptations on switching between tasks, in addition to (iii) the well-studied savings, de-adaptation and spontaneous recovery.
 
 
 \section{Introduction}
@@ -67,7 +67,7 @@ The model we present has three main components: (1) context inference, (2) motor
 
 Central to the model is the concept of context, defined in terms of the task to be performed, the variables of the environment that are relevant to perform the task, the forward models used by the decision-making agent to perform the task, and the update mechanisms necessary to adapt these forward models to the changing environment. Together, these elements allow the agent to make predictions on future observations when this context is active, and these predictions are used to infer the context. For example, when lifting an object of unknown weight, an agent might have learned one context for heavy objects and one for light objects. When observing an object to be lifted, the agent can use its size and texture to estimate the weight of the object, which in turn allows the agent to infer the appropriate context and, with it, decide how to lift the object.
 
-We now briefly describe the three components of the model separately. For clarity, we start with the second component (i.e. motor adaptation), in order to introduce the terminology that we use throughout this work. For an overview, we show in \fref{fig:model} how these three components affect each other.
+We now briefly describe the three components of the model separately. For clarity, we start with the second component (i.e. motor adaptation), in order to introduce the terminology that we use throughout this work. For an overview, we show in \fref{fig:model} how these three components affect each other. The full mathematical description of the model can be found in the Methods.
 
 \begin{figure}
 \centering
@@ -82,7 +82,7 @@ It is widely accepted that in order to adapt motor commands to a novel environme
 \subsubsection{Context inference}
 To infer the adequate forward model to deploy, most previous models \cite[e.g.][]{Wolpert_Multiple_1998,Imamizu_Neural_2008,Oh_Minimizing_2019} have focused on the elements of the context which are directly related to the forward models: the model that best predicts the current observation given the past is deemed to be the ``correct'' model, i.e. the model that best represents the current context. \cite{Imamizu_Explicit_2007} expanded on this idea by showing the effects of visual cues on model switching.
 
-Following these ideas, our model performs context inference that integrates several sources of information, including those typical for experimental studies such as visual cues \citep{Lee_Dual_2009,Kim_Neural_2015}, the place where the task must be carried out \citep{Forano_Timescales_2020,Shadmehr_Adaptive_1994} or the start of a new block of trials \citep{Ethier_Spontaneous_2008}, in addition to proprioceptive information, outcome prediction errors and reward prediction errors. As with motor adaptation, the context is inferred with exact Bayesian inference, with the updates given by \eref{eqn:estimated-context}.
+Following these ideas, our model performs context inference that integrates several sources of information, including those typical for experimental studies such as visual cues \citep{Lee_Dual_2009,Kim_Neural_2015}, the place where the task must be carried out \citep{Forano_Timescales_2020,Shadmehr_Adaptive_1994} or the start of a new block of trials \citep{Ethier_Spontaneous_2008}, in addition to proprioceptive information, outcome prediction errors and reward prediction errors. As with motor adaptation, the context is inferred as a probability distribution $q(\zeta)$ with exact Bayesian inference, with the updates given by \eref{eqn:estimated-context}.
 
 \subsubsection{Action selection}
 Action selection is affected by the current context via the context-dependent forward model that is used. In our model, action selection is made by building a distribution over available actions which is a weighted sum of the distributions given by the existing forward models, where the weights are obtained by the context inference component of the model.
@@ -158,9 +158,9 @@ Context inference also explains the variability in the lag before adaptation sta
 \section{Discussion}
 We presented a hierarchical model for motor adaptation based on Bayesian inference, which not only learns to adapt its motor outputs by observing errors, but also infers the context in which these errors were committed and updates the forward model associated with that context.
 
-We generalized the inference over the best-fitting internal models to the concept of context inference, which includes all sensory information, in addition to feedback provided by the experimenters or the task. With this, we showed how this seemingly small generalization provides a parsimonious explanation for several experimental phenomena across many experiments in motor adaptation that, up to now, had required multiple \textit{ad hoc} mechanisms.
+We generalized the inference over the best-fitting internal models to the concept of context inference, which includes all sensory information, in addition to feedback provided by the experimenters or the task. With this, we showed how this seemingly small generalization provides a parsimonious explanation for several experimental phenomena across many experiments in motor adaptation that, up to now, had assumed the existence of multiple mechanisms.
 
-We selected representative experimental studies that show savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using our model, we showed how each of these effects can be explained by the specifics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
+We selected representative experimental studies that show the well-established effects of savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using our model, we showed how each of these effects can be explained by the specifics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
 
 Our choice of an exact Bayesian learner greatly simplified our simulations, but we expect the results we presented here to hold using alternative models for motor adaptation, such as Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}. An exception is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, as these models do not incorporate uncertainty in the estimate of the parameters of the forward models.
 
@@ -441,7 +441,7 @@ deviation are stable during the experiment.
 \section{Acknowledgment}
 Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
-\bibliography{../../MyLibrary}
+\bibliography{MyLibrary}
 
 
 
