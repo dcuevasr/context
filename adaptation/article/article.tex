@@ -25,14 +25,14 @@
 % For revision
 \DeclareRobustCommand{\newcontent}[1]{#1}
 
-\title{The effects of ongoing context inference on motor learning}
-\shorttitle{Context-inference-dependent motor learning}
-% \author[1,2]{Cuevas Rivera, Darío}
-% \author[1,2]{Kiebel, Stefan J.}
-% \affil[1]{Chair of Neuroimaging, Faculty of Psychology, Technische Universität Dresden, 01062 Dresden, Germany.}
-% \affil[2]{Centre for Tactile Internet with Human-in-the-Loop (CeTI)}
-\author[1]{Author list}
-\affil[1]{Affiliation list}
+\title{The effects of uncertain context inference on motor adaptation}
+\shorttitle{Context-inference-dependent motor adaptation}
+\author[1,2]{Cuevas Rivera, Darío}
+\author[1,2]{Kiebel, Stefan J.}
+\affil[1]{Chair of Neuroimaging, Faculty of Psychology, Technische Universität Dresden, 01062 Dresden, Germany.}
+\affil[2]{Centre for Tactile Internet with Human-in-the-Loop (CeTI)}
+% \author[1]{Author list}
+% \affil[1]{Affiliation list}
 \affiliation{~}
 
 \begin{document}
@@ -40,7 +40,7 @@
 \maketitle
 
 \abstract{Abstract}
-Humans have been shown to adapt their movements when a sudden change to the dynamics of the environment is introduced, a phenomenon called motor adaptation. If the change is reverted, the adaptation is also quickly reverted. Human are also able to adapt to multiple changes in dynamics presented separately, and to be able to switch between adapted movements on the fly. Such switching relies on contextual information which is often noisy or misleading, which affects the switch between adaptations. In this work, we introduce a computational model to explain the behavioral phenomena effected by imperfect contextual information. Specifically, we present a hierarchical model for motor adaptation based on exact Bayesian inference. This model explicitly takes into account contextual information and how the dynamics of context inference affect adaptation and action selection. We show how the proposed model provides a unifying explanation for four different experimentally established phenomena: (i) effects of sensory cues and proprioceptive information on switching between tasks, (ii) the effects of previously-learned adaptations on switching between tasks, in addition to (iii) the well-studied savings, de-adaptation and spontaneous recovery.
+Humans have been shown to adapt their movements when a sudden change to the dynamics of the environment is introduced, a phenomenon called motor adaptation. If the change is reverted, the adaptation is also quickly reverted. Human are also able to adapt to multiple changes in dynamics presented separately, and to be able to switch between adapted movements on the fly. Such switching relies on contextual information which is often noisy or misleading, which affects the switch between adaptations. In this work, we introduce a computational model to explain the behavioral phenomena effected by uncertain contextual information. Specifically, we present a hierarchical model for motor adaptation based on exact Bayesian inference. This model explicitly takes into account contextual information and how the dynamics of context inference affect adaptation and action selection. We show how the proposed model provides a unifying explanation for four different experimentally-established phenomena: (i) effects of sensory cues and proprioceptive information on switching between tasks, (ii) the effects of previously-learned adaptations on switching between tasks, (iii) the effects of training history on behavior in new contexts, in addition to (iv) the well-studied savings, de-adaptation and spontaneous recovery.
 
 
 \section{Introduction}
@@ -52,7 +52,9 @@ To explain these phenomena, a number of computational models have been introduce
 
 While these general models of adaptation explain the most common phenomena observed in experiments, other known phenomena remain outside of their scope. For example, it is known that adaptation rate is reduced in situations where the environment is unstable and unpredictable \citep{Herzfeld_memory_2014}, or situations in which errors are small \citep{Marko_Sensitivity_2012} or adaptations slowly introduced \citep{Huang_Persistence_2009}. Action selection has also been found to depend on the history of adaptations learned \citep{Vaswani_Decay_2013,Davidson_Scaling_2004}.
 
-In this work, we show that these unexplained phenomena can be explained in terms context inference, an idea that has recently been gaining traction in different fields \cite[e.g.][]{Sanders_Hippocampal_2020,Hunter_Contextsensitive_2021}. We build on models such as MOSAIC \citep{Wolpert_Multiple_1998} and Bayesian switching models \citep{Kording_Bayesian_2004,Oh_Minimizing_2019} by expanding the concept of context and introducing an explicit mechanism for inferring the context based on Bayesian inference. In the proposed model, the context encompasses all the information relevant to making decisions, both environmental and internal to the agent making these decisions. To infer the current context, our model integrates several sources of information, including the predictions made by its internal forward models, an estimate of the reliability of these predictions, direct sensory information (such as visual contextual cues), proprioceptive information, and feedback provided by the environment.
+In this work, we show that these unexplained phenomena can be explained in terms context inference, an idea that has recently been gaining traction in motor adaptation \citep{Heald_Contextual_2021}, as well as in other fields \cite[e.g.][]{Sanders_Hippocampal_2020,Hunter_Contextsensitive_2021}. We build on models such as MOSAIC \citep{Wolpert_Multiple_1998} and Bayesian switching models \citep{Kording_Bayesian_2004,Oh_Minimizing_2019} by expanding the concept of context and introducing an explicit mechanism for inferring the context based on Bayesian inference. In the proposed model, the context encompasses all the information relevant to making decisions, both environmental and internal to the agent making these decisions. To infer the current context, our model integrates several sources of information, including the predictions made by its internal forward models, an estimate of the reliability of these predictions, direct sensory information (such as visual contextual cues), proprioceptive information, and feedback provided by the environment.
+
+This work expands on the work by \cite{Heald_Contextual_2021}, who showed that context inference modulates learning rate in cases of unstable contexts. To do this, we focused on the effects of uncertain contextual information on switching behavior, especially during so-called error-clamp trials, in which errors are forced to zero by experimenters.
 
 We show that the dynamics of context inference provide a principled mechanistic explanation for the experimental phenomena outlined above, providing a single account for motor adaptation under changing contexts, while relying on known mechanisms for adaptation.
 
@@ -163,20 +165,24 @@ We generalized the inference over the best-fitting internal models to the concep
 
 We selected representative experimental studies that show the well-established effects of savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using our model, we showed how each of these effects can be explained by the specifics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
 
-Our choice of an exact Bayesian learner greatly simplified our simulations, but we expect the results we presented here to hold using alternative models for motor adaptation, such as Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}. An exception is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, as these models do not incorporate uncertainty in the estimate of the parameters of the forward models.
+Together with the results by \cite{Heald_Contextual_2021}, our results show that many behavioral phenomena observed across different experiments can be explained by the uncertainty in context inference and its effects on learning and action selection.
+
+Our choice of an exact Bayesian learner greatly simplified our simulations, but we expect the results we presented here to hold using alternative models for motor adaptation, such as Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}, as well as the recently-introduced COIN model \citep{Heald_Contextual_2021}. An exception is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, as these models do not incorporate uncertainty in the estimate of the parameters of the forward models.
 
 \subsection{Further experimental evidence}
 In many cases, the context is not directly observable and context inference takes the form of an evidence-accumulating process that can take any amount of time to be sure of the context. It is in these cases where the effects of context inference are most noticeable. While many experiments exist that give probabilistic contextual information \cite[e.g.][]{Scholz_uncontrolled_1999,Behrens_Learning_2007,Nassar_Dissociable_2019}, evidence accumulation is not limited to these explicit cases. Indeed, as we noted in the Results section, many experiments inadvertently include partial contextual information used by participants.
 
 The most direct secondary contextual information comes in the form of reward and endpoint feedback. Participants are told whether they obtained the desired reward at the end of a trial and are shown the end point of their movement. When a participants observe an unexpectedly large error, they can infer that the inferred context might be incorrect. This is the case of the experiments by \cite{Oh_Minimizing_2019} shown in \fref{fig:oh-2019}B-C: if the adaptation is high, changes in context produce errors much larger than those of motor variability, and a context switch is easily and immediately identified; if adaptation is low, the errors produced by context switching are closer in magnitude to motor variability and evidence accumulation is necessary.
 
-The same rationale explains the results by \cite{Davidson_Scaling_2004}: motor learning, which in our model is modulated by context inference, is minimal for errors close to 2 and -2 (see their figure 2E). This is because an error of 2 or -2 signals that the participant incorrectly identified the context (as adaptation has a magnitude of 1).
+The same rationale explains the results by \cite{Herzfeld_memory_2014}: motor learning, which in our model is modulated by context inference, is minimal for errors close to 2 and -2 (see their figure 2E). This is because an error of 2 or -2 signals that the participant incorrectly identified the context (as adaptation has a magnitude of 1). Additionally, as was shown by \cite{Heald_Contextual_2021}, context inference explains the modulation of learning rate by the volatility of the environment observed by \cite{Herzfeld_memory_2014}.
 
 A subtler source of information can be found in long pauses between blocks of adaptation trials, after which an unprompted partial return to baseline has been observed \cite{Ethier_Spontaneous_2008}. This can be explained by context inference, as a long pause could prompt participants to infer that a switch had occurred, prompting participants to rely on their belief of the underlying probability of observing any of the known contexts, which is dominated by the previously observed context A, but now includes a component of the baseline O, as it is the most common one in everyday life.
 
 Error-clamp (E) trials present another insight. If error is kept at zero, one could assume that participants would continue doing what they were doing before, as there is no reason (no observed error) to infer a change in context. However, this is almost never the case \cite[e.g.][]{Smith_Interacting_2006,Ethier_Spontaneous_2008,Forano_Timescales_2020,Vaswani_Decay_2013,Scheidt_Persistence_2000,Pekny_Protection_2011}. Instead, participants slowly reduce their adaptation, often displaying spontaneous recovery \cite[e.g.][]{Smith_Interacting_2006}. Our model provides a principled account of this behavior: the natural variability in participants' behavior lead them to expect errors, which clashes with the observed zero error. This prompts participants to re-evaluate their inferred context, which can partially activate a previously-observed context, as we showed in \fref{fig:vaswani-2013}. \cite{Pekny_Protection_2011} found similar results, demonstrating that the duration of the previously-observed adaptation block also affects behavior in the E block. Additionally, \cite{Criscimagna-Hemminger_Consolidation_2008} showed that introducing long periods before the E block begins lowers the initial force that participants exerted on the mechanical arm during the E block; longer periods of time make context inference revert to the prior expectation that a new baseline block begins, because participants are free to move their arm about during the pause.
 
 In our account, if all information indicating a change in context is removed from the experiment, participants would continue to behave as they were in the previous block. Evidence for this can be seen in experiments 2 and 3 by \cite{Vaswani_Decay_2013}, where participants were shown random errors during E trials, with a variance matching that of previously observed motor commands. The authors showed that by matching the errors expected by participants, they eliminated the slow tapering off observed in most E blocks.
+
+
 
 \subsection{Model predictions and future work}
 The basic principle behind the results we presented is that context inference is a process that develops over time and that carries with it uncertainty. This uncertainty affects learning and behavior during motor adaptation, effecting phenomena that are directly observable during behavioral experiments.
@@ -439,8 +445,8 @@ arm experiments, around 0.0125), and the hyperparameters of the standard
 deviation are stable during the experiment.
 
 
-% \section{Acknowledgment}
-% Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
+\section{Acknowledgment}
+Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
 \bibliography{../../MyLibrary}
 
