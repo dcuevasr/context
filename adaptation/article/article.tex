@@ -161,11 +161,9 @@ Context inference also explains the variability in the lag before adaptation sta
 \section{Discussion}
 We presented a hierarchical model for motor adaptation based on Bayesian inference, which not only learns to adapt its motor outputs by observing errors, but also infers the context in which these errors were committed and updates the forward model associated with that context.
 
-We generalized the inference over the best-fitting internal models to the concept of context inference, which includes all sensory information, in addition to feedback provided by the experimenters or the task. With this, we showed how this seemingly small generalization provides a parsimonious explanation for several experimental phenomena across many experiments in motor adaptation that, up to now, had assumed the existence of multiple mechanisms.
+We generalized the inference over the best-fitting internal models to the concept of context inference, which includes all sensory information, in addition to feedback provided by the experimenters or the task. With this, we showed how this seemingly-simple generalization provides a parsimonious explanation for several experimental phenomena across many experiments in motor adaptation that, up to now, had assumed the existence of multiple mechanisms.
 
 We selected representative experimental studies that show the well-established effects of savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using our model, we showed how each of these effects can be explained by the specifics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
-
-Together with the results by \cite{Heald_Contextual_2021}, our results show that many behavioral phenomena observed across different experiments can be explained by the uncertainty in context inference and its effects on learning and action selection.
 
 Our choice of an exact Bayesian learner greatly simplified our simulations, but we expect the results we presented here to hold using alternative models for motor adaptation, such as Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}, as well as the recently-introduced COIN model \citep{Heald_Contextual_2021}. An exception is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, as these models do not incorporate uncertainty in the estimate of the parameters of the forward models.
 
@@ -197,6 +195,9 @@ If this prediction is confirmed, our model would additionally suggest that human
 
 \subsubsection{Multi-source integration}
 The model also predicts an effect reminiscent of multisensory integration \citep{Ernst_Humans_2002}: in order to integrate contextual information from conflicting sources (e.g. probabilistic visual cues and noisy endpoint feedback), the weight placed on a source increases with its reliability. Such integration would manifest itself in experiments in which observations are noisy, as in the experiments by \cite{Kording_Bayesian_2004}, in which the position of the finger was obscured and instead participants are shown a blurry cursor which was some times shifted from its real position. If the added observation noise gives evidence for a particular context (the true underlying context or another one) and a visual cue gave partial information for another context, the participants' behavior would be more consistent with the most reliable source of contextual information.
+
+\subsection{Conclusions}
+The results we presented in this work show that many behavioral phenomena observed across different experiments can be explained by the uncertainty in context inference and its effects on learning and action selection. Together with the results by \cite{Heald_Contextual_2021}, these results suggest new venues of investigation for future works in motor adaptation and context-dependent behavior.
 
 
 \section{Methods}
@@ -448,7 +449,7 @@ deviation are stable during the experiment.
 \section{Acknowledgment}
 Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
-\bibliography{../../MyLibrary}
+\bibliography{MyLibrary}
 
 
 
