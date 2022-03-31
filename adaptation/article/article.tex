@@ -10,6 +10,8 @@
 \usepackage{todonotes}
 \usepackage{authblk}
 % \usepackage[nomarkers,figuresonly]{endfloat}
+\usepackage{multirow}
+\usepackage{tabularx}
 
 % Remember to start reftex-mode
 
@@ -201,203 +203,53 @@ The results we presented in this work show that many behavioral phenomena observ
 
 
 \section{Methods}
-\subsection{Model description}
-\label{subsection:model-description}
-We first describe the general principle behind the model, followed, in the next
-subsection, by the full mathematical description of each one of its components.
+\subsection{The COIN model}
+In this work, we used the recently-introduced COIN model \citep{Heald_Contextual_2021}, adapted to the experiments that we covered in our simulations. In this section, we give a brief introduction to the COIN model and, in the subsequent subsection, describe how we adapted the model to the experimental tasks. For a full description of the model, refer to \cite{Heald_Contextual_2021}.
 
-Before proceeding with the model description, let us introduce nomenclature:
-\begin{itemize}
-\item $t$: Discrete time at the moment an observation is made, before inference is done. 
-Here taken as the trial number.
-\item $\vartheta_t$: Observation. Note that this is assumed to be a noisy
-observation of the generalized state (see below)
-\item $s_t$: Hidden state, e.g. the position of the hand in reaching
-experiments. It does not depend on the context.
-\item $c_t$: Motor command (action) taken after observing $\vartheta_t$ and inferring the context.
-\item $\zeta_t$: Categorical variable representing the context inferred after observing $\vartheta_t$.
-\item $\omega_t$: Contextual information. This term includes, e.g. visual cues,
-proprioceptive feedback, performance feedback.
-\item $z_t$: Generalized state, $z_t = \{s_t, \zeta_t\}$. Observed noisily
-as $\vartheta_t$.
-\item $m_i$: Forward model for context $\zeta_i$.
-\item $\phi_i$: Parametrization of the forward model $m_i$. In adaptation experiments, this
-can be interpreted as the inferred size of the adaptation.
-\end{itemize}
-
-Context inference can work through context-specific (possibly unreliable) sensory cues,
-or through the dynamics of the system (e.g. expected outputs of motor
-commands), using prediction error as the force behind inference. In this case,
-the generative model can be written as follows:
-\[
-p(z_t, \vartheta_t | z_{t-1}, c_{t-1}) = p(\vartheta_t | z_t)p(z_t|z_{t-1}, c_{t-1})
-\]
-and inferring the current (hidden) generalized state is done with Bayes' theorem:
-\[
-  q(z_t | \vartheta_t, \vartheta_{t-1}, c_{t-1}) \propto p(\vartheta_t | z_t)p(z_t|\vartheta_{t-1}, c_{t-1})
-\]
-  
-Additionally, after having inferred the current state, motor adaptation is given by
+\subsubsection{Generative model}
+At each trial $t$, the agent infers both the context and the context-dependent adaptation (e.g. the parameters of the force field in mechanical-arm experiments). The context is represented by a latent, categorical variable $\zeta_t$:
 \begin{equation}
-q(\phi | z_t, z_{t-1}, c_{t-1}) \propto p(z_t | z_{t-1}, c_{t-1}, \phi)q(z_{t-1}|\ldots)p(\phi) \label{eqn:motor-adaptation}
+p(\zeta_t | \zeta_{t-1}, \pi_{\zeta_{t-1}}) = \text{Discrete}\left(\pi_{\zeta_{t-1}}\right)
 \end{equation}
-where $\phi$ are the parameters of the internal model for the dynamics, also called the forward model,
-i.e. the function $f: (z_t, c_t) \rightarrow z_{t+1}$, which determines the beliefs of
-the agent regarding how the system evolves after having taken action $c_t$. $q(z_{t-1}|\ldots)$ is the
-posterior probability calculated in the previous trial.
-
-Having inferred the generalized state (including context), a motor command is
-sampled from a distribution:
+where $\pi_{\zeta_{t-1}}$ is the transition probability vector from context $\zeta_{t-1}$ to all other contexts. MARKOV CHAIN. The contextual cues (when present in an experiment) are assumed to be drawn depending on the context following:
 \begin{equation}
-p(c_t | s_t, \zeta_t) = \displaystyle\sum_{i}q(\zeta_i)p(c_t | s_t, \zeta_i)
+p(q_t | c_t, \Phi) = \text{Discrete}(\Phi_{\zeta_t})
 \end{equation}
-where $i$ runs over all contexts and $p(a_t | ... m)$ is the probability distribution over actions
-prescribed by the forward model $m_i$ for context $\zeta_i$.
+where $Q_{\zeta_t}$ is the probability vector with which the contextual cue $q_t$ is shown to the agent in context $\zeta_t$. As pointed out by \cite{Heald_Contextual_2021}, both $\Phi$ and $\pi$ are in principle infinite, but a task-relevant finite set can be used instead.
 
-In the following sections, we present a specific mathematical implementation
-of the principles outlined above. This is the implementation used throughout the
-simulations in the Results section.
-
-\subsubsection{Mathematical implementation}
-The generalized state is given by:
+The context-dependent adaptation is represented by the latent variable $x_{\zeta,t}$ and assumed to arise from an autoregressive process AR(1), with a stationary Gaussian distribution of unknown mean and variance:
 \begin{equation}
-z_t = \{s_t, \zeta_t\}
+p(x_{\zeta,t}) = \mathcal{N}(\mu_{\zeta,x}, \sigma_{\zeta,x})
 \end{equation}
-where $s_t$ is, e.g. in a reaching task, the current position of the hand in
-Cartesian coordinates, where the origin is the starting point. We assume that
-motor commands are issued every $\Delta t$ for simplicity. At the beginning of
-each time interval, the context is inferred combining the contextual
-information and the prediction error of the outcome of the previous motor
-command. This yields:
-\begin{align}
-  \begin{split}
-  q(\zeta_t) &= q(\zeta_t | \omega_t)q(\zeta_t | s_t, s_{t-1}, c_{t-1}) \\ \label{eqn:estimated-context}
-  q(\zeta_t | \omega_t) &\propto p(\omega_t | \zeta_t)p(\zeta_t) \\
-  q(\zeta_t | s_t, s_{t-1}, c_{t-1}) &\propto p(s_t | \zeta_t, s_{t-1}, c_{t-1})p(\zeta_t)
-  \end{split}
-\end{align}
-The terms $p(\zeta_t)$ refer to the prior probability of the context at the
-beginning of the trial: at the first trial, this refers to prior beliefs over
-which contexts are more common/likely, which we call $p_0(\zeta_t)$. At each
-subsequent trial, it incorporates the belief that has so far been accumulated,
-given previous trials. Note that certain events, such as the start of a new
-block of trials (see main text) can return an agent to a state in which
-$p_0(\zeta_t)$ becomes relevant.
+where $\sigma$ is assumed to be shared across all contexts. Note that $\mu$ and $\sigma$ are parametrized by the parameters of the AR(1) process, namely $\mu_{\zeta,x} = d_\zeta / (1 - a_\zeta)$ and $\sigma_{\zeta, x} = \sigma_q / 1 - a_\zeta^2$, where $\sigma_q$ is a free parameter of the model.
 
-We do not directly model hand movements or eye position. Instead, we model
-systems in the motor error space: the position $s_t = 0$ represents a trial in
-which no motor error occurred. We make use of the fact that in most
-experiments, motor adaptation needs to happen in one of two directions
-(e.g. clockwise vs. counter-clockwise) to keep the error space
-one-dimensional. With this, $s_t > 0$ represents motor error in one direction
-(e.g. clockwise) and $s_t < 0$, error in the other direction. We made this
-choice because in this work we modeled different experiments with
-different state spaces, but with the commonality of (at most)
-two-dimensional error spaces. In order to model a specific experiment in its
-own physical space (e.g. hand positions in a reaching task), only the dynamical
-system  $p(s_t | \zeta_t, s_{t-1}, c_{t-1})$ would need to be adapted.
+Observations take the form of state feedback (e.g. the position of the cursor on the screen in visuomotor rotation tasks), given by:
+\begin{equation}
+y_t = x_{\zeta_t, t} + \nu_t
+\end{equation}
+where $\nu_t$ is a zero-mean Gaussian noise term with unknown standard deviation $\sigma_r$, which is a free parameter of the model.
 
-We assume that the decision-making agent has a baseline internal forward model $m_O$ that
-maps motor commands to outcomes:
+Action selection (i.e. motor output $u_t$) is done via the weighted mean of $x_{j,t}$:
 \begin{equation}
-p(s_{t+1} | s_t, c_t, m=m_O) = f_O(s_t, c_t)
+u_t  = \displaystyle\sum_{j}p(\zeta_{j,t} | ...) x_{j,t}
 \end{equation}
-where $c_t$ are motor commands (actions). We further assume that participants
-have learned $f_O$ throughout their lives and use it to decide which motor
-command to issue under normal circumstances (i.e. no adaptation). When a
-perturbation is introduced, to which the participant must adapt, we assume they
-learn a new forward model $f_m^{\phi}$, where $\phi$ represents the parameters
-of the function that participants must learn. For example, in a saccade task,
-$\phi$ represents the new gain. Note that $\phi$ depends on the context and
-participants may need to use and update multiple forward adapted models
-$f_m^{\phi}$ throughout one experiment.
+To include motor noise (independent from estimation uncertainty), as well as carry over the uncertainty over $x_{j,t}$, we instead sample motor commands from a Gaussian centered on this mean, with a standard deviation $\sigma_u$, which is a free parameter of the model.
 
-Given a forward model $f_m$ (or $f_m^\phi$), action selection is done by
-building a probability distribution over possible actions $c_t$ based on how
-likely they are to produce zero motor error. For example, in saccade
-experiments, motor commands are issued based on how likely they are to move the
-fovea to the target. These motor commands are issued to counteract intrinsic
-sources of error, such as muscle variability and exhaustion, and extrinsic
-sources of error, such as the experimental manipulations on saccade gain. Thus,
-the expected observed error can be written as:
-\begin{equation}
-p(\epsilon | c_t) \propto p(\epsilon_{\text{intrinsic}} | c_t) + p(\epsilon_{\text{extrinsic}} | c_t)
-\end{equation}
-and a motor command can be chosen to maximize the chance of observing zero error:
-\begin{equation}
-p(c_t) = argmin_{c_t} p(\epsilon | c_t)
-\end{equation}
 
-For simplicity, we assume that motor errors are Gaussian, such that:
-\begin{equation}
-p(\epsilon | c_t) = N(\mu_{\text{extrinsic}}, \sigma_\epsilon)
-\end{equation}
-where $\sigma_\epsilon$ incorporates both intrinsic and extrinsic sources of
-error and is a free parameter of the model. The mean of the error is assumed to
-have no intrinsic component.
+\subsubsection{Using the model}
+The free parameters of this model can be fit to participants' data, as was done by \cite{Heald_Contextual_2021}. In this work, we instead chose values for these parameters to show that the model is capable of explaining the experimental phenomena in the Results section. Additionally, by fixing these parameters the agent is able to perform exact Bayesian inference at each trial using conjugate priors, replacing the MCMC approach used by \cite{Heald_Contextual_2021} due to the mathematical intractability of the full formulation. This, however, does not change the model and was done purely for computational efficiency. In this section, we describe how we fixed parameters and the procedure for Bayesian inference.
 
-With this, a forward model will produce a motor command with outcomes centered
-at $-\mu_{\text{extrinsic}}$, which counteracts the externally-induced errors.
+As explained above, context is assumed to be a discrete variable which evolves as a Markov process. The transition matrices $\pi$ were generated via a Dirichlet process, with parameters that can be inferred from participant data ($\alpha$ and $\kappa$ in \cite{Heald_Contextual_2021}). For a fixed value of these parameters, the transition matrices also become fixed. In particular, setting the parameters to CALCULATE THIS, the transition matrices are such that contexts are assumed to be sticky, i.e. a transition from a context to itself is more likely than to any other context. In our simulations, we set the probability of self-transitioning (denoted $p_\zeta$) depending on the experiments (see below), to numbers that match the information given to the participants of each study.
 
-To complete the action-selection picture, we return to context inference. As
-discussed above, action selection is made via a weighted sum of the motor commands
-produced by each forward model:
-\begin{equation}
-p(c_t | ...) \propto \displaystyle \sum_{i} q(\zeta_i)p(c_t | \zeta_i, ...) \label{eqn:dist-comm}
-\end{equation}
-From this distribution, an action is sampled at each trial.
+Contextual cues are assumed by the agent to be sampled from a distribution that depends on the current context. This is done through a set of cue probability vectors that are generated via a parametric distribution, whose parameters are fitted to participants' data. Because the experiments we simulate do not include probabilistic or deceiving cues, contextual cues, when present, unequivocally reflect the current context, i.e. $p(q_t = i | c_t = j) = d_{ij}$, where $\delta_{ij}$ is the Kronecker delta, equaling zero unless $i = j$.
 
-To update the agent's estimates on the parameters of the forward models, we
-make use of Bayes' theorem with conjugate priors. This approach has the
-advantage of not only greatly simplifying computational calculations, but also
-presenting update equations with intuitive appeal.
+Finally, we chose an equivalent parametrization for the priors over the hidden variables $x_{j,t}$, using the mean $\mu_x$ and standard deviation $\sigma_x$ directly instead of the AR(1) $a$ and $d$ parameters used by \cite{Heald_Contextual_2021}. Note that we dropped the $j$ dependency for clarity. This parametrization, in conjunction with the fixed parameters outlined above,  allows us to set priors over $\mu_x$ and $\sigma_x$ that enable exact inference over the latent variables. The priors are given by a Normal-Gamma distribution, typically used for priors of the mean and standard deviation of a Gaussian distribution [CITATION NEEDED]:
+\begin{equation}
+\mu_x, \sigma_x \sim \mathcal{NG}(\mu_0, \nu_0, \alpha_0, \beta_0)
+\end{equation}
+with free parameters $\mu_0$, $\nu_0$, $\alpha_0$ and $\beta_0$, which we fixed for each experiment separately. Because $x$ is context-specific, so are these parameters. This formulation comes with four free parameters (i.e. the hyper-priors $\mu_0, \nu_0, \alpha_0, \beta_0$), in accordance with the original formulation (note that \cite{Heald_Contextual_2021} fixed the mean of the priors for $b$ to zero). While the two formulations are not mathematically identical, the effects of the hyper-priors for both are the same; we discuss these effects in the next section. Additionally, we found numerically that these two formulations could provide almost identical samples for given parametrizations (see SUPPLEMENTARY MATERIALS). \todo{Do this}
 
-In the following equations, we drop the dependence on the context and
-observations for notational simplicity:
-\begin{equation}
-q(\phi | s_{1:t}) \propto p(s_{1:t} | \phi)p(\phi)
-\end{equation}
-where $s_{1:t}$ are the observed states up until time $t$. The likelihood is a
-Gaussian:
-\begin{align}
-  p(s_t | \phi) &= N(\mu_s, \sigma_s)  \\
-  \mu_s &= \phi + s_t \\
-  \sigma_s &= \xi_0 1
-\end{align}
-This likelihood is the probability of observing $s$ given the previous estimate
-of the parameters of the forward model, $\phi_{t-1}$, and given the dynamics of
-the system (see below).
-
-To update $\phi$, we assumed that for each context, the agent's belief over
-the magnitude of the adaptation is given by a normal distribution:
-\begin{equation}
-p(\phi) = N(\mu_\phi, \sigma_\phi) \label{eqn:data-dist}
-\end{equation}
-where $\mu_\phi$ and $\sigma_\phi$ are parameters to be estimated at each
-trial. Before the experiment begins, the agent will have a prior distribution
-over these parameters. A standard Bayesian approach is to choose NormalGamma
-priors:
-\begin{equation}
-p(\mu_\phi, \sigma_\phi) = NG(\mu_0, \nu_0, \alpha_0, \beta_0)
-\end{equation}
-where $\mu_{\phi}^0, \nu_{\phi}^0, \alpha_{\phi}^0$ and $\beta_{\phi}^0$ are free
-hyperparameters of the model.
-
-The update equations for the magnitude parameters are given by:
-\begin{equation}
-q(\mu_\phi, \sigma_\phi | s_t, s_{t-1}, c_{t-1}) \propto p(s_t |
-s_{t-1}, c_{t-1}, \zeta_t)p(\mu_\phi, \sigma_\phi) \label{eqn:context-from-x}
-\end{equation}
-where $p(s_t | s_{t-1}, c_{t-1}, \zeta_t)$ is a Gaussian distribution centered
-around $\mu_c$ with standard deviation $\sigma_c$, which is a free parameter of
-the model. It is assumed that the standard deviation over outcomes ($\sigma_c$)
-is related to that of the parameter $\mu_\phi$ as follows:
-\begin{equation}
-\sigma_\phi = \sigma_c / \nu_\phi
-\end{equation}
-which makes $\nu_\phi$ a parameter to estimate. Each one of the forward models can
-be updated at every trial, depending on context inference (see main text). The
-updated parameters for any one forward model $i$ are given by:
+Because the likelihood function $p(y_t | x_t, ...)$ is Gaussian, this choice of priors allows us to calculate the update equations as follows:
 \begin{align}
   \begin{split}
   \mu_\phi^{(t)} &= \frac{\nu_\phi^{(t-1)} \mu_\phi^{(t-1)} + q(\zeta_i)s_t}{\nu_\phi^{(t-1)} + q(\zeta_i)} \\
@@ -407,9 +259,56 @@ updated parameters for any one forward model $i$ are given by:
     q(\zeta_i)}\frac{\left(s_t - \mu_\phi^{(t-1)}\right)^2}{2}  \label{eqn:update-full}
   \end{split}
 \end{align}
-where $q(\zeta_i)$ is the posterior probability of context $\zeta_i$ from
-\eref{eqn:estimated-context}. Note that when $q(\zeta_i) = 0$, the model $i$ is not
-updated.
+Note that the effect of the evidence (i.e. observations) on the inference over the context-dependent hidden states is gated by the probability of each context $p(\zeta_i)$, as in \cite[][supplementary materials]{Heald_Contextual_2021}.
+
+
+
+\subsubsection{Model parameters}
+\tref{tab:parameters} lists all the parameter values that we used during our simulations. The parameters are divided into two categories: (1) task parameters, which encode the way we simulated the experimental design; (2) agent parameters, which correspond to the free parameters listed in the previous section. The variable names for the model parameters are given in the ``Var'' column, corresponding to the variables in the previous section. The values are divided into experiments and, within experiments, into the different groups or conditions that we simulated. 
+\begin{table}[h!]
+\resizebox{\textwidth}{!}{%
+  \begin{tabular}{|c|c|c|c|c|c|c|c|c|c|c|}
+  \cline{1-11}
+  & & & Kim (2015) & \multicolumn{2}{c|}{Oh (2009)} & \multicolumn{2}{c|}{Davidson (2004)} & \multicolumn{3}{c|}{Vaswani (2013)} \\
+  \cline{2-11}
+  & Var & Description & & Exp. 1 & Exp. 2 & Grp. 3A & Grp. -A & Grp. 1 & Grp. 2 & Grp. 3 \\
+  \cline{1-11}\cline{1-11}
+  \multirow{4}{*}{Task pars.} & & Contextual cues & Yes & \multicolumn{7}{c|}{No} \\
+  \cline{2-11}
+  & $x_j^*$ & Adaptation sizes & 0, 40, -40 & 0, 20 & 0, 10 & 0, 4, -4 & 0, 4, 12 & 1 & 0, 1 & -0.5, 1 \\
+  \cline{2-11}
+  & & Adaptation noise & 0.01 & \multicolumn{2}{c|}{1} & \multicolumn{2}{c|}{0.5} & \multicolumn{3}{c|}{0.01} \\
+  \cline{2-11}
+  & $\sigma_r^*$ & Obs. noise & 3 & \multicolumn{2}{c|}{1.5} & \multicolumn{2}{c|}{0.1} & \multicolumn{3}{c|}{0.01} \\
+  \cline{1-11}
+  \cline{1-11}
+  \multirow{7}{*}{Agent pars.} & $p_\zeta$& Context self-transition & 0.9 & \multicolumn{2}{c|}{0.98} &  \multicolumn{2}{c|}{0.98} & \multicolumn{2}{c|}{0.9} & 0.8 \\
+  \cline{2-11}
+  & $\mu_0$ & \multirow{4}{*}{Hyper priors} & 0, -1, 1 & \multicolumn{2}{c|}{0, 0} & 0, 4, -4 & 0, 4, 12 & \multicolumn{2}{c|}{0, 1} & 0, 1, -0.5 \\
+  \cline{2-2} \cline{4-11}
+  & $\nu_0$ & & 1e4, 10, 10 & \multicolumn{2}{c|}{0, 0} & \multicolumn{2}{c|}{1e4, 0.5, 0.5} & \multicolumn{2}{c|}{1e4, 1} & 1e4, 1, 1 \\
+  \cline{2-2} \cline{4-11}
+  & $\alpha_0$ & & 25e4, 0.25, 0.25 & \multicolumn{2}{c|}{22e4, 2.2} & \multicolumn{2}{c|}{33e4, 33, 33} & \multicolumn{2}{c|}{5e5, 5} & 15e5, 5, 5 \\
+  \cline{2-2} \cline{4-11}
+  & $\beta_0$ & & 1e5, 2, 2 & \multicolumn{2}{c|}{1e5, 20} & \multicolumn{2}{c|}{1e5, 200, 200} & \multicolumn{2}{c|}{1e5, 2} & 1e5, 2, 2 \\
+  \cline{2-11}
+  & $\sigma_u$ & Motor noise & 0.001 & \multicolumn{4}{c|}{2} & \multicolumn{3}{c|}{0.17} \\
+  \cline{2-11}
+  & $\sigma_r$& Obs. noise & 3 & \multicolumn{2}{c|}{3.5} & \multicolumn{2}{c|}{2.5} & \multicolumn{3}{c|}{0.1} \\
+  \cline{1-11}
+  \end{tabular}}
+\caption{Model and simulation parameters.}
+\label{tab:parameters}
+\end{table}
+
+We estimated the task parameters from the information provided in their respective publications; when direct information was not provided, we estimated it from the reported results; these estimations are not exact, but function as a proof of context. Agent parameter values are held constant for the different conditions or groups for each experiment, except those parameters that are expected to vary across conditions.
+
+The context-dependent hyper-priors $\{\mu_0, \nu_0, \alpha_0, \beta_0\}$ effect a learning rate and, as such, were set such that the learning rate for the baseline context is nearly zero, following the assumption that participants will not change the way they perform these movements outside of the lab. The values for contexts outside of baseline were set identically within each experiment.
+
+
+The agent has direct knowledge on the adaptation and observation noises of the task; we do not expect this to be the case in an experiment (instead participants would estimate it during their early trials). \todo{check simulations to see if I can make them identical; if not, change this}
+
+The star notation (e.g. $x_j^*$) denotes the real value used in the simulation of the task, which may be different from that assumed by the agent.
 
 \subsubsection{Interpreting the hyperparameters}
 \label{sec:interpreting-hyperparameters}
@@ -449,7 +348,7 @@ deviation are stable during the experiment.
 \section{Acknowledgment}
 Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
-\bibliography{MyLibrary}
+\bibliography{../../MyLibrary}
 
 
 
