@@ -76,34 +76,38 @@ class LeftRightAgent(object):
     def __init__(self, obs_sd=None, action_sd=None, cue_noise=None,
                  angles=None, context_noise=None, prediction_noise=None,
                  reset_after_change=None, force_sds=None, max_force=None,
-                 sample_action=None):
+                 sample_action=None, prior_over_contexts=None):
         """Initializes the known left and right contexts, as well as
         baseline.
 
         """
-        if obs_sd:
+        if obs_sd is not None:
             self.obs_sd = obs_sd
-        if action_sd:
+        if action_sd is not None:
             self.action_sd = action_sd
-        if cue_noise:
+        if cue_noise is not None:
             self.cue_noise = cue_noise
-        if angles:
+        if angles is not None:
             self.angles = np.array(angles)
             self.num_contexts = len(angles)
         else:
             self.num_contexts = 3
-        if context_noise:
+        if context_noise is not None:
             self.context_noise = context_noise
-        if prediction_noise:
+        if prediction_noise is not None:
             self.prediction_noise = prediction_noise
-        if reset_after_change:
+        if reset_after_change is not None:
             self.reset_after_change = reset_after_change
         if force_sds is not None:
             self.force_sds = force_sds
-        if max_force:
+        if max_force is not None:
             self.max_force = max_force
-        if sample_action:
+        if sample_action is not None:
             self.sample_action = sample_action
+        if prior_over_contexts is None:
+            self.prior_over_contexts = np.ones(self.num_contexts) / self.num_contexts
+        else:
+            self.prior_over_contexts = prior_over_contexts
 
         _, self.magnitudes = self.__init_contexts()
         self.magnitude_history = [self.magnitudes]
@@ -290,12 +294,13 @@ class LeftRightAgent(object):
             cue_li = self.cue_noise * np.ones(self.num_contexts)
             cue_li[cue] = 1 - (self.num_contexts - 1) * self.cue_noise
             log_cue = np.log(cue_li)
-        # if np.argmax(log_cue) != np.argmax(log_li_hand):
-        #     ipdb.set_trace()
+    
+        # Now all together!
         prior = np.exp(self.log_context - self.log_context.max()) + \
             self.context_noise
         log_prior = np.log(prior / prior.sum())
-        full_logli = log_li_hand + log_cue + log_prior
+        full_logli = log_li_hand + log_cue + log_prior +\
+            np.log(self.prior_over_contexts)
         full_li = np.exp(full_logli - full_logli.max())
         full_li /= full_li.sum()
         full_logli = np.log(full_li)

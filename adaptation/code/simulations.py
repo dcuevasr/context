@@ -373,8 +373,8 @@ def plot_adaptation(pandata, axis=None, fignum=5):
 
 def sim_and_plot(agent, pars_task, return_data=False,
                  force_labels=None, axes=None, fignum=6):
-    """Simulates the agent playing and makes a nice plot with context inference and
-    adaptation and colors everywhere.
+    """Simulates the agent playing and makes a nice plot with context inference
+    and adaptation and colors everywhere.
 
     """
     pandata, pandagent, agent = thh.run(agent, pars=pars_task)
@@ -476,6 +476,110 @@ def baseline_bias(fignum=9):
     axes[0, 3].get_legend().remove()
 
 
+def herzfeld_2014(num_trials=150, plot=True, axes=None, fignum=12):
+    """Simulates something like the experiments from Herzfeld et al. 2014.
+
+    This does two conditions: high uncertainty and low uncertainty, where
+    the uncertainty is over the current context given the previous one. In
+    the high uncertainty condition, there's a 50/50 chance of a context
+    change. In the low uncertainty, there is a 0.1 chance of change.
+
+    """
+    task = task_pars.copy()
+    task['obs_noise'] = 3
+    task['force_noise'] = 0.01 * np.ones(3)
+    task['forces'] = [[0, 0], [-1, 13], [1, 13]]
+    task['breaks'] = np.zeros(num_trials, dtype=int)
+    task['cues'] = np.zeros(num_trials, dtype=int)
+
+    task_high = task.copy()
+    contexts = np.random.choice([1, 2], size=num_trials)
+    task_high['context_seq'] = contexts
+    task_low = task.copy()
+    switches = np.random.choice([0, 1], p=(0.99, 0.01), size=num_trials)
+    switches_ct = np.concatenate([[0], np.nonzero(switches)[0], [num_trials]])
+    switches_delta = np.diff(switches_ct)
+    contexts = [[(idx % 2) + 1, switch]
+                for idx, switch in enumerate(switches_delta)]
+    task_low['context_seq'] = pars.define_contexts(contexts)
+
+    agent_pars_high = {'angles': [0, -1, 1],
+                       'prediction_noise': 0.2,
+                       'cue_noise': 1 / 3,
+                       'context_noise': 0.25,
+                       'force_sds': 0.1 * np.ones(3),
+                       'max_force': 20,
+                       'hyper_sd': 1000,
+                       'learn_rate': 10,
+                       'obs_sd': 2,
+                       'sample_action': True}
+    agent_pars_low = agent_pars_high.copy()
+    agent_pars_low['context_noise'] = 0.1
+    if plot:
+        if axes is None:
+            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
+                                     sharex=True, sharey=False)
+
+        agent = model.LRMeanSD(**agent_pars_high)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_high, axes=axes[:, 0])
+        agent = model.LRMeanSD(**agent_pars_low)
+        agent.all_learn = True
+        agent.threshold_learn = 0.2
+        sim_and_plot(agent, task_low, axes=axes[:, 1])
+
+    return task_high, task_low, agent_pars_high, agent_pars_low
+
+
+def kim_2015(plot=True, axis=None, fignum=11):
+    """Simulates an experiment from Kim et al. 2015.
+
+    Parameters
+    ----------
+    plot : bool
+    Whether to simulate and plot. If True, will create the agent
+    with the parameters agent_pars and simulate with sim_and_plot().
+
+    Returns
+    -------
+    task : dictionary
+    Parameters for the task. To be used directly as the input for tth.run().
+
+    agent_pars : dictionary
+    Parameters for the agent for both tasks. To be used directly with
+    agent.RLMeanSD(). Note that it will not work for the other agents.
+
+    """
+    task = task_pars.copy()
+    task['obs_noise'] = 3
+    task['force_noise'] = 0.01 * np.ones(3)
+    task['forces'] = [[0, 0], [-1, 40], [1, 40]]
+    blocks = [0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0, 0, 2, 1, 2, 1,
+              0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0]
+    contexts = [[idx, 30] for idx in blocks]
+    task['context_seq'] = pars.define_contexts(contexts)
+    task['breaks'] = np.zeros(len(task['context_seq']))
+    task['cues'] = task['context_seq']
+
+    agent_pars = {'angles': [0, -1, 1],
+                  'prediction_noise': 0,
+                  'cue_noise': 0.0001,
+                  'context_noise': 0.1,
+                  'force_sds': np.ones(3),
+                  'max_force': 60,
+                  'hyper_sd': 1,
+                  'obs_sd': 3,
+                  'all_learn': True,
+                  'learn_rate': 10,
+                  'sample_action': True}
+    if plot:
+        agent = model.LRMeanSD(**agent_pars)
+        sim_and_plot(agent, task, force_labels=[-40, 0, 40],
+                     fignum=fignum)
+    return task, agent_pars
+
+
 def oh_2019(plot=True, axes=None, fignum=10):
     """Simulates the experiments from Oh and Schweighoffer 2019.
 
@@ -541,110 +645,6 @@ def oh_2019(plot=True, axes=None, fignum=10):
     return task_20, task_10, agent_pars
 
 
-def kim_2015(plot=True, axis=None, fignum=11):
-    """Simulates an experiment from Kim et al. 2015.
-
-    Parameters
-    ----------
-    plot : bool
-    Whether to simulate and plot. If True, will create the agent
-    with the parameters agent_pars and simulate with sim_and_plot().
-
-    Returns
-    -------
-    task : dictionary
-    Parameters for the task. To be used directly as the input for tth.run().
-
-    agent_pars : dictionary
-    Parameters for the agent for both tasks. To be used directly with
-    agent.RLMeanSD(). Note that it will not work for the other agents.
-
-    """
-    task = task_pars.copy()
-    task['obs_noise'] = 3
-    task['force_noise'] = 0.01 * np.ones(3)
-    task['forces'] = [[0, 0], [-1, 40], [1, 40]]
-    blocks = [0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0, 0, 2, 1, 2, 1,
-              0, 1, 2, 1, 2, 0, 0, 1, 2, 1, 2, 0, 2, 1, 2, 1, 0]
-    contexts = [[idx, 30] for idx in blocks]
-    task['context_seq'] = pars.define_contexts(contexts)
-    task['breaks'] = np.zeros(len(task['context_seq']))
-    task['cues'] = task['context_seq']
-
-    agent_pars = {'angles': [0, -1, 1],
-                  'prediction_noise': 0,
-                  'cue_noise': 0.0001,
-                  'context_noise': 0.1,
-                  'force_sds': np.ones(3),
-                  'max_force': 60,
-                  'hyper_sd': 1,
-                  'obs_sd': 3,
-                  'all_learn': True,
-                  'learn_rate': 10,
-                  'sample_action': True}
-    if plot:
-        agent = model.LRMeanSD(**agent_pars)
-        sim_and_plot(agent, task, force_labels=[-40, 0, 40],
-                     fignum=fignum)
-    return task, agent_pars
-
-
-def herzfeld_2014(num_trials=150, plot=True, axes=None, fignum=12):
-    """Simulates something like the experiments from Herzfeld et al. 2014.
-
-    This does two conditions: high uncertainty and low uncertainty, where
-    the uncertainty is over the current context given the previous one. In
-    the high uncertainty condition, there's a 50/50 chance of a context
-    change. In the low uncertainty, there is a 0.1 chance of change.
-
-    """
-    task = task_pars.copy()
-    task['obs_noise'] = 3
-    task['force_noise'] = 0.01 * np.ones(3)
-    task['forces'] = [[0, 0], [-1, 13], [1, 13]]
-    task['breaks'] = np.zeros(num_trials, dtype=int)
-    task['cues'] = np.zeros(num_trials, dtype=int)
-
-    task_high = task.copy()
-    contexts = np.random.choice([1, 2], size=num_trials)
-    task_high['context_seq'] = contexts
-    task_low = task.copy()
-    switches = np.random.choice([0, 1], p=(0.99, 0.01), size=num_trials)
-    switches_ct = np.concatenate([[0], np.nonzero(switches)[0], [num_trials]])
-    switches_delta = np.diff(switches_ct)
-    contexts = [[(idx % 2) + 1, switch]
-                for idx, switch in enumerate(switches_delta)]
-    task_low['context_seq'] = pars.define_contexts(contexts)
-
-    agent_pars_high = {'angles': [0, -1, 1],
-                       'prediction_noise': 0.2,
-                       'cue_noise': 1 / 3,
-                       'context_noise': 0.25,
-                       'force_sds': 0.1 * np.ones(3),
-                       'max_force': 20,
-                       'hyper_sd': 1000,
-                       'learn_rate': 10,
-                       'obs_sd': 2,
-                       'sample_action': True}
-    agent_pars_low = agent_pars_high.copy()
-    agent_pars_low['context_noise'] = 0.1
-    if plot:
-        if axes is None:
-            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
-                                     sharex=True, sharey=False)
-
-        agent = model.LRMeanSD(**agent_pars_high)
-        agent.all_learn = True
-        agent.threshold_learn = 0.2
-        sim_and_plot(agent, task_high, axes=axes[:, 0])
-        agent = model.LRMeanSD(**agent_pars_low)
-        agent.all_learn = True
-        agent.threshold_learn = 0.2
-        sim_and_plot(agent, task_low, axes=axes[:, 1])
-
-    return task_high, task_low, agent_pars_high, agent_pars_low
-
-
 def davidson_2004(plot=True, axes=None, fignum=13):
     """Simulates the second experiment in Davidson_Scaling_2004."""
     task_m8 = task_pars.copy()
@@ -659,36 +659,60 @@ def davidson_2004(plot=True, axes=None, fignum=13):
     task_p8 = task_m8.copy()
     task_p8['forces'] = [[0, 0], [1, 4], [1, 12]]
 
+    task_p12 = task_p8.copy()
+    task_p12['forces'] = [[0, 0], [1, 4], [1, 18]]
+
+    task_m12 = task_m8.copy()
+    task_m12['forces'] = [[0, 0], [1, 4], [-1, 10]]
+
+    task_noo_m8 = task_m8.copy()
+    task_noo_m8['forces'][0][1] = 20
+    task_noo_p8 = task_p8.copy()
+    task_noo_p8['forces'] = [[0, 20], [1, 4], [1, 12]]
+
     agent_pars_m8 = {'angles': [0, 4, -4],
                      'cue_noise': 1 / 3,
                      'max_force': 20,
                      'hyper_sd': 100,
-                     'obs_sd': 2.5,
+                     'obs_sd': 2.7,  # 2.6
                      'context_noise': 0.01,
-                     'force_sds': 0.5 * np.ones(3),
+                     'force_sds': 0.3 * np.ones(3),
                      'prediction_noise': 0.5,
                      'learn_rate': 0.5,
                      'all_learn': True,
                      'threshold_learn': 0.2,
                      'sample_action': True,
-                     'action_sd': 2}
+                     'action_sd': 1}  # 2
     agent_pars_p8 = agent_pars_m8.copy()
     agent_pars_p8['angles'] = [0, 4, 12]
+    agent_pars_m12 = agent_pars_m8.copy()
+    agent_pars_m12['angles'] = [0, 4, -10]
+    agent_pars_p12 = agent_pars_p8.copy()
+    agent_pars_p12['angles'] = [0, 4, 18]
+    agent_pars_noo_p8 = agent_pars_p8.copy()
+    agent_pars_noo_p8['angles'] = [25, 4, 12]
+    agent_pars_noo_m8 = agent_pars_m8.copy()
+    agent_pars_noo_m8['angles'] = [25, 4, -4]
+    tasks = (task_m8, task_p8, task_m12, task_p12, task_noo_m8, task_noo_p8)
+    agents = (agent_pars_m8, agent_pars_p8, agent_pars_m12, agent_pars_p12,
+              agent_pars_noo_m8, agent_pars_noo_p8)
     if plot:
         if axes is None:
-            fig, axes = plt.subplots(2, 2, num=fignum, clear=True,
+            fig, axes = plt.subplots(len(agents), 2, num=fignum, clear=True,
                                      sharex=True, sharey=False)
-
-        agent = model.LRMeanSD(**agent_pars_m8)
-        sim_and_plot(agent, task_m8, axes=axes[:, 0])
-        axes[0, 0].set_title('-8 group')
-        axes[0, 0].set_ylim([-12, 12])
-        agent = model.LRMeanSD(**agent_pars_p8)
-        sim_and_plot(agent, task_p8, axes=axes[:, 1])
-        axes[0, 1].set_title('+8 group')
-        axes[0, 1].set_ylim([-12, 12])
-
-    return task_m8, task_p8, agent_pars_m8, agent_pars_p8
+        for ix_agent, ag_par in enumerate(agents):
+            c_axes = axes[ix_agent, :]
+            agent = model.LRMeanSD(**ag_par)
+            sim_and_plot(agent, tasks[ix_agent], axes=c_axes)
+        # agent = model.LRMeanSD(**agent_pars_m8)
+        # sim_and_plot(agent, task_m8, axes=axes[:, 0])
+        # axes[0, 0].set_title('-8 group')
+        # axes[0, 0].set_ylim([-12, 12])
+        # agent = model.LRMeanSD(**agent_pars_p8)
+        # sim_and_plot(agent, task_p8, axes=axes[:, 1])
+        # axes[0, 1].set_title('+8 group')
+        # axes[0, 1].set_ylim([-12, 12])
+    return tasks, agents
 
 
 def vaswani_2013(plot=True, axes=None, fignum=14):
@@ -753,6 +777,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     agent_1['force_sds'] = force_sds * np.ones(2)
 
     agent_2 = agent_1.copy()
+    agent_2['prior_over_contexts'] = np.array([0.505, 0.495])
 
     agent_3 = agent_pars.copy()
     agent_3['angles'] = [0, 1, -0.5]
@@ -777,5 +802,104 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     return tasks, agents
 
 
-if __name__ == '__main__':
-    grid_sims()
+def model_showoff(plot=True, axes=None, fignum=15):
+    """Runs a grid of simulations for different values of the parameters
+    obs_noise and cue_noise.
+    """
+    obs_noises = np.array([0.5, 1, 2])
+    cue_noises = np.array([0.0, 0.003, 0.33])
+    numbers = np.array((len(obs_noises), len(cue_noises)))
+    agents_pars = np.empty(numbers, dtype=object)
+    tasks_pars = np.empty(numbers, dtype=object)
+
+    task_common = task_pars.copy()
+    task_common['forces'] = [[0, 0], [1, 4]]
+    task_common['context_seq'] = pars.define_contexts([[1, 20],
+                                                       [0, 10]])
+    task_common['cues'] = task_common['context_seq']
+    task_common['breaks'] = np.zeros(len(task_common['context_seq']), dtype=int)
+
+    for ix_obs, c_obs in enumerate(obs_noises):
+        for ix_cue, c_cue in enumerate(cue_noises):
+            c_task = task_common.copy()
+            c_task['obs_noise'] = c_obs
+            c_agent_pars = {'max_force': 20,
+                            'angles': [0, 1],
+                            'force_sds': 0.01 * np.ones(2),
+                            'hyper_sd': 5,
+                            'obs_sd': 1,
+                            'context_noise': 0.09,
+                            'prediction_noise': 0.01,
+                            'action_sd': 0.17,
+                            'cue_noise': c_cue}
+            agents_pars[ix_obs, ix_cue] = c_agent_pars
+            tasks_pars[ix_obs, ix_cue] = c_task
+
+    if plot:
+        agents = np.empty(numbers, dtype=object)
+        if axes is None:
+            fig, axes = plt.subplots(*numbers, num=fignum, clear=True,
+                                     sharex=True, sharey=True)
+        for ix_obs in range(numbers[0]):
+            for ix_cue in range(numbers[1]):
+                agents[ix_obs, ix_cue] = model.LRMeanSD(**agents_pars[ix_obs,
+                                                                      ix_cue])
+                sim_and_plot(agent=agents[ix_obs, ix_cue],
+                             pars_task=tasks_pars[ix_obs, ix_cue],
+                             axes=[axes[ix_obs, ix_cue], axes[ix_obs, ix_cue]])
+
+    return tasks_pars, agents_pars
+
+
+def multiple_runs(runs, agent_pars, task_pars, names=None,
+                  agent_class=None):
+    """Simulates --runs-- runs of the experiments with each of the agents
+    described by --agent_pars--, in the tasks described by --task_pars--.
+
+    Returns a panda with a meaningless index, with the columns returned by
+    agent_class.join_pandas, adding columns for trial number and group name
+    (each group defined by an agent).
+
+    Parameters
+    ----------
+    runs : int
+    Number of runs of the experiment per agent to do.
+
+    agent_pars : iterable
+    Iterable of dictionaries, each dictionary containing the parameters for
+    the agent. The elements of the dictionaries must match the parameters of
+    --agent_class--. Its size must match that of --task_pars--.
+
+    task_pars : iterable
+    Iterable of dictionaries, each dictionary containing the parameters for
+    the task in thh. Its size must match that of --agent_pars--.
+
+    names : iterable
+    List of names to identify each agent. The names are used for the "group"
+    column of the returned panda. If None, range(num_agents) is used.
+
+    agent_class : class
+    Class for the agent to use. This function assumes children of
+    model.LeftRightAgent, but anything that can work with thh.run should
+    work.
+
+    """
+    if names is None:
+        names = np.arange(len(agent_pars))
+    if agent_class is None:
+        agent_class = model.LRMeanSD
+    data = {name: [] for name in names}
+    looping = [task_pars, agent_pars, names]
+    for idx, (task, ag_pars, name) in enumerate(zip(*looping)):
+        for idx in range(runs):
+            agent = agent_class(**ag_pars)
+            pandata, pandagent, _ = thh.run(agent, pars=task)
+            pandota = thh.join_pandas(pandata, pandagent)
+            pandota['part'] = idx
+            data[name].append(pandota)
+        data[name] = pd.concat(data[name])
+        data[name]['pos(t)'] = np.abs(data[name]['pos(t)'])
+    data = pd.concat(data, axis=0, names=['Group', 'trial'])
+    data.reset_index('Group', inplace=True)
+    data.reset_index('trial', inplace=True)
+    return data
