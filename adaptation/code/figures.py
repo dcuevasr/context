@@ -23,15 +23,24 @@ FIGURE_FOLDER = '../article/figures/'
 
 mpl.rcParams['font.size'] = 8
 mpl.rcParams['figure.titlesize'] = 'small'
+mpl.rcParams['lines.linewidth'] = 1
 
 
-def model_showoff(fignum=1, show=True):
-    """Plots a bunch of arbitrary simulations that show how the parameters of
+def model_showoff(fignum=1, show=True, do_a=True):
+    """Plots a bunch of arbitrary simulationsthat show how the parameters of
     the model work and affect inference. Also leaves an empty space on top
     to insert the diagram of the generative model by hand.
+
+    Parameters
+    ----------
+    do_a : bool
+    Whether to add the model diagram to the figure. If True, the model diagram
+    is assumed to be in FIGURE_FOLDER/generative.png. If False, the space will
+    be left empty at the top.
+
     """
     runs = 50
-    colors = ['black', 'tab:orange', 'tab:blue']
+    colors = ['black', 'tab:green', 'tab:blue']
     cycler = plt.cycler('color', colors)
     tasks, agents_pars = sims.model_showoff(plot=False)
     numbers = tasks.shape
@@ -111,9 +120,10 @@ def model_showoff(fignum=1, show=True):
     axes[-1, 0, 0].set_ylabel(r'Adaptation')
 
     # Import diagram of the model from png
-    diagram = plt.imread(FIGURE_FOLDER + '/generative.png')
-    axis_diagram.axis('off')
-    axis_diagram.imshow(diagram)
+    if do_a:
+        diagram = plt.imread(FIGURE_FOLDER + '/generative.png')
+        axis_diagram.axis('off')
+        axis_diagram.imshow(diagram)
 
     # subplot labels
     offset_multiplier = 0.03
@@ -122,7 +132,7 @@ def model_showoff(fignum=1, show=True):
     anchor_b = np.array(axes[0, 0, 0].get_position())[[0, 1], [0, 1]] + offset
     fig.text(s='A', x=anchor_a[0], y=anchor_a[1], fontdict={'size': 12})
     fig.text(s='B', x=anchor_b[0], y=anchor_b[1], fontdict={'size': 12})
-    
+
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
     if show:
@@ -155,7 +165,7 @@ def plot_adaptation(pandata, axis, colors):
               if column.startswith('mag_sd')]
     for color_x, error_x, magmu_x in zip(colors, errors, magmu):
         axis.plot(magmu_x, color=color_x, label='{} model'.format(color_x),
-                  linewidth=3)
+                  linewidth=2)
         # axis.fill_between(trial, magmu_x - 2 * error_x, magmu_x + 2 * error_x,
         #                   color=color_x, alpha=0.1)
     axis.plot(np.array(-pandata['hand'] - pandata['action']),
@@ -176,7 +186,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
     """
     context_color = np.ones(3) * 0.5
     ad_color = np.ones(3) * 0.3
-    cycler = plt.cycler('color', ['black', 'tab:orange', 'tab:blue'])
+    cycler = plt.cycler('color', ['black', 'tab:green', 'tab:blue'])
 
     figsize = (6, 4)
     fig = plt.figure(fignum, clear=True, figsize=figsize)
@@ -195,7 +205,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
                                                    sharey=sharey)
 
     # a)
-    trials_kim = np.arange(300)
+    trials_kim = np.arange(300)  # It IS used in the query below
     task_kim, agent_pars = sims.kim_2015(plot=False)
     agent_kim = model.LRMeanSD(**agent_pars)
     pandata, pandagent, _ = thh.run(agent_kim, pars=task_kim)
@@ -434,15 +444,19 @@ def _davidson_trio(repeats, color_list, agent_pars, tasks, names, axes, labels,
     sns.lineplot(data=datum_a, x='trial', y='con0', ax=axes[1],
                  color='black', label=labels[0][0])
     sns.lineplot(data=datum_a,
-                 x='trial', y='con1', ax=axes[1], label=labels[0][1])
+                 x='trial', y='con1', ax=axes[1], label=labels[0][1],
+                 color='tab:green')
     sns.lineplot(data=datum_a,
-                 x='trial', y='con2', ax=axes[1], label=labels[0][2])
+                 x='trial', y='con2', ax=axes[1], label=labels[0][2],
+                 color='tab:blue')
     sns.lineplot(data=datum_b, x='trial', y='con0', ax=axes[2],
                  color='black', label=labels[1][0])
     sns.lineplot(data=datum_b,
-                 x='trial', y='con1', ax=axes[2], label=labels[1][1])
+                 x='trial', y='con1', ax=axes[2], label=labels[1][1],
+                 color='tab:green')
     sns.lineplot(data=datum_b,
-                 x='trial', y='con2', ax=axes[2], label=labels[1][2])
+                 x='trial', y='con2', ax=axes[2], label=labels[1][2],
+                 color='tab:blue')
     axes[1].legend(ncol=1, fontsize='x-small', handlelength=1)
     axes[2].legend(ncol=1, fontsize='x-small', handlelength=1)
 
@@ -460,9 +474,8 @@ def _davidson_trio(repeats, color_list, agent_pars, tasks, names, axes, labels,
     axes[0].set_ylim(1.2 * np.array((ymin, ymax)))
 
 
-
 def vaswani_2013(fignum=4, show=True, pandota=None):
-    """Reproduces the results from Vaswani_Decay_2013, especifically their
+    """Reproduces the results from Vaswani_Decay_2013, specifically their
     figures 2a-c.
 
     """
