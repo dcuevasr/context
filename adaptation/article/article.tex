@@ -71,16 +71,14 @@ We focused on three main components of the COIN model: (1) context inference, (2
 
 Central to the model is the concept of context, defined in terms of the task to be performed, the variables of the environment that are relevant to perform the task, the forward models used by the decision-making agent to perform the task, and the update mechanisms necessary to adapt these forward models to the changing environment. Together, these elements allow the agent to make predictions on future observations when this context is active, and these predictions are used to infer the context. For example, when lifting an object of unknown weight, an agent might have learned one context for heavy objects and one for light objects. When observing an object to be lifted, the agent can use its size and texture to estimate the weight of the object, which in turn allows the agent to infer the appropriate context and, with it, decide how to lift the object.
 
-The COIN model contains, additionally to these three main components, components for learning new contexts (i.e. inferring the existence of a new context that had not been previously encountered by the agent), as well as the ability to infer subject-specific parameters such as a participant's assumed transition probabilities between contexts, which can differ from the real, hidden transition probabilities. In this work, we focus on switching behavior between previously-learned contexts, as well as in the perceptual aspect of context inference. Additionally, we do not fit the COIN model to participant data, instead focusing on showing the way the COIN model explains known experimental phenomena. For these reasons, we chose not to use these components of the COIN model, instead fixing both the transition probabilities between contexts and the number of contexts based on the real values during the experiments, which were made available to participants \todo{Check this}. Fixing these values, in turn, allowed us to simplify the generative model, internal to the agent, using conjugate priors, with which the agent can do exact Bayesian inference. The generative model we used here can be seen in \fref{fig:model}A, including the priors for both context inference and motor adaptation. For more details on these choices, see the Methods section.
+The COIN model contains, additionally to these three main components, components for learning new contexts (i.e. inferring the existence of a new context that had not been previously encountered by the agent), as well as the ability to infer subject-specific parameters such as a participant's assumed transition probabilities between contexts, which can differ from the real, hidden transition probabilities. In this work, we focused on switching behavior between previously-learned contexts, as well as in the perceptual aspect of context inference. More specifically, we simulated previous experiments and focused on the way the COIN model qualitatively explains experimental phenomena observed in these experiments. To do this, we fixed both the transition probabilities between contexts and the number of contexts based on the real values during the experiments, which were made available to participants. Fixing these values, in turn, allowed us to simplify the generative model, internal to the agent, using conjugate priors, with which the agent can do exact Bayesian inference. The generative model we used here can be seen in \fref{fig:model}A, including the priors for both context inference and motor adaptation. For more details on these choices, see the Methods section.
 
 \begin{figure}
 \centering
-\includegraphics[width=0.7\textwidth]{./figures/figure_1.png}
-\caption{Schematic representation of the model and illustrative simulations. (A) Generative model. Clear circles represent the observables, i.e. motor commands $u_t$ and direct observations $y_t$ (e.g. cursor position). The true context $\zeta_t$ is not directly observable, but influences $y_t$. The dark rectangles represent the prior distributions for the inferred adaptation level $x_t$ (Normal-Gamma distribution) and the current context $\zeta_t$ (discrete distribution with known $\pi$; see Methods). At every trial, the context is inferred, then motor adaptation is carried out and finally a motor command is issued; the flow of this process is indicated by the gray arrow in the background, while black arrows show the direction of information flow. (B)\todo{Explain vertical dashes} Simulations obtained with the model in (A), using a simulated experimental setup similar to that by \cite{Davidson_Scaling_2004}. A total of 3x3 experiments were simulated, with low, medium and high levels of both cue uncertainty and observation noise. Each pair of plots represent response/adaptation (top) and context inference $p(ctx)$ (bottom), for one specific level of cue uncertainty and observation noise. In the context inference plot, the y-axis represents the posterior probability of each context $p(\zeta_t = j)$; the black line represents the baseline context (i.e. no adaptation), the green line represents the only adaptation to be learned during the simulated experiment. In the top plot (adaptation), the y-axis is the adaptation to be learned (e.g. the angle in a visuomotor rotation experiment), using the same color scheme (black for baseline). The purple line is the agent's response for the trial. The shaded areas represent the standard deviation around the mean, obtained across 50 simulated participants. The top plots are shown for a single run, for clarity (see main text). All plots share the same x-axis, which represents the trial number.}
+\includegraphics[]{./figures/figure_1.png}
+\caption{Schematic representation of the model and illustrative simulations. (A) Generative model. Clear circles represent the observables, i.e. motor commands $u_t$ and direct observations $y_t$ (e.g. cursor position). The true context $\zeta_t$ is not directly observable, but influences $y_t$. The dark rectangles represent the prior distributions for the inferred adaptation level $x_t$ (Normal-Gamma distribution) and the current context $\zeta_t$ (discrete distribution with known $\pi$; see Methods). At every trial, the context is inferred, then motor adaptation is carried out and finally a motor command is issued; the flow of this process is indicated by the gray arrow in the background, while black arrows show the direction of information flow. (B) Simulations obtained with the model in (A), using a simulated experimental setup similar to that by \cite{Davidson_Scaling_2004}, in which the context changes at trial 20 (vertical, dashed lines). A total of 3x3 experiments were simulated, with low, medium and high levels of both cue uncertainty and observation noise. Each plot represents context inference $p(ctx)$ for one specific level of cue uncertainty and observation noise. The y-axis represents the posterior probability of each context $p(\zeta_t = j)$; the black line represents the baseline context (i.e. no adaptation), the green line represents the only adaptation to be learned during the simulated experiment. The shaded areas represent the standard deviation around the mean, obtained across 50 simulated participants.}
 \label{fig:model}
 \end{figure}
-\todo{Remove adaptation plots}
-These priors are not mathematically equivalent to those used by \cite{Heald_Contextual_2021}, but the prior samples they produce can be shown to be similar. For more details, see the supplementary materials. \todo{Do this}.
 
 \subsection{Contextual cues and feedback}
 The behavioral phenomena which are the focus of this work can be explained as arising from the effects of contextual cues and sensory feedback provided to participants during the experiment. To illustrate these effects in a simple example, we first simulated a generic motor adaptation experiment similar to those performed by \cite{Davidson_Scaling_2004}, in which participants must adapt to a visuomotor rotation of the cursor on a screen in relation to the movement of a pointing device.
@@ -142,7 +140,7 @@ We simulated data with the model fitting the experimental structure in \cite{Dav
 \label{fig:davidson-2004}
 \end{figure}
 
-To confirm our hypothesis, we simulated variants of the experiments in which the COIN model predicts that the difference between groups disappears. First, in \fref{fig:davidson-2004}B, we simulated an experiment in which the contexts have more extreme adaptations, making them more different from baseline than in the \cite{Davidson_Scaling_2004} experiments. To do this, one group adapts in a $O-A-(-2A)$ paradigm, while the other group adapts in a $0-A-4A$ paradigm. As in the original experiment, the second contexts ($-2A$ for one group, $4A$ for the other) are equally spaced from the first context. However, given the larger distance from baseline, the baseline context has a much lower attribution when the switch occurs compared to the original experiment. This change makes both simulated groups infer the correct context almost equally quickly, making the difference between their errors much smaller compared to the original experiment. Furthermore, we simulated an experiment with an identical structure to that of \cite{Davidson_Scaling_2004}, but eliminated the baseline context from the agent. The results can be seen in \fref{fig:davidson-2004}C, where the switches between contexts are made identically by the two groups. We discuss possible implementations of such an experiment in the Discussion section, alongside with other predictions made by the model. \todo{Promises, promises} 
+To confirm our hypothesis, we simulated variants of the experiments in which the COIN model predicts that the difference between groups disappears. First, in \fref{fig:davidson-2004}B, we simulated an experiment in which the contexts have more extreme adaptations, making them more different from baseline than in the \cite{Davidson_Scaling_2004} experiments. To do this, one group adapts in a $O-A-(-2A)$ paradigm, while the other group adapts in a $0-A-4A$ paradigm. As in the original experiment, the second contexts ($-2A$ for one group, $4A$ for the other) are equally spaced from the first context. However, given the larger distance from baseline, the baseline context has a much lower attribution when the switch occurs compared to the original experiment. This change makes both simulated groups infer the correct context almost equally quickly, making the difference between their errors much smaller compared to the original experiment. Furthermore, we simulated an experiment with an identical structure to that of \cite{Davidson_Scaling_2004}, but eliminated the baseline context from the agent. The results can be seen in \fref{fig:davidson-2004}C, where the switches between contexts are made identically by the two groups. We discuss possible implementations of such an experiment in the Discussion section, alongside with other predictions made by the model.
 
 \subsubsection{Action selection in error-clamp blocks}
 During error-clamp blocks at the end of block sequences, participants' behavior can be divided in two phases: (1) Spontaneous recovery, during which participants' behavior is consistent with a previously-encountered context (e.g. in an O-A-E experiment, consistent with A); this phase, when present, is seen during the early trials of the E block. (2) A slow return to baseline, which can last as long as hundreds of trials \citep{Brennan_Decay_2015}. However, the direction of the spontaneous recovery, its duration, the delay before it is observed, the speed of the return to baseline and the final asymptote of the adaptation vary greatly depending on the experiment \citep{Brennan_Decay_2015,Vaswani_Decay_2013,Smith_Interacting_2006,Shmuelof_Overcoming_2012}.
@@ -160,16 +158,16 @@ In \fref{fig:vaswani-2013}A, we show data simulated with the COIN model, followi
 \label{fig:vaswani-2013}
 \end{figure}
 
-In \fref{fig:vaswani-2013}C, the inference over context is shown for each group separately. Context inference works reliably until the error-clamp trials start, which do not correspond to any of the known contexts. This causes the agent to infer the combination of some of the known contexts that best fits the observations. Depending on the contexts previously learned by the agent: groups 1.1 and 1.4 display the same behavior, where the previous context (A and -A, respectively) slowly dwindles. These agents will slowly lower the force applied. In contrast, group 1.3 has learned the additional -A/2 context, which has a non-zero posterior probability during E trials, pushing the agent's adaptation force more quickly towards zero. Group 1.2 behaves similarly to 1.1, with the exception that the baseline context, which was recently seen, plays a bigger role during E trials, making the agent reduce its force during E trials slightly more quickly than groups 1.1 and 1.4. \todo{Danger! Danger! A keen observer might point out that the model might want to learn a new context, as COIN does. What to do? What to do?}
+In \fref{fig:vaswani-2013}C, the inference over context is shown for each group separately. Context inference works reliably until the error-clamp trials start, which do not correspond to any of the known contexts. This causes the agent to infer the combination of some of the known contexts that best fits the observations. Depending on the contexts previously learned by the agent: groups 1.1 and 1.4 display the same behavior, where the previous context (A and -A, respectively) slowly dwindles. These agents will slowly lower the force applied. In contrast, group 1.3 has learned the additional -A/2 context, which has a non-zero posterior probability during E trials, pushing the agent's adaptation force more quickly towards zero. Group 1.2 behaves similarly to 1.1, with the exception that the baseline context, which was recently seen, plays a bigger role during E trials, making the agent reduce its force during E trials slightly more quickly than groups 1.1 and 1.4.
 
 Context inference also explains the variability in the lag before adaptation starts to drop to zero after the E block starts. In the model, this lag is due to a period in which context inference has not ``caught on'' to the change of context; during this period, behavior remains consistent with that of the previously-observed block, as can be seen in the experimental data as well. To show this, we show in \fref{fig:vaswani-2013}D the drop in the inferred probability of the previous context for each simulated run (one line per run, 10 runs per group, all groups). The start and speed of the drop depend on the run (i.e. the participant), reproducing the different lags observed in experimental data.
 
 \section{Discussion}
-We expand on previous works \cite{Heald_Contextual_2021,Oh_Minimizing_2019} that introduced the idea that context inference is a process that informs and is informed by motor adaptation by showing that it explains behavioral phenomena that had previously required different specific, ad-hoc mechanisms outside of contextual motor adaptation. 
+We showed that context inference as an active, continuous process, can explain many behavioral phenomena observed experimentally. In particular, we showed that the effects of the presence and reliability of contextual cues, as well as observation noise, can cause behavior that can be observed during context switching, as well as during times in which context inference is hindered, as is the case during error-clamp trials in many experiments.
 
-We selected representative experimental studies that show the well-established effects of savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using the COIN model introduced by \cite{Heald_Contextual_2021}, we showed how each of these effects can be explained by the dynamics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
+To do this, we selected representative experimental studies that show the well-established effects of savings, quick de-adaptation, spontaneous recovery and the effects of sensory cues. Using the COIN model introduced by \cite{Heald_Contextual_2021}, we showed how each of these effects can be explained by the dynamics of context inference, which integrates all the available information (e.g. sensory cues, workspace location, reward and endpoint feedback), in some cases throughout many trials.
 
-We used the recently-introduced COIN model \cite{Heald_Contextual_2021}, with a different choice of prior distributions that greatly simplified our simulations without sacrificing relevant parts of the original specification. While we focused on the Bayesian motor adaptation of the COIN model, we expect the results we presented here to hold using alternative models for motor adaptation, such as other Kalman filter-based learners \cite[e.g.][]{Oh_Minimizing_2019,Baddeley_System_2003} and other Bayesian implementations \cite[e.g.][]{Wolpert_Multiple_1998,Kording_Bayesian_2004}. An exception is linear learners \cite[e.g.][]{Smith_Interacting_2006,Forano_Timescales_2020,Lee_Dual_2009}, as these models do not incorporate uncertainty in the estimate of the parameters of the forward models.
+With this, we expanded on previous works that introduced the idea that context inference is a process that informs and is informed by motor adaptation by showing that it explains behavioral phenomena that had previously required different specific, ad-hoc mechanisms outside of contextual motor adaptation. 
 
 \subsection{Further experimental evidence}
 In many cases, the context is not directly observable and context inference takes the form of an evidence-accumulating process that can take any amount of time to be sure of the context. It is in these cases where the effects of context inference are most noticeable. While many experiments exist that give probabilistic contextual information \cite[e.g.][]{Scholz_uncontrolled_1999,Behrens_Learning_2007,Nassar_Dissociable_2019}, evidence accumulation is not limited to these explicit cases. Indeed, as we noted in the Results section, many experiments inadvertently include partial contextual information used by participants.
@@ -197,7 +195,7 @@ Note that the original COIN specification includes a component to learn new cont
 As discussed in the Resuls section, the effect observed by \cite{Davidson_Scaling_2004} is explained by the model as an effect of slow context inference, instead of being a direct interference at the level of learning. As shown in \fref{fig:davidson-2004}B-C, the context inference account predicts that this effect would disappear if all contexts were significantly different from baseline, such that the baseline context never explains the observations. Removing the baseline context from a participant's context inference might be experimentally unfeasible, but other possibilities include making all adaptations bigger (e.g. bigger angles, stronger forces), and including contextual cues that rule out the baseline context. In the opposite direction, the model predicts that if all adaptations are smaller (i.e. closer to baseline), the differences between the two groups would increase.
 
 \subsubsection{Reducing the effect of volatility on learning}
-Experiments \citep{Herzfeld_memory_2014,Heald_Contextual_2021} have shown an effect of the volatility of the environment (i.e. unpredictable switching between contexts) on measured learning rate. The model predicts that this effect would be greatly reduced if reliable contextual cues were introduced: if a participant can infer the context of the current trial before any decision or observation has occurred, the learning rate would not be affected by the volatility of the environment. \cite{Heald_Contextual_2021} showed that the COIN model explains this change in terms of the Kalman gain and the posterior probability over contexts (see their equation 14) \todo{Check this in more detail}.
+Experiments \citep{Herzfeld_memory_2014,Heald_Contextual_2021} have shown an effect of the volatility of the environment (i.e. unpredictable switching between contexts) on measured learning rate. The model predicts that this effect would be greatly reduced if reliable contextual cues were introduced: if a participant can infer the context of the current trial before any decision or observation has occurred, the learning rate would not be affected by the volatility of the environment. \cite{Heald_Contextual_2021} showed that the COIN model explains this change in terms of the Kalman gain and the posterior probability over contexts (see their equation 14).
 
 If this prediction is confirmed, the model would additionally suggest that human participants do not revisit the learned adaptation of the previous trial when a new observation comes in. To see this, consider the following scenario from the experiments by \cite{Herzfeld_memory_2014}: at trial $t$, the true context was B but the participant inferred context A, issued a motor command consistent with context A and then observed the outcome at $t + 1$. When the outcome is observed, it becomes clear to the participant that the context was B. Does the participant update the internal model of A or of B? According to the model, participants incorrectly update A and, upon learning of their mistake at trial $t+1$, do not revert this update. If this were not the case, the volatility of the environment would have no effect even without contextual cues, as the context at trial $t$ can almost always be identified at trial $t+1$.
 
@@ -217,17 +215,17 @@ At each trial $t$, the agent infers both the context and the context-dependent a
 \begin{equation}
 p(\zeta_t | \zeta_{t-1}, \pi_{\zeta_{t-1}}) = \text{Discrete}\left(\pi_{\zeta_{t-1}}\right)
 \end{equation}
-where $\pi_{\zeta_{t-1}}$ is the transition probability vector from context $\zeta_{t-1}$ to all other contexts. MARKOV CHAIN. The contextual cues (when present in an experiment) are assumed to be drawn depending on the context following:
+where $\pi_{\zeta_{t-1}}$ is the transition probability vector from context $\zeta_{t-1}$ to all other contexts. The contextual cues (when present in an experiment) are assumed to be drawn depending on the context following:
 \begin{equation}
 p(q_t | c_t, \Phi) = \text{Discrete}(\Phi_{\zeta_t})
 \end{equation}
-where $Q_{\zeta_t}$ is the probability vector with which the contextual cue $q_t$ is shown to the agent in context $\zeta_t$. As pointed out by \cite{Heald_Contextual_2021}, both $\Phi$ and $\pi$ are in principle infinite, but a task-relevant finite set can be used instead.
+where $\Phi_{\zeta_t}$ is the probability vector with which the contextual cue $q_t$ is shown to the agent in context $\zeta_t$. As pointed out by \cite{Heald_Contextual_2021}, both $\Phi$ and $\pi$ are in principle infinite, but a task-relevant finite set can be used instead.
 
 The context-dependent adaptation is represented by the latent variable $x_{\zeta,t}$ and assumed to arise from an autoregressive process AR(1), with a stationary Gaussian distribution of unknown mean and variance:
 \begin{equation}
-p(x_{\zeta,t}) = \mathcal{N}(\mu_{\zeta,x}, \sigma_{\zeta,x})
+p(x_{\zeta,t}) = \mathcal{N}(\mu_{\zeta,x}, \sigma_{\zeta, x})
 \end{equation}
-where $\sigma$ is assumed to be shared across all contexts. Note that $\mu$ and $\sigma$ are parametrized by the parameters of the AR(1) process, namely $\mu_{\zeta,x} = d_\zeta / (1 - a_\zeta)$ and $\sigma_{\zeta, x} = \sigma_q / 1 - a_\zeta^2$, where $\sigma_q$ is a free parameter of the model.
+Note that $\mu_{\zeta, x}$ and $\sigma_{\zeta,x}$ are parametrized by the parameters of the AR(1) process, namely $\mu_{\zeta,x} = d_\zeta / (1 - a_\zeta)$ and $\sigma_{\zeta, x} = \sigma_q / 1 - a_\zeta^2$, where $\sigma_q$ is a free parameter of the model which is not context dependent.
 
 Observations take the form of state feedback (e.g. the position of the cursor on the screen in visuomotor rotation tasks), given by:
 \begin{equation}
@@ -243,29 +241,29 @@ To include motor noise (independent from estimation uncertainty), as well as car
 
 
 \subsubsection{Using the model}
-The free parameters of this model can be fitted to participants' data, as was done by \cite{Heald_Contextual_2021}. In this work, we instead chose values for these parameters to show that the model is capable of explaining the experimental phenomena in the Results section. Additionally, by fixing these parameters the agent is able to perform exact Bayesian inference at each trial using conjugate priors, replacing the MCMC approach used by \cite{Heald_Contextual_2021} due to the mathematical intractability of the full formulation. This, however, does not change the model and was done purely for computational efficiency. In this section, we describe how we fixed parameters and the procedure for Bayesian inference.
+The free parameters of this model can be fitted to participants' data, as was done by \cite{Heald_Contextual_2021}. In this work, we instead chose values for these parameters to show that the model is capable of explaining the experimental phenomena in the Results section. Additionally, by fixing these parameters the agent is able to perform exact Bayesian inference at each trial using conjugate priors, replacing the MCMC approach used by \cite{Heald_Contextual_2021} due to the mathematical intractability of the full formulation. This, however, does not significantly change the model and was done purely for computational efficiency. In this section, we describe how we fixed parameters and the procedure for Bayesian inference.
 
-As explained above, context is assumed to be a discrete variable which evolves as a Markov process. The transition matrices $\pi$ were generated via a Dirichlet process, with parameters that can be inferred from participant data ($\alpha$ and $\kappa$ in \cite{Heald_Contextual_2021}). For a fixed value of these parameters, the transition matrices also become fixed. In particular, setting the parameters to CALCULATE THIS, the transition matrices are such that contexts are assumed to be sticky, i.e. a transition from a context to itself is more likely than to any other context. In our simulations, we set the probability of self-transitioning (denoted $p_\zeta$) depending on the experiments (see below), to numbers that match the information given to the participants of each study.
+As explained above, context is assumed to be a discrete variable which evolves as a Markov process. The transition matrices $\pi$ were generated via a Dirichlet process, with parameters that can be inferred from participant data ($\alpha$ and $\kappa$ in \cite{Heald_Contextual_2021}). For a fixed value of these parameters, the transition matrices also become fixed. In our simulations, we set the probability of self-transitioning (denoted $p_\zeta$) depending on the experiments (see below), to numbers that match the experimental setup of each study.
 
-Contextual cues are assumed by the agent to be sampled from a distribution that depends on the current context. This is done through a set of cue probability vectors that are generated via a parametric distribution, whose parameters are fitted to participants' data. Because the experiments we simulate do not include probabilistic or deceiving cues, contextual cues, when present, unequivocally reflect the current context, i.e. $p(q_t = i | c_t = j) = d_{ij}$, where $\delta_{ij}$ is the Kronecker delta, equaling zero unless $i = j$.
+Contextual cues are assumed by the agent to be sampled from a distribution that depends on the current context. This is done through a set of cue probability vectors that are generated via a parametric distribution, whose parameters are fitted to participants' data. Because the experiments we simulate do not include probabilistic or deceiving cues, contextual cues, when present, unequivocally reflect the current context, i.e. $p(q_t = i | c_t = j) = d_{ij}$, where $\delta_{ij}$ is the Kronecker delta, equaling one when $i = j$, zero otherwise.
 
-Finally, we chose an equivalent parametrization for the priors over the hidden variables $x_{j,t}$, using the mean $\mu_x$ and standard deviation $\sigma_x$ directly instead of the AR(1) $a$ and $d$ parameters used by \cite{Heald_Contextual_2021}. Note that we dropped the $j$ dependency for clarity. This parametrization, in conjunction with the fixed parameters outlined above,  allows us to set priors over $\mu_x$ and $\sigma_x$ that enable exact inference over the latent variables. The priors are given by a Normal-Gamma distribution, typically used for priors of the mean and standard deviation of a Gaussian distribution [CITATION NEEDED]:
+Finally, we chose a different parametrization for the priors over the hidden variables $x_{j,t}$, using the mean $\mu_x$ and standard deviation $\sigma_x$ directly instead of the AR(1) $a$ and $d$ parameters used by \cite{Heald_Contextual_2021}. In what follows, we dropped the $j$ dependency for clarity. This parametrization, in conjunction with the fixed parameters outlined above, allows us to set priors over $\mu_{\zeta,x}$ and $\sigma_{\zeta,x}$ that enable exact inference over the latent variables:
 \begin{equation}
 \mu_x, \sigma_x \sim \mathcal{NG}(\mu_0, \nu_0, \alpha_0, \beta_0)
 \end{equation}
-with free parameters $\mu_0$, $\nu_0$, $\alpha_0$ and $\beta_0$, which we fixed for each experiment separately. Because $x$ is context-specific, so are these parameters. This formulation comes with four free parameters (i.e. the hyper-priors $\mu_0, \nu_0, \alpha_0, \beta_0$), in accordance with the original formulation (note that \cite{Heald_Contextual_2021} fixed the mean of the priors for $b$ to zero). While the two formulations are not mathematically identical, the effects of the hyper-priors for both are the same; we discuss these effects in the next section. Additionally, we found numerically that these two formulations could provide almost identical samples for given parametrizations (see SUPPLEMENTARY MATERIALS). \todo{Do this}
+with free parameters $\mu_0$, $\nu_0$, $\alpha_0$ and $\beta_0$, which we fixed for each experiment separately. Because $x$ is context-specific, so are these parameters. This formulation comes with four free parameters (i.e. the hyper-priors $\mu_{0,i}, \nu_{0,i}, \alpha_{0,i}, \beta_{0,i}$), in accordance with the original formulation (note that \cite{Heald_Contextual_2021} fixed the mean of the priors for $b$ to zero). While the two formulations are not mathematically identical, the effects of the hyper-priors for both are the same; we discuss these effects in the next section.
 
 Because the likelihood function $p(y_t | x_t, ...)$ is Gaussian, this choice of priors allows us to calculate the update equations as follows:
 \begin{align}
   \begin{split}
-  \mu_\phi^{(t)} &= \frac{\nu_\phi^{(t-1)} \mu_\phi^{(t-1)} + q(\zeta_i)s_t}{\nu_\phi^{(t-1)} + q(\zeta_i)} \\
-  \nu_\phi^{(t)} &= \nu_\phi^{(t-1)} + q(\zeta_i) \\
-  \alpha_\phi^{(t)} &= \alpha_\phi^{(t-1)} + q(\zeta_i) / 2 \\
-  \beta_\phi^{(t)} &= \beta_\phi^{(t-1)} + \frac{q(\zeta_i)\nu_\phi^{(t-1)}}{\nu_\phi^{(t-1)} +
-    q(\zeta_i)}\frac{\left(s_t - \mu_\phi^{(t-1)}\right)^2}{2}  \label{eqn:update-full}
+  \mu_{\phi, i}^{(t)} &= \frac{\nu_{\phi,i}^{(t-1)} \mu_{\phi,i}^{(t-1)} + q(\zeta_i)s_t}{\nu_{\phi,t}^{(t-1)} + q(\zeta_i)} \\
+  \nu_{\phi,t}^{(t)} &= \nu_{\phi,t}^{(t-1)} + q(\zeta_i) \\
+  \alpha_{\phi,t}^{(t)} &= \alpha_{\phi,i}^{(t-1)} + q(\zeta_i) / 2 \\
+  \beta_{\phi,i}^{(t)} &= \beta_{\phi,i}^{(t-1)} + \frac{q(\zeta_i)\nu_{\phi,i}^{(t-1)}}{\nu_{\phi,i}^{(t-1)} +
+    q(\zeta_i)}\frac{\left(s_t - \mu_{\phi,t}^{(t-1)}\right)^2}{2}  \label{eqn:update-full}
   \end{split}
 \end{align}
-Note that the effect of the evidence (i.e. observations) on the inference over the context-dependent hidden states is gated by the probability of each context $p(\zeta_i)$, as in \cite[][supplementary materials]{Heald_Contextual_2021}.
+where $s_t$ represents the observations, in the form of the error between the observed and expected outcomes of the motor command. Note that the effect of the evidence (i.e. observations) on the inference over the context-dependent hidden states is gated by the probability of each context $p(\zeta_i)$, as in \cite[][supplementary materials]{Heald_Contextual_2021}.
 
 
 
@@ -307,54 +305,54 @@ Note that the effect of the evidence (i.e. observations) on the inference over t
 \label{tab:parameters}
 \end{table}
 
-We estimated the task parameters from the information provided in their respective publications; when direct information was not provided, we estimated it from the reported results; these estimations are not exact, but function as a proof of context. Agent parameter values are held constant for the different conditions or groups for each experiment, except those parameters that are expected to vary across conditions.
+We estimated the task parameters from the information provided in their respective publications; when direct information was not provided, we estimated it from the reported results; these estimations are not exact, but function as a proof of concept. Agent parameter values are held constant for the different conditions or groups for each experiment, except those parameters that are expected to vary across conditions.
 
 The context-dependent hyper-priors $\{\mu_0, \nu_0, \alpha_0, \beta_0\}$ effect a learning rate and, as such, were set such that the learning rate for the baseline context is nearly zero, following the assumption that participants will not change the way they perform these movements outside of the lab. The values for contexts outside of baseline were set identically within each experiment.
 
-
-The agent has direct knowledge on the adaptation and observation noises of the task; we do not expect this to be the case in an experiment (instead participants would estimate it during their early trials). \todo{check simulations to see if I can make them identical; if not, change this}
-
 The star notation (e.g. $x_j^*$) denotes the real value used in the simulation of the task, which may be different from that assumed by the agent.
 
-\subsubsection{Interpreting the hyperparameters}
+For the simulations in \fref{fig:model}, the parameters were set as in the experiments by \cite{Davidson_Scaling_2004}, with two exceptions: (1) the cue noise, which is set to the values of 0, 0.003 and 0.33, for the low, medium and high values, respectively; and (2) the agent's observation noise $\sigma_r$, with values of 0.5, 1 and 2.
+
+\subsubsection{Interpreting the hyper-parameters}
 \label{sec:interpreting-hyperparameters}
 $\mu$ determines the initial estimate of the adaptation, in the same units as
-the necessary adaptation. $\nu$ encodes how stable this hyperprior is: higher
-values (e.g. 10,000) all but guarantee that the hypermean will not change its
-value after observations; In principle, enough evidence should still modify it,
-but that would not happen during an experiment. Smaller values (i.e. $\sim 1$)
-make the hypermean follow evidence more freely. Note that as more observations
-are accumulated, $\nu$ becomes bigger and bigger, stabilizing the value of the
-hypermean.
+the necessary adaptation. $\nu$ encodes how stable this hyper-prior is: higher
+values (e.g. 10,000) all but guarantee that the hyper-prior $\mu$ will not
+change its value after observations; In principle, enough evidence should still
+modify it, but that would not happen during an experiment. Smaller values
+(i.e. $\sim 1$) make $\mu$ follow evidence more freely. Note that as more
+observations are accumulated, $\nu$ becomes bigger and bigger, stabilizing the
+value of $\mu$.
 
-The hyperparameters $\alpha$ and $\beta$ have a more complex effect. Note that
+The hyper-parameters $\alpha$ and $\beta$ have a more complex effect. Note that
 the mean of a gamma distribution is $1 / (\alpha \nu)$; this mean is being used
-as the standard deviation of a Gaussian by the rest of the agent, which makes it
-an important measure of uncertainty. While setting the default hyperparameters,
-the values used are $\alpha = 0.5 / \sigma_0$ and $\beta = 0.5$, where
-$\sigma_0$ is the \textit{a priori} estimate of the standard deviation of the
-force exerted by the environment, which controls the initial learning rate. This
-makes the initial standard deviation equal $\sigma_0$, which makes it consistent
-with the fixed-force model. The 0.5 values ensure that uncertainty is large at
-the beginning and is greatly reduced during the experiment, but never to a point
-where it is so small that it makes trial-to-trial variation in the environment
-surprising. Changing this 0.5 would make the standard deviation change more
-quickly, making the model more or less precise in its predictions, independently
-of the volatility of the mean of the adaptation (via the hypermean).
+as the standard deviation of a Gaussian by the rest of the agent, which makes
+it an important measure of uncertainty. While setting the default
+hyper-parameters, the values used are $\alpha = 0.5 / \sigma_0$ and
+$\beta = 0.5$, where $\sigma_0$ is the \textit{a priori} estimate of the
+standard deviation of the force exerted by the environment, which controls the
+initial learning rate. This makes the initial standard deviation equal
+$\sigma_0$, which makes it consistent with the fixed-force model. The 0.5
+values ensure that uncertainty is large at the beginning and is greatly reduced
+during the experiment, but never to a point where it is so small that it makes
+trial-to-trial variation in the environment surprising. Changing this 0.5 would
+make the standard deviation change more quickly, making the model more or less
+precise in its predictions, independently of the volatility of the mean of the
+adaptation (via $\mu$).
 
 The baseline model defaults to different values that make it a lot more
 stable. The hyper-standard deviation of the mean is set to 10,000, which makes
 the mean entirely stable during the duration of the experiment. The values of
 $\alpha$ and $\beta$ are fixed regardless of $\sigma_0$ such that the standard
 deviation is 0.001 (compared that to the size of the adaptations in mechanical
-arm experiments, around 0.0125), and the hyperparameters of the standard
+arm experiments, around 0.0125), and the hyper-parameters of the standard
 deviation are stable during the experiment.
 
 
 \section{Acknowledgment}
 Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft) as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische Universität Dresden.
 
-\bibliography{MyLibrary}
+\bibliography{../../MyLibrary}
 
 
 

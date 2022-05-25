@@ -7,6 +7,8 @@ is in the paper. Those that do not have one are not paper figures, but
 auxiliary functions."""
 
 import ipdb
+from itertools import product
+
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
@@ -18,6 +20,7 @@ import simulations as sims
 import model
 import task_hold_hand as thh
 import pars
+import heald
 
 FIGURE_FOLDER = '../article/figures/'
 
@@ -27,7 +30,7 @@ mpl.rcParams['lines.linewidth'] = 1
 
 
 def model_showoff(fignum=1, show=True, do_a=True):
-    """Plots a bunch of arbitrary simulationsthat show how the parameters of
+    """Plots a bunch of arbitrary simulations that show how the parameters of
     the model work and affect inference. Also leaves an empty space on top
     to insert the diagram of the generative model by hand.
 
@@ -40,31 +43,29 @@ def model_showoff(fignum=1, show=True, do_a=True):
 
     """
     runs = 50
-    colors = ['black', 'tab:green', 'tab:blue']
+    highlight_color = 'lightgray'
+    colors = ['black', 'tab:olive', 'tab:blue']
     cycler = plt.cycler('color', colors)
     tasks, agents_pars = sims.model_showoff(plot=False)
     numbers = tasks.shape
-    figsize = (6, 8)
+    figsize = (5, 6)
     fig = plt.figure(fignum, clear=True, figsize=figsize)
-    height_ratios = np.ones(numbers[0] + 2)
+    height_ratios = 0.5 * np.ones(numbers[0] + 2)
     height_ratios[0] = 3
     height_ratios[1] = 0.3
     gsbig = gs.GridSpec(numbers[0] + 2, numbers[1], figure=fig,
                         height_ratios=height_ratios, hspace=0.1, wspace=0.1)
     axis_diagram = fig.add_subplot(gsbig[0, :])
-    ctx_switch = np.diff(tasks.reshape(-1)[0]['context_seq']).nonzero()[0][0] + 1
+    ctx_switch = np.diff(
+        tasks.reshape(-1)[0]['context_seq']).nonzero()[0][0] + 1
     num_trials = len(tasks.reshape(-1)[0]['context_seq'])
-    axes = np.empty((*numbers, 2), dtype=object)
-    small_hr = [2, 1]  # height ratios for adaptation/p(ctx)
+    axes = np.empty(numbers, dtype=object)
     for ix_row in np.arange(2, numbers[0] + 2):
         for ix_col in np.arange(numbers[1]):
-            gssmall = gsbig[ix_row, ix_col].subgridspec(2, 1, hspace=0.05,
-                                                        height_ratios=small_hr)
-            axes[ix_row - 2, ix_col, 0] = fig.add_subplot(gssmall[0])
-            axes[ix_row - 2, ix_col, 1] = fig.add_subplot(gssmall[1])
+            axes[ix_row - 2, ix_col] = fig.add_subplot(gsbig[ix_row, ix_col])
     for ix_row in range(numbers[0]):
         for ix_col in range(numbers[1]):
-            c_axes = axes[ix_row, ix_col, :]
+            c_axes = axes[ix_row, ix_col]
             agent = model.LRMeanSD(**agents_pars[ix_row, ix_col])
             task = tasks[ix_row, ix_col]
             pandata, pandagent, _ = thh.run(agent, pars=task)
@@ -73,18 +74,13 @@ def model_showoff(fignum=1, show=True, do_a=True):
                                          agent_pars=[agents_pars[ix_row,
                                                                  ix_col], ],
                                          task_pars=[task, ])
-            c_axes[0].axvline(ctx_switch, linestyle='--', color='black',
-                              alpha=0.3)
-            c_axes[1].axvline(ctx_switch, linestyle='--', color='black',
-                              alpha=0.3)
-            c_axes[1].set_prop_cycle(cycler)
+            c_axes.axvline(ctx_switch, linestyle='--', color='black',
+                           alpha=0.3)
+            c_axes.set_prop_cycle(cycler)
             sns.lineplot(data=pandota, x='trial', y='con0', ci='sd',
-                         ax=c_axes[1])
+                         ax=c_axes)
             sns.lineplot(data=pandota, x='trial', y='con1', ci='sd',
-                         ax=c_axes[1])
-            plot_adaptation(pandota, axis=c_axes[0], colors=colors)
-            # c_axes[0].set_ylim((-3, 6))
-    yticks_ada = axes[-1, 0, 0].get_yticks()[1:]
+                         ax=c_axes)
     xticks = np.array([0, ctx_switch])
     for axis in axes.reshape(-1):
         axis.set_xticks([])
@@ -94,30 +90,30 @@ def model_showoff(fignum=1, show=True, do_a=True):
         axis.set_ylabel('')
         axis.spines['right'].set_visible(False)
         axis.spines['top'].set_visible(False)
-    for rows in axes[-1, :, :]:
-        rows[1].set_xlabel('Trial')
-        rows[1].set_xticks(xticks)
-        # rows[1].set_xlim((0, num_trials))
-    for cols in axes[:, 0, :]:
-        cols[0].set_yticks(yticks_ada)
-        cols[1].set_yticks([0, 0.5], labels=['0', '.5'])
-    cue_texts = ['Low', 'Cue uncertainty\nMed', 'High']
-    for tops, text in zip(axes[0, :, 0], cue_texts):
+    for rows in axes[-1, :]:
+        rows.set_xlabel('Trial')
+        rows.set_xticks(xticks)
+    for cols in axes[:, 0]:
+        cols.set_yticks([0, 0.5], labels=['0', '.5'])
+    cue_texts = ['Low', 'Med.', 'High']
+    for tops, text in zip(axes[0, :], cue_texts):
         tops.set_title(text, verticalalignment='bottom')
-    centering = (1 - small_hr[1] / small_hr[0]) / 2
+    axes[0, 1].text(s='Cue Uncertainty', x=0.5, y=1.8,
+                    transform=axes[0, 1].transAxes,
+                    verticalalignment='center',
+                    horizontalalignment='center',
+                    backgroundcolor=highlight_color,
+                    linespacing=0.1)
     obs_texts = ['Low', 'Med.', 'High']
-    for lefts, text in zip(axes[:, -1, 0], obs_texts):
-        lefts.text(s=text, x=1.1, y=centering, transform=lefts.transAxes,
+    for lefts, text in zip(axes[:, -1], obs_texts):
+        lefts.text(s=text, x=1.1, y=0.5, transform=lefts.transAxes,
                    rotation=270, horizontalalignment='center',
                    verticalalignment='center')
-    axes[1, -1, 0].text(s='Obs. Noise', x=1.2, y=centering,
-                        transform=axes[1, -1, 0].transAxes,
-                        rotation=270, verticalalignment='center')
-    for axis in axes[:, :, 0].reshape(-1):
-        axis.set_ylim((-1, 5))
-        axis.axline((0, 4), slope=0, color='black', linestyle='--', alpha=0.3)
-    axes[-1, 0, 1].set_ylabel(r'p(ctx)')
-    axes[-1, 0, 0].set_ylabel(r'Adaptation')
+    axes[1, -1].text(s='Obs. Noise', x=1.25, y=0.5,
+                     transform=axes[1, -1].transAxes,
+                     rotation=270, verticalalignment='center',
+                     backgroundcolor=highlight_color,)
+    axes[-1, 0].set_ylabel(r'p(ctx)')
 
     # Import diagram of the model from png
     if do_a:
@@ -129,7 +125,7 @@ def model_showoff(fignum=1, show=True, do_a=True):
     offset_multiplier = 0.03
     offset = np.array([-1, figsize[1] / figsize[0]]) * offset_multiplier
     anchor_a = np.array(axis_diagram.get_position())[[0, 1], [0, 1]] + offset
-    anchor_b = np.array(axes[0, 0, 0].get_position())[[0, 1], [0, 1]] + offset
+    anchor_b = np.array(axes[0, 0].get_position())[[0, 1], [0, 1]] + offset
     fig.text(s='A', x=anchor_a[0], y=anchor_a[1], fontdict={'size': 12})
     fig.text(s='B', x=anchor_b[0], y=anchor_b[1], fontdict={'size': 12})
 
@@ -229,7 +225,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
                     horizontalalignment='center',
                     verticalalignment='center')
     axes[0, 1].set_title('Adaptation')
-    axes[0, 0].set_title('p(context)')
+    axes[0, 0].set_title('Context')
 
     # b)
     ohcon = ['con0', 'con1']
@@ -299,6 +295,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
     # Axes shenanigans
     for axis in axes[:, 0].reshape(-1):
         axis.set_yticks([0, 1])
+        axis.set_ylabel('p(ctx)')
     for axis in axes[:, -1]:
         yticks = axis.get_yticks().astype(int)
         axis.set_yticklabels(yticks, visible=False)
@@ -608,7 +605,7 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
     axes_sum[0].set_title('Simulations')
     axes_sum[1].set_title('Exp. data')
     axes_lag.set_title('Simulations')
-    
+
     plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
 
@@ -617,21 +614,29 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
         plt.show(block=False)
 
 
-def test(fignum=100, figsize=(5, 5)):
-    mags = gs.GridSpec(3, 3, height_ratios=[2.2, 1, 1],
-                       width_ratios=[1, 1, 2.2], wspace=0.1, hspace=0.1)
-    fig = plt.figure(num=fignum, clear=True, figsize=figsize)
-    axes_con = [fig.add_subplot(mags[1, 0])]
-    axes_con.append(fig.add_subplot(mags[1, 1], sharey=axes_con[0]))
-    axes_con.append(fig.add_subplot(mags[2, 0], sharey=axes_con[0]))
-    axes_con.append(fig.add_subplot(mags[2, 1], sharey=axes_con[0]))
-    axes_sum = [fig.add_subplot(mags[0, 0:2]), ]
-    axes_sum.append(fig.add_subplot(mags[0, 2], sharex=axes_sum[0]))
-    axes_lag = fig.add_subplot(mags[1:3, 2])
+def priors_model_evidence(elbows=None, fignum=101, show=True):
+    """Supplementary information plot. Shows the model evidence after fitting
+    both the original COIN priors and our priors to data sets obtained from
+    both models. As such, it is a confussion matrix.
 
-    all_axes = [*axes_con, *axes_sum, axes_lag]
-    for axis in all_axes:
-        axis.plot([0, 1], [0, 1], color='blue')
-        axis.set_ylabel('yo')
-    plt.draw()
-    plt.show(block=False)
+    """
+    fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
+    flat_elbows = heald._flatten_elbows(elbows)
+    axis.imshow(flat_elbows)
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
+
+    if elbows is None:
+        elbows = heald.generate_elbowsh_normal()
+    if elbows.ndim == 4:
+        elbows = heald._flatten_elbows(elbows)
+    showy = axis.imshow(elbows)
+    axis.set_xticklabels([])
+    axis.set_yticklabels([])
+    axis.set_ylabel('Models')
+    axis.set_xlabel('Data sets')
+    plt.colorbar(showy)
+    if show:
+        plt.draw()
+        plt.show(block=False)
+    return elbows
