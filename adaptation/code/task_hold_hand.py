@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/task_hold_hand.py
-import ipdb
 from datetime import datetime
 
 import numpy as np
@@ -80,12 +79,25 @@ def trial(c_trial, hand_position, agent, pars):
     c_hand_position = hand_position
     c_obs = sample_observation(hand_position, pars)
     action = agent.one_trial(c_obs, cue=cue)
+    # agent.cue_history.append(cue)
+    # agent.hand_position = c_hand_position
+    # agent.hand_position_history.append(c_obs)
+    # p_con = agent.log_context
+    # agent.infer_context(None, cue)
+    # # agent.update_magnitudes()
+    # action = agent.make_decision()
+    # agent.is_reset = False
     if context == pars['clamp_index']:
         n_hand_position = 0
         force = -action
     else:
         force = sample_force(context, pars)
         n_hand_position = c_hand_position + force + action
+    # agent.hand_position = n_hand_position
+    # agent.log_context = p_con
+    # # del agent.log_context_history[-1]
+    # agent.infer_context(n_hand_position, cue=cue, rewrite=True)
+    # agent.update_magnitudes()
     outs = [action, force, c_hand_position, n_hand_position,
             context]
     return outs

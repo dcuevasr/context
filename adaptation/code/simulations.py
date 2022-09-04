@@ -191,7 +191,8 @@ def context_inference(pandata):
     """
     pandata = pandata.copy()
     # pandata.dropna(axis=0, how='any', inplace=True)
-    pandata['context_error'] = pandata['ix_context'].astype(float) != pandata['con_t']
+    pandata['context_error'] = pandata['ix_context'].astype(
+        float) != pandata['con_t']
     labels, _ = _define_grid()
     return pandata.groupby(labels + ['agent']).sum()['context_error']
 
@@ -243,7 +244,8 @@ def interactive_plot(pandata, axes=None, fignum=3):
         if flag_noindex:
             axes[0].set_title(indices[ix_ix])
         else:
-            title = ''.join([label + ': {}\n' for label in labels]) + 'Agent: {}\n'
+            title = ''.join(
+                [label + ': {}\n' for label in labels]) + 'Agent: {}\n'
             axes[0].set_title(title.format(*indices[ix_ix]))
         plt.draw()
         input = yield None
@@ -363,7 +365,7 @@ def plot_adaptation(pandata, axis=None, fignum=5):
               if column.startswith('mag_sd')]
     for color_x, error_x, magmu_x in zip(colors, errors, magmu):
         axis.plot(magmu_x, color=color_x, label='{} model'.format(color_x))
-        axis.fill_between(trial, magmu_x - 2 * error_x, magmu_x + 2 * error_x,
+        axis.fill_between(trial, magmu_x - error_x, magmu_x + error_x,
                           color=color_x, alpha=0.1)
     magmu = np.array(magmu)
     yrange = np.array([magmu.min(), magmu.max()]) * 1.1
@@ -568,7 +570,7 @@ def kim_2015(plot=True, axis=None, fignum=11):
                   'context_noise': 0.1,
                   'force_sds': np.ones(3),
                   'max_force': 60,
-                  'hyper_sd': 1,
+                  'hyper_sd': 10,
                   'obs_sd': 3,
                   'all_learn': True,
                   'learn_rate': 10,
@@ -604,7 +606,7 @@ def oh_2019(plot=True, axes=None, fignum=10):
 
     """
     task_20 = task_pars.copy()
-    task_20['obs_noise'] = 1.5
+    task_20['obs_noise'] = 2.8
     task_20['force_noise'] = 1 * np.ones(2)
     task_20['forces'] = [[0, 0], [1, 20]]
     contexts_20 = [[0, 20], [1, 60], [0, 40], [1, 50], [0, 20],
@@ -616,14 +618,15 @@ def oh_2019(plot=True, axes=None, fignum=10):
     agent_pars = {'angles': [0, 0],
                   'cue_noise': 1 / 2,
                   'max_force': 50,
-                  'hyper_sd': 10,
-                  'obs_sd': 3.5,
+                  'hyper_sd': 5,
+                  'obs_sd': 2.8,
                   'context_noise': 0.01,
                   'force_sds': np.ones(2),
                   'prediction_noise': 0.1,
-                  'action_sd': 2,
+                  'action_sd': 0.1,  # 2,
                   'all_learn': True,
-                  'sample_action': True}
+                  'sample_action': True,
+                  'learn_rate': 2}
 
     task_10 = task_20.copy()
     task_10['forces'] = [[0, 0], [1, 10]]
@@ -642,17 +645,21 @@ def oh_2019(plot=True, axes=None, fignum=10):
         axes[0, 1].set_title('Adaptation: 10')
         axes[0, 1].set_ylim((-25, 25))
 
-    return task_20, task_10, agent_pars
+    if plot:
+        return task_20, task_10, agent_pars, agent
+    else:
+        return task_20, task_10, agent_pars
 
 
 def davidson_2004(plot=True, axes=None, fignum=13):
     """Simulates the second experiment in Davidson_Scaling_2004."""
+    trials = 160
     task_m8 = task_pars.copy()
-    task_m8['obs_noise'] = 0.1
+    task_m8['obs_noise'] = 1.1  # 0.5
     task_m8['force_noise'] = 0.5 * np.ones(3)
-    task_m8['forces'] = [[0, 0], [1, 4], [-1, 4]]
-    task_m8['context_seq'] = pars.define_contexts([[2, 160],
-                                                   [1, 160]])
+    task_m8['forces'] = [[0, 0], [1, 4], [-1, 4]]  #
+    task_m8['context_seq'] = pars.define_contexts([[2, trials],
+                                                   [1, trials]])
     task_m8['cues'] = np.zeros(len(task_m8['context_seq']), dtype=int)
     task_m8['breaks'] = np.zeros(len(task_m8['context_seq']), dtype=int)
 
@@ -670,19 +677,34 @@ def davidson_2004(plot=True, axes=None, fignum=13):
     task_noo_p8 = task_p8.copy()
     task_noo_p8['forces'] = [[0, 20], [1, 4], [1, 12]]
 
+    # agent_pars_m8 = {'angles': [0, 4, -4],
+    #                  'cue_noise': 1 / 3,
+    #                  'max_force': 20,
+    #                  'hyper_sd': 10,
+    #                  'obs_sd': 3.2,  # 2.6
+    #                  'context_noise': 0.1,
+    #                  'force_sds':  0.1 * np.ones(3),
+    #                  'prediction_noise': 0.1,
+    #                  'learn_rate': 1,
+    #                  'all_learn': True,
+    #                  'threshold_learn': 0.2,
+    #                  'sample_action': True,
+    #                  'action_sd': 0.01,
+    #                  'prior_over_contexts': np.array([0.01, 0.01, 0.98])}
     agent_pars_m8 = {'angles': [0, 4, -4],
                      'cue_noise': 1 / 3,
                      'max_force': 20,
-                     'hyper_sd': 100,
+                     'hyper_sd': 1001,
                      'obs_sd': 2.7,  # 2.6
                      'context_noise': 0.01,
-                     'force_sds': 0.3 * np.ones(3),
-                     'prediction_noise': 0.5,
-                     'learn_rate': 0.5,
+                     'force_sds':  0.1 * np.ones(3),
+                     'prediction_noise': 0.3,
+                     'learn_rate': 1,
                      'all_learn': True,
                      'threshold_learn': 0.2,
-                     'sample_action': True,
-                     'action_sd': 1}  # 2
+                     'sample_action': False,
+                     'action_sd': 1.2,
+                     'prior_over_contexts': np.array([0.01, 0.01, 0.98])}
     agent_pars_p8 = agent_pars_m8.copy()
     agent_pars_p8['angles'] = [0, 4, 12]
     agent_pars_m12 = agent_pars_m8.copy()
@@ -690,9 +712,9 @@ def davidson_2004(plot=True, axes=None, fignum=13):
     agent_pars_p12 = agent_pars_p8.copy()
     agent_pars_p12['angles'] = [0, 4, 18]
     agent_pars_noo_p8 = agent_pars_p8.copy()
-    agent_pars_noo_p8['angles'] = [25, 4, 12]
+    agent_pars_noo_p8['angles'] = [25, 0, 0]
     agent_pars_noo_m8 = agent_pars_m8.copy()
-    agent_pars_noo_m8['angles'] = [25, 4, -4]
+    agent_pars_noo_m8['angles'] = [25, 0, 0]
     tasks = (task_m8, task_p8, task_m12, task_p12, task_noo_m8, task_noo_p8)
     agents = (agent_pars_m8, agent_pars_p8, agent_pars_m12, agent_pars_p12,
               agent_pars_noo_m8, agent_pars_noo_p8)
@@ -712,6 +734,7 @@ def davidson_2004(plot=True, axes=None, fignum=13):
         # sim_and_plot(agent, task_p8, axes=axes[:, 1])
         # axes[0, 1].set_title('+8 group')
         # axes[0, 1].set_ylim([-12, 12])
+        return tasks, agents, agent
     return tasks, agents
 
 
@@ -739,7 +762,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
     """
     num_trials = 300
     task_common = task_pars.copy()
-    task_common['obs_noise'] = 0.01
+    task_common['obs_noise'] = 0.1
     task_common['breaks'] = np.zeros(num_trials, dtype=int)
     task_common['cues'] = np.zeros(num_trials, dtype=int)
     task_common['forces'] = [[0, 0], [1, 1], [-1, 1], [-1, 0.5]]
@@ -799,6 +822,7 @@ def vaswani_2013(plot=True, axes=None, fignum=14):
             agent = model.LRMeanSD(**c_agent_pars)
             sim_and_plot(agent, c_task, axes=axes[:, idx])
             axes[0, idx].set_ylim((-1.2, 1.2))
+        return tasks, agents, agent
     return tasks, agents
 
 
@@ -806,8 +830,8 @@ def model_showoff(plot=True, axes=None, fignum=15):
     """Runs a grid of simulations for different values of the parameters
     obs_noise and cue_noise.
     """
-    obs_noises = np.array([0.5, 1, 2])
-    cue_noises = np.array([0.0, 0.003, 0.33])
+    obs_noises = np.array([0.5, 2])
+    cue_noises = np.array([0.0, 0.33])
     numbers = np.array((len(obs_noises), len(cue_noises)))
     agents_pars = np.empty(numbers, dtype=object)
     tasks_pars = np.empty(numbers, dtype=object)
@@ -817,7 +841,8 @@ def model_showoff(plot=True, axes=None, fignum=15):
     task_common['context_seq'] = pars.define_contexts([[1, 20],
                                                        [0, 10]])
     task_common['cues'] = task_common['context_seq']
-    task_common['breaks'] = np.zeros(len(task_common['context_seq']), dtype=int)
+    task_common['breaks'] = np.zeros(
+        len(task_common['context_seq']), dtype=int)
 
     for ix_obs, c_obs in enumerate(obs_noises):
         for ix_cue, c_cue in enumerate(cue_noises):
@@ -847,7 +872,7 @@ def model_showoff(plot=True, axes=None, fignum=15):
                 sim_and_plot(agent=agents[ix_obs, ix_cue],
                              pars_task=tasks_pars[ix_obs, ix_cue],
                              axes=[axes[ix_obs, ix_cue], axes[ix_obs, ix_cue]])
-
+    idxs = [0, 2]
     return tasks_pars, agents_pars
 
 
@@ -898,7 +923,7 @@ def multiple_runs(runs, agent_pars, task_pars, names=None,
             pandota['part'] = idx
             data[name].append(pandota)
         data[name] = pd.concat(data[name])
-        data[name]['pos(t)'] = np.abs(data[name]['pos(t)'])
+        # data[name]['pos(t)'] = np.abs(data[name]['pos(t)'])
     data = pd.concat(data, axis=0, names=['Group', 'trial'])
     data.reset_index('Group', inplace=True)
     data.reset_index('trial', inplace=True)

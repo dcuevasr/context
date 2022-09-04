@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 # ./adaptation/model.py
 
-import ipdb
-
 import numpy as np
 from scipy import stats
 import pandas as pd
@@ -48,7 +46,7 @@ class LeftRightAgent(object):
     # Free parameters with default values. Can be overwritten by __init__
     action_sd = pars['action_sd']  # SD of a Gaussian for action uncertainty
     cue_noise = 0.1  # If ix_cue is observed, the posterior over the
-                     # corresponding context is 1 - 2 * cue_noise.
+    # corresponding context is 1 - 2 * cue_noise.
     obs_sd = pars['obs_noise']
     angles = np.array([0, 0.01, -0.01])
     force_sds = pars['force_sd']  # np.array([0.01, 0.2, 0.2])
@@ -105,7 +103,9 @@ class LeftRightAgent(object):
         if sample_action is not None:
             self.sample_action = sample_action
         if prior_over_contexts is None:
-            self.prior_over_contexts = np.ones(self.num_contexts) / self.num_contexts
+            self.prior_over_contexts = 0.2 / self.num_contexts * np.ones(
+                self.num_contexts) / self.num_contexts
+            self.prior_over_contexts[0] = 0.8
         else:
             self.prior_over_contexts = prior_over_contexts
 
@@ -115,9 +115,7 @@ class LeftRightAgent(object):
         self.hand_position_history = [0]
         self.hand_position = 0
         self.action_history = [0]
-        exp_log_context = 0.2 / self.num_contexts * np.ones_like(self.angles)
-        exp_log_context[0] = 0.8
-        self.log_context = np.log(exp_log_context)
+        self.log_context = np.log(self.prior_over_contexts)
         self.log_context_history = [self.log_context]
         self.cue_history = [-1]
 
@@ -138,7 +136,8 @@ class LeftRightAgent(object):
         """
         self.is_reset = True
         if priors is None:
-            self.log_context = - np.log(self.num_contexts) * np.ones(self.num_contexts)
+            self.log_context = - \
+                np.log(self.num_contexts) * np.ones(self.num_contexts)
         else:
             if not np.isclose(np.sum(priors), 1):
                 raise ValueError('Provided priors do not add to 1')
@@ -188,7 +187,8 @@ class LeftRightAgent(object):
         # sampled_context = np.random.choice(np.arange(len(probs)), p=probs)
         # sampled_decision = bests[sampled_context] + \
         #     self.action_sd * self.sample_norm()
-        sampled_decision = bests.dot(probs) + self.action_sd * self.sample_norm()
+        sampled_decision = bests.dot(
+            probs) + self.action_sd * self.sample_norm()
         return sampled_decision
 
     def _best(self, context):
@@ -269,12 +269,12 @@ class LeftRightAgent(object):
             return funs[context](pos)
         return predicted_hand, posterior_pars
 
-    def infer_context(self, hand_position, cue=None):
+    def infer_context(self, hand_position=None, cue=None, rewrite=False):
         """Infers the current context given the current observation, as well
         as the previous action and outcome.
 
         """
-        if not self.is_reset:
+        if not (self.is_reset or (hand_position is None)):
             lh_fun, lh_pars = self.predict_outcome()
             # Hand position likelihood:
             log_li_hand = np.array([lh_fun(hand_position, ix_context)
@@ -285,7 +285,8 @@ class LeftRightAgent(object):
             p_hand /= p_hand.sum()
             log_li_hand = np.log(p_hand)
         else:
-            log_li_hand = -np.log(self.num_contexts) * np.ones(self.num_contexts)
+            log_li_hand = -np.log(self.num_contexts) * \
+                np.ones(self.num_contexts)
 
         # Cue likelihood:
         if cue is None:
@@ -294,18 +295,20 @@ class LeftRightAgent(object):
             cue_li = self.cue_noise * np.ones(self.num_contexts)
             cue_li[cue] = 1 - (self.num_contexts - 1) * self.cue_noise
             log_cue = np.log(cue_li)
-    
+
         # Now all together!
         prior = np.exp(self.log_context - self.log_context.max()) + \
             self.context_noise
         log_prior = np.log(prior / prior.sum())
-        full_logli = log_li_hand + log_cue + log_prior +\
-            np.log(self.prior_over_contexts)
+        full_logli = log_li_hand + log_cue + log_prior
         full_li = np.exp(full_logli - full_logli.max())
         full_li /= full_li.sum()
         full_logli = np.log(full_li)
         self.log_context = full_logli
-        self.log_context_history.append(full_logli)
+        if rewrite:
+            self.log_context_history[-1] = full_logli
+        else:
+            self.log_context_history.append(full_logli)
 
     def sample_context(self, mode=None, t=-1):
         """This function defines the logic to obtain a single number from
@@ -411,7 +414,7 @@ class LeftRightAgent(object):
         self.is_reset = False
         return action
 
-    def plot_mu(self, trials=None, fignum=1, axis=None):
+    def plot_mu(self, fignum=1, axis=None):
         """Plots the adaptation (mu of the force) as a function of time."""
         colors = ['black', 'red', 'blue']
         if axis is None:
@@ -480,7 +483,8 @@ class LRMean(LeftRightAgent):
         Note that the SD of the mean of the magnitude remains fixed.
 
         """
-        ix_context = self.sample_context(t=-2)  # todo: should be sampled from t-1
+        ix_context = self.sample_context(
+            t=-2)  # todo: should be sampled from t-1
         mu_pre, sd_pre = self.mag_hypers[ix_context]
         mu_l, sd_l = self.predict_outcome()[1][ix_context]
         mu_l = mu_pre + self.hand_position - mu_l
@@ -563,7 +567,8 @@ class LRMeanSD(LeftRightAgent):
             post_mag = self._update_magnitude(ix_context)
             mag_hypers[ix_context] = post_mag
             magnitudes[ix_context][0] = post_mag[0]
-            magnitudes[ix_context][1] = post_mag[3] / post_mag[2]  # / post_mag[1]
+            magnitudes[ix_context][1] = post_mag[3] / \
+                post_mag[2]  # / post_mag[1]
         else:
             pos_con = np.exp(self.log_context)
             for ix_context in range(self.num_contexts):
@@ -574,7 +579,8 @@ class LRMeanSD(LeftRightAgent):
                                                   c_pos_con)
                 mag_hypers[ix_context] = post_mag
                 magnitudes[ix_context][0] = post_mag[0]
-                magnitudes[ix_context][1] = post_mag[3] / post_mag[2] # / post_mag[1]
+                magnitudes[ix_context][1] = post_mag[3] / \
+                    post_mag[2]  # / post_mag[1]
         self.mag_hypers = mag_hypers
         self.mag_hypers_history.append(mag_hypers)
         # post_mag[3] / post_mag[2] / post_mag[1]
@@ -586,11 +592,13 @@ class LRMeanSD(LeftRightAgent):
         mu_l, sd_l = self.predict_outcome()[1][ix_context]
         mag_pars = self.mag_hypers[ix_context]
         mu_l = mag_pars[0] + self.hand_position - mu_l
-        post_mag = [(mag_pars[0] * mag_pars[1] + data_weight * mu_l) / (mag_pars[1] + data_weight),
+        post_mag = [(mag_pars[0] * mag_pars[1] + data_weight * mu_l) /
+                    (mag_pars[1] + data_weight),
                     mag_pars[1] + data_weight,
                     mag_pars[2] + 0.5 * data_weight,
-                    mag_pars[3] + data_weight * mag_pars[1] *
-                    (mu_l - mag_pars[0]) ** 2 / 2 / (mag_pars[1] + data_weight)]
+                    mag_pars[3] + data_weight *
+                    mag_pars[1] * (mu_l - mag_pars[0]) ** 2 / 2 /
+                    (mag_pars[1] + data_weight)]
         return post_mag
 
     def sample_force(self, mode=None):
@@ -663,8 +671,10 @@ class LRSpawn(LeftRightAgent):
     """
     name = 'LRS'
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     def update_magnitudes(self, ):
         """At the beginning of each trial, updates each model proportionally to
         its posterior probability. Additionally, """
         pass
-

@@ -7,7 +7,6 @@ is in the paper. Those that do not have one are not paper figures, but
 auxiliary functions."""
 
 import ipdb
-from itertools import product
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -20,7 +19,6 @@ import simulations as sims
 import model
 import task_hold_hand as thh
 import pars
-import heald
 
 FIGURE_FOLDER = '../article/figures/'
 
@@ -44,8 +42,7 @@ def model_showoff(fignum=1, show=True, do_a=True):
     """
     runs = 50
     highlight_color = 'lightgray'
-    colors = ['black', 'tab:olive', 'tab:blue']
-    cycler = plt.cycler('color', colors)
+    colors = ['black', 'tab:olive', 'tab:blue', 'tab:orange', 'tab:green']
     tasks, agents_pars = sims.model_showoff(plot=False)
     numbers = tasks.shape
     figsize = (5, 6)
@@ -53,16 +50,23 @@ def model_showoff(fignum=1, show=True, do_a=True):
     height_ratios = 0.5 * np.ones(numbers[0] + 2)
     height_ratios[0] = 3
     height_ratios[1] = 0.3
-    gsbig = gs.GridSpec(numbers[0] + 2, numbers[1], figure=fig,
-                        height_ratios=height_ratios, hspace=0.1, wspace=0.1)
+    width_ratios = np.ones(numbers[1] + 2)
+    width_ratios[0] = 2
+    width_ratios[1] = 0.35
+    gsbig = gs.GridSpec(numbers[0] + 2, numbers[1] + 2, figure=fig,
+                        height_ratios=height_ratios, width_ratios=width_ratios,
+                        hspace=0.1, wspace=0.1)
     axis_diagram = fig.add_subplot(gsbig[0, :])
     ctx_switch = np.diff(
         tasks.reshape(-1)[0]['context_seq']).nonzero()[0][0] + 1
     num_trials = len(tasks.reshape(-1)[0]['context_seq'])
     axes = np.empty(numbers, dtype=object)
+    axes_state = fig.add_subplot(gsbig[2:, 0])
     for ix_row in np.arange(2, numbers[0] + 2):
-        for ix_col in np.arange(numbers[1]):
-            axes[ix_row - 2, ix_col] = fig.add_subplot(gsbig[ix_row, ix_col])
+        for ix_col in np.arange(2, numbers[1] + 2):
+            axes[ix_row - 2, ix_col -
+                 2] = fig.add_subplot(gsbig[ix_row, ix_col])
+    states = []
     for ix_row in range(numbers[0]):
         for ix_col in range(numbers[1]):
             c_axes = axes[ix_row, ix_col]
@@ -76,12 +80,29 @@ def model_showoff(fignum=1, show=True, do_a=True):
                                          task_pars=[task, ])
             c_axes.axvline(ctx_switch, linestyle='--', color='black',
                            alpha=0.3)
-            c_axes.set_prop_cycle(cycler)
+            c_colors = [colors[0], colors[ix_row + ix_col * numbers[0] + 1]]
+            c_cycler = plt.cycler('color', c_colors)
+            c_axes.set_prop_cycle(c_cycler)
             sns.lineplot(data=pandota, x='trial', y='con0', ci='sd',
                          ax=c_axes)
             sns.lineplot(data=pandota, x='trial', y='con1', ci='sd',
                          ax=c_axes)
+            pandota['cue_uncertainty'] = int(ix_row)
+            pandota['obs_noise'] = int(ix_col)
+            states.append(pandota)
     xticks = np.array([0, ctx_switch])
+    megapanda = pd.concat(states, ignore_index=True)
+    megapanda['one_noise'] = megapanda['cue_uncertainty'] + \
+        megapanda['obs_noise'] * megapanda['cue_uncertainty'].max()
+    megapanda['cat_noise'] = megapanda['one_noise'].astype(str) + '--'
+    cycler = plt.cycler('color', colors[1:])
+    axes_state.set_prop_cycle(cycler)
+    sns.lineplot(data=megapanda, x='trial', y='mag_mu_1', ci='sd', hue='cat_noise',
+                 ax=axes_state)
+    axes_state.set_title('Inferred state')
+    axes_state.set_xlabel('Trial')
+    axes_state.set_ylabel('Force')
+    axes_state.get_legend().remove()
     for axis in axes.reshape(-1):
         axis.set_xticks([])
         axis.set_yticks([])
@@ -94,23 +115,23 @@ def model_showoff(fignum=1, show=True, do_a=True):
         rows.set_xlabel('Trial')
         rows.set_xticks(xticks)
     for cols in axes[:, 0]:
-        cols.set_yticks([0, 0.5], labels=['0', '.5'])
-    cue_texts = ['Low', 'Med.', 'High']
+        cols.set_yticks([0, 0.5])  # , labels=['0', '.5'])
+    cue_texts = ['Low', 'High']
     for tops, text in zip(axes[0, :], cue_texts):
         tops.set_title(text, verticalalignment='bottom')
-    axes[0, 1].text(s='Cue Uncertainty', x=0.5, y=1.8,
+    axes[0, 1].text(s='Cue Uncertainty', x=0, y=1.8,
                     transform=axes[0, 1].transAxes,
                     verticalalignment='center',
                     horizontalalignment='center',
                     backgroundcolor=highlight_color,
                     linespacing=0.1)
-    obs_texts = ['Low', 'Med.', 'High']
+    obs_texts = ['Low', 'High']
     for lefts, text in zip(axes[:, -1], obs_texts):
         lefts.text(s=text, x=1.1, y=0.5, transform=lefts.transAxes,
                    rotation=270, horizontalalignment='center',
                    verticalalignment='center')
-    axes[1, -1].text(s='Obs. Noise', x=1.25, y=0.5,
-                     transform=axes[1, -1].transAxes,
+    axes[1, -1].text(s='Obs. Noise', x=1.25, y=0,
+                     transform=axes[0, -1].transAxes,
                      rotation=270, verticalalignment='center',
                      backgroundcolor=highlight_color,)
     axes[-1, 0].set_ylabel(r'p(ctx)')
@@ -125,11 +146,12 @@ def model_showoff(fignum=1, show=True, do_a=True):
     offset_multiplier = 0.03
     offset = np.array([-1, figsize[1] / figsize[0]]) * offset_multiplier
     anchor_a = np.array(axis_diagram.get_position())[[0, 1], [0, 1]] + offset
-    anchor_b = np.array(axes[0, 0].get_position())[[0, 1], [0, 1]] + offset
+    anchor_b = np.array(axes_state.get_position())[[0, 1], [0, 1]] + offset
     fig.text(s='A', x=anchor_a[0], y=anchor_a[1], fontdict={'size': 12})
     fig.text(s='B', x=anchor_b[0], y=anchor_b[1], fontdict={'size': 12})
 
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum),
+                dpi=600, bbox_inches='tight')
     plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
     if show:
         plt.draw()
@@ -180,26 +202,27 @@ def oh_2019_kim_2015(fignum=2, show=True):
     paper.
 
     """
+    oh_reps = 10
     context_color = np.ones(3) * 0.5
     ad_color = np.ones(3) * 0.3
-    cycler = plt.cycler('color', ['black', 'tab:green', 'tab:blue'])
+    colors = ['black', 'tab:green', 'tab:orange']
+    cycler = plt.cycler('color', colors)
 
-    figsize = (6, 4)
+    figsize = (7, 4)
     fig = plt.figure(fignum, clear=True, figsize=figsize)
-    magri = gs.GridSpec(3, 4, width_ratios=[1, 0.15, 1, 1], wspace=0.05,
+    magri = gs.GridSpec(3, 5, width_ratios=[1, 0.15, 0.5, 1, 1], wspace=0.05,
                         hspace=0.25, figure=fig)
-    axes = np.empty((3, 3), dtype=object)
-    for ix_col, col in enumerate([0, 2, 3]):
+    axes = np.empty((3, 4), dtype=object)
+    for ix_col, col in enumerate([0, 2, 3, 4]):
         for ix_row in range(3):
-            if ix_col == 2:
-                sharex = axes[ix_row, ix_col - 1]
-                sharey = axes[ix_row, ix_col - 1]
+            if ix_col == 2 or ix_col == 3:
+                sharex = axes[ix_row, 1]
+                sharey = axes[ix_row, 1]
             else:
                 sharex = sharey = None
             axes[ix_row, ix_col] = fig.add_subplot(magri[ix_row, col],
                                                    sharex=sharex,
                                                    sharey=sharey)
-
     # a)
     trials_kim = np.arange(300)  # It IS used in the query below
     task_kim, agent_pars = sims.kim_2015(plot=False)
@@ -212,74 +235,41 @@ def oh_2019_kim_2015(fignum=2, show=True):
     contexts[contexts == pars.CLAMP_INDEX] = 0
     contexts[contexts == 1] = -40
     contexts[contexts == 2] = 40
-    axes[0, 1].plot(contexts, color=context_color)
     axes[0, 2].plot(contexts, color=context_color)
-    axes[0, 1].plot(-pandota_kim['pos(t)'] - pandota_kim['action'],
+    axes[0, 3].plot(contexts, color=context_color)
+    axes[0, 2].plot(-pandota_kim['pos(t)'] - pandota_kim['action'],
                     color=ad_color)
     pcons = np.array(pandota_kim.loc[:, kimcon])
+    magmustr = np.unique([column for column in pandota_kim.columns if
+                          column.startswith('mag_mu')])
+    states = np.array([pandota_kim[magmu] for magmu in magmustr]).T
     axes[0, 0].set_prop_cycle(cycler)
     axes[0, 0].plot(pcons)
-    axes[0, 1].set_yticks([-40, 0, 40])
-    axes[0, 1].text(s='Angle', x=-0.2, y=0.5,
+    axes[0, 1].set_prop_cycle(cycler)
+    axes[0, 1].plot(states)
+    axes[0, 2].set_yticks([-40, 0, 40])
+    axes[0, 3].text(s='Angle', x=-0.35, y=0.5,
                     transform=axes[0, 1].transAxes, rotation=90,
                     horizontalalignment='center',
                     verticalalignment='center')
-    axes[0, 1].set_title('Adaptation')
+    axes[0, 1].set_title('Inferred state')
+    axes[0, 2].set_title('Obs. Adapt.')
     axes[0, 0].set_title('Context')
 
     # b)
-    ohcon = ['con0', 'con1']
     task_20, task_10, agent_pars = sims.oh_2019(plot=False)
     agent = model.LRMeanSD(**agent_pars)
     agent.all_learn = True
-    pandata, pandagent, _ = thh.run(agent, pars=task_20)
-    pandota_20 = thh.join_pandas(pandata, pandagent)
-    contexts = pandota_20['ix_context'].values
-    contexts[contexts == pars.CLAMP_INDEX] = 0
-    contexts[contexts == 1] = 20
-    contexts_20 = contexts
-    switches = np.nonzero(np.diff(contexts_20))[0]
-    switches = np.concatenate([[0], switches, [len(contexts)]])
-    axes[1, 1].plot(contexts, color=context_color)
-    axes[1, 2].plot(contexts, color=context_color)
-    axes[1, 1].plot(-pandota_20['pos(t)'] - pandota_20['action'],
-                    color=ad_color)
-    axes[1, 0].set_prop_cycle(cycler)
-    axes[1, 0].plot(pandota_20.loc[:, ohcon])
-    axes[1, 1].text(s='Angle', x=-0.2, y=0.5,
-                    transform=axes[1, 1].transAxes, rotation=90,
-                    horizontalalignment='center',
-                    verticalalignment='center')
-    axes[1, 0].set_ylim([0, 1.2])
-    ylim = axes[1, 0].get_ylim()
-    axes[1, 0].vlines(switches, *ylim, linestyle='--', color='black',
-                      linewidth=0.5)
+    pandota_20 = sims.multiple_runs(oh_reps, agent_pars=[agent_pars],
+                                    task_pars=[task_20])
+    _one_oh(pandota_20, oh_reps, colors, context_color, 20, axes[1, :])
 
     # c)
     agent = model.LRMeanSD(**agent_pars)
     agent.all_learn = True
-    pandata, pandagent, _ = thh.run(agent, pars=task_10)
-    pandota_10 = thh.join_pandas(pandata, pandagent)
-    contexts = pandota_10['ix_context'].values
-    contexts[contexts == pars.CLAMP_INDEX] = 0
-    contexts[contexts == 1] = 10
-    contexts_10 = contexts
-    axes[2, 1].plot(contexts_10, color=context_color)
-    axes[2, 2].plot(contexts_10, color=context_color)
-    axes[2, 1].plot(-pandota_10['pos(t)'] - pandota_10['action'],
-                    color=ad_color)
-    axes[2, 1].set_xlabel('Trials')
-    axes[2, 1].text(s='Angle', x=-0.2, y=0.5,
-                    transform=axes[2, 1].transAxes, rotation=90,
-                    horizontalalignment='center',
-                    verticalalignment='center')
-    axes[2, 0].set_prop_cycle(cycler)
-    axes[2, 0].plot(pandota_10.loc[:, ohcon])
-    axes[2, 0].set_xlabel('Trial')
-    axes[2, 0].set_ylim([0, 1.2])
-    ylim = axes[2, 1].get_ylim()
-    axes[2, 0].vlines(switches, *ylim, linestyle='--', color='black',
-                      linewidth=0.5)
+    pandota_10 = sims.multiple_runs(oh_reps, agent_pars=[agent_pars],
+                                    task_pars=[task_10])
+    _one_oh(pandota_10, oh_reps, colors, context_color, 10, axes[2, :])
 
     # Subplot labels
     axes[0, 0].text(x=-0.1, y=1.05, s='A',
@@ -296,7 +286,7 @@ def oh_2019_kim_2015(fignum=2, show=True):
     for axis in axes[:, 0].reshape(-1):
         axis.set_yticks([0, 1])
         axis.set_ylabel('p(ctx)')
-    for axis in axes[:, -1]:
+    for axis in axes[:, -2:].reshape(-1):
         yticks = axis.get_yticks().astype(int)
         axis.set_yticklabels(yticks, visible=False)
     axes[0, -1].set_title('Exp. data')
@@ -308,11 +298,50 @@ def oh_2019_kim_2015(fignum=2, show=True):
         axis.spines['right'].set_visible(False)
         axis.spines['top'].set_visible(False)
     # fig.align_ylabels(axes[:, 0])
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum),
+                dpi=600, bbox_inches='tight')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum),
+                format='svg', bbox_inches='tight')
     if show:
         plt.draw()
         plt.show(block=False)
+
+
+def _one_oh(pandota, oh_reps, colors, context_color, adapt, axes):
+    """Plots one full row of the Oh simulations.
+
+    """
+    ohcon = ['con0', 'con1']
+    pandota_u = pandota.loc[pandota['part'] == 0]
+    contexts = pandota_u['ix_context'].values
+    contexts[contexts == pars.CLAMP_INDEX] = 0
+    contexts[contexts == 1] = adapt
+    contexts_20 = contexts
+    switches = np.nonzero(np.diff(contexts_20))[0]
+    switches = np.concatenate([[0], switches, [len(contexts)]])
+    magmustr = np.unique([column for column in pandota.columns if
+                          column.startswith('mag_mu')])
+    axes[2].plot(contexts, color=context_color)
+    axes[3].plot(contexts, color=context_color)
+    pandota['adapt'] = -pandota['pos(t)'] - pandota['action']
+    sns.lineplot(data=pandota, x='trial', y='adapt', ax=axes[2], color='black')
+    for c_con, c_state, c_color in zip(ohcon, magmustr, colors):
+        sns.lineplot(data=pandota, x='trial', y=c_con, color=c_color,
+                     ax=axes[0])
+        sns.lineplot(data=pandota, x='trial', y=c_state, color=c_color,
+                     ax=axes[1])
+    for axis in axes:
+        axis.set_xlabel('Trial')
+        axis.set_ylabel('')
+
+    axes[2].text(s='Angle', x=-0.35, y=0.5,
+                 transform=axes[1].transAxes, rotation=90,
+                 horizontalalignment='center',
+                 verticalalignment='center')
+    axes[0].set_ylim([0, 1.2])
+    ylim = axes[0].get_ylim()
+    axes[0].vlines(switches, *ylim, linestyle='--', color='black',
+                   linewidth=0.5)
 
 
 def davidson_2004(fignum=3, show=True):
@@ -320,13 +349,13 @@ def davidson_2004(fignum=3, show=True):
     subplot to put in the results from their paper.
 
     """
-    repeats = 8  # No. of participants per group
+    repeats = 32  # No. of participants per group
     figsize = (6, 4)
     colors = [np.array((95, 109, 212)) / 256,
               np.array((212, 198, 95)) / 256]
     # colors = {'-A': np.array((95, 109, 212)) / 256,
     #           '3A': np.array((212, 198, 95)) / 256}
-    ran = [161, 201]  # Trials of importance for this plot
+    ran = [161, 220]  # Trials of importance for this figure
 
     fig = plt.figure(num=fignum, clear=True, figsize=figsize)
     gsbig = gs.GridSpec(2, 1, figure=fig, height_ratios=[1.5, 1], hspace=0.4)
@@ -358,15 +387,16 @@ def davidson_2004(fignum=3, show=True):
     tasks_sims = tasks_all[2:]        # For bottom row
 
     names = ['-A', '3A']
-    labels = [['O', '-A', 'A'], ['O', '3A', 'A']]
+    labels = [['O', 'A', '-A'], ['O', 'A', '3A']]
     _davidson_trio(repeats, colors, agent_pars, tasks, names, axes, labels,
                    ran)
+
     names = ['-2A', '4A']
-    labels = [['_O', '-2A', '_A'], ['_O', '4A', '_A']]
+    labels = [['_O', '_A', '-2A'], ['_O', '_A', '4A']]
     _davidson_trio(repeats, colors, agent_sims[:2], tasks_sims[:2],
                    names, baxes[:3], labels, ran)
     names = ['-A', '3A']
-    labels = [['_O', '-A', 'A'], ['_O', '3A', 'A']]
+    labels = [['_O', 'A', '-A'], ['_O', 'A', '3A']]
     _davidson_trio(repeats, colors, agent_sims[2:], tasks_sims[2:],
                    names, baxes[3:], labels, ran)
     for axis in axes.reshape(-1):
@@ -381,6 +411,7 @@ def davidson_2004(fignum=3, show=True):
     axes[1].set_title('p(ctx)', horizontalalignment='center')
     axes[3].set_title('Exp. data')
     axes[3].set_yticklabels([])
+    axes[1].set_xticks([])
     baxes[0].set_xlabel('Trials since switch')
     baxes[4].set_ylabel('')
     baxes[5].set_ylabel('')
@@ -397,8 +428,10 @@ def davidson_2004(fignum=3, show=True):
     fig.text(s='B', x=anchor_b[0], y=anchor_b[1], fontdict={'size': 12})
     fig.text(s='C', x=anchor_c[0], y=anchor_c[1], fontdict={'size': 12})
 
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum),
+                dpi=600, bbox_inches='tight')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum),
+                format='svg', bbox_inches='tight')
     if show:
         plt.draw()
         plt.show(block=False)
@@ -552,7 +585,8 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
         axes_con[idx].set_ylim([0, 1])
     axes_con[2].set_yticks([0, 1])
     axes_con[2].set_ylabel(r'p(ctx)', labelpad=-0.1)
-    axes_con[2].set_xticks([75, 175], [0, 100])
+    axes_con[2].set_xticks([75, 175])
+    axes_con[2].set_xticklabels([0, 100])
     axes_con[2].set_xlabel('Trial')
     axes_con[0].text(x=-0.3, y=1.1, s='C',
                      transform=axes_con[0].transAxes,
@@ -606,37 +640,11 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
     axes_sum[1].set_title('Exp. data')
     axes_lag.set_title('Simulations')
 
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum),
+                dpi=600, bbox_inches='tight')
+    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum),
+                format='svg', bbox_inches='tight')
 
     if show:
         plt.draw()
         plt.show(block=False)
-
-
-def priors_model_evidence(elbows=None, fignum=101, show=True):
-    """Supplementary information plot. Shows the model evidence after fitting
-    both the original COIN priors and our priors to data sets obtained from
-    both models. As such, it is a confussion matrix.
-
-    """
-    fig, axis = plt.subplots(1, 1, num=fignum, clear=True)
-    flat_elbows = heald._flatten_elbows(elbows)
-    axis.imshow(flat_elbows)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.png'.format(fignum), dpi=600)
-    plt.savefig(FIGURE_FOLDER + 'figure_{}.svg'.format(fignum), format='svg')
-
-    if elbows is None:
-        elbows = heald.generate_elbowsh_normal()
-    if elbows.ndim == 4:
-        elbows = heald._flatten_elbows(elbows)
-    showy = axis.imshow(elbows)
-    axis.set_xticklabels([])
-    axis.set_yticklabels([])
-    axis.set_ylabel('Models')
-    axis.set_xlabel('Data sets')
-    plt.colorbar(showy)
-    if show:
-        plt.draw()
-        plt.show(block=False)
-    return elbows
