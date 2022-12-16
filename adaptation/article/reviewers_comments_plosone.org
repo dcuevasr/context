@@ -90,7 +90,7 @@ effect of contextual cues on the encoding of motor memories. Journal of neurophy
 109(10), 2632-2644.
 2. Lines 40-41 add “upon re-exposure to the same perturbation”. The ability to recall previously learned skills upon re-exposure to the same perturbation,
 called savings;
-3. Line 47 - models don’t do the adapting. “Whereby after each iteration, the change in motor
+1. Line 47 - models don’t do the adapting. “Whereby after each iteration, the change in motor
 commands is related to the measure of error.”
 4. Line 47 The most well-studied models are ...”
 5. Lines 49-50 from “but Bayesian accounts have also been presented, providing an alternative
