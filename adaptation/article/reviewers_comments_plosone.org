@@ -1,0 +1,133 @@
+#+Title: PLOS One reviewers' comments
+* Journal Requirements:
+When submitting your revision, we need you to address these additional requirements.
+1. Please ensure that your manuscript meets PLOS ONE's style requirements, including those for file naming. The PLOS ONE style templates can be found at 
+https://journals.plos.org/plosone/s/file?id=wjVg/PLOSOne_formatting_sample_main_body.pdf and 
+https://journals.plos.org/plosone/s/file?id=ba62/PLOSOne_formatting_sample_title_authors_affiliations.pdf
+2. Please update your submission to use the PLOS LaTeX template. The template and more information on our requirements for LaTeX submissions can be found at http://journals.plos.org/plosone/s/latex.
+3. We note that the grant information you provided in the ‘Funding Information’ and ‘Financial Disclosure’ sections do not match. 
+When you resubmit, please ensure that you provide the correct grant numbers for the awards you received for your study in the ‘Funding Information’ section.
+4. Thank you for stating the following in the Acknowledgments Section of your manuscript: 
+Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft)
+as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster
+of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische
+Universität Dresden.
+However, funding information should not appear in the Acknowledgments section or other areas of your manuscript. We will only publish funding information present in the Funding Statement section of the online submission form. 
+Please remove any funding-related text from the manuscript and let us know how you would like to update your Funding Statement. Currently, your Funding Statement reads as follows: 
+Funded by the German Research Foundation (DFG, Deutsche Forschungsgemeinschaft)
+as part of Germany’s Excellence Strategy – EXC 2050/1 – Project ID 390696704 – Cluster
+of Excellence “Centre for Tactile Internet with Human-in-the-Loop” (CeTI) of Technische
+Universität Dresden.
+Please include your amended statements within your cover letter; we will change the online submission form on your behalf.
+5. We note that you have stated that you will provide repository information for your data at acceptance. Should your manuscript be accepted for publication, we will hold it until you provide the relevant accession numbers or DOIs necessary to access your data. If you wish to make changes to your Data Availability statement, please describe these changes in your cover letter and we will update your Data Availability statement to reflect the information you provide.
+
+[Note: HTML markup is below. Please do not edit.]
+
+
+* Reviewer 1
+Please use the space provided to explain your answers to the questions above. You may also include additional comments for the author, including concerns about dual publication, research ethics, or publication ethics. (Please upload your review as an attachment if it exceeds 20,000 characters)
+Reviewer #1: Summary:
+This work proposes a simplified version of the recently introduced "context inference" (COIN) model (Heald et al. 2021) for modeling context dependent motor adaptation. In contrast to the original COIN models, the simplified model (termed “sCOIN”) retained the mechanisms for context inference, motor adaptation, and action selection while eliminating the components that support learning of new contexts and estimating the dynamics of environment transition between contexts. The authors demonstrate that sCOIN is capable of displaying three contextual motor learning phenomena, unexplored by Heald et al. (2021) but previously investigated in experimental studies on motor adaptation. These phenomena are linked to the effect of contextual information (cues and feedback) on context inference which in turn affects switching behavior. The model was utilized to simulate the learner adaptation behavior rather than utilizing it to fit subject data. The study shows that in simulations of the original setups, the "simplified COIN" (sCOIN) model exhibits motor adaptation sequences qualitatively similar to real subjects shown in the original papers.
+
+Strengths:
+1. Although I don't have much experience with motor learning modeling, the suggested simplification of the COIN model appears intriguing and the paper demonstrates its potential to explain interesting phenomena.
+2. The model's behavior in simulations is very similar to experimental data.
+
+Weaknesses:
+1. The paper is well written but some parts are difficult to understand. The reader must refer to the original studies to understand the experimental paradigms. I would recommend adding illustrative figures of the paradigms and emphasizing the nature of cues and feedback.
+2. The link between the paradigm aspects (both environment and learner) and the model variables is not always clear. In addition, how exactly the specific components of the model give rise to the observed phenomenon is not always explained (see detailed comments below).
+3. The similarity between the simulated and real data is compared only qualitatively. I wonder whether these similarities could also be captured quantitatively.
+4. It is not clear to me (Despite the reasons given in the paragraph starting in line 523) why the authors did not try to fit the sCoin model parameters to real subjects data instead of arbitrarily/empirically selecting them for the simulation.
+
+** Detailed comments:
+
+1. Line 66: ungrammatical "In this work show that"
+2. Line 125: typo “alread-learned”.
+3. Line 136: provide more information on the "generic experiment". It would be easier to understand how contextual cues and sensory feedback are provided and noised. (Instead of just referring the reader to Davidson and Wolpert (2004))
+4. Figure 1: In panel A mention that this is the Schematic representation of the sCOIN model (rather than COIN Model).
+5. Figure 1: In the left figure of panel B, if the context changed at trial 20, It is not clear how the inferred state (force) does not change even in the high certainty and low noise setup? It may be due to the fact that I do not understand the experiment setup. Please clarify.
+6. Line 218: which one is the center panel in figure 2A? There are 4…
+7. Line 245: I am missing here the link between the observed data (both real and simulated) and the model. Which component/s of the model are responsible for the main observed phenomena? It would help the reader better understand the model workings and appreciate its ability to exhibit those behaviors (similar to how it was done later on in the paragraph starting from line 274.)
+8. Line 250: typo “ever” instead of “every”.
+9. Line 289: typo "O" instead of "0".
+10. Figure 2: How many agents/runs were included in the simulation and in the original experiment? How model/simulation parameters were set? Mention that it is detailed later on in the paper.
+11. Figure 2: What does the gray region around the black line in the third and fourth panels represent? Why there is no black line in the third column of 2A as opposed to the other experiments (2B and 2C).
+12. Figure 2: No blue lines in the figure. Do you mean orange?
+13. Figure 3: Use the model name consistently throughout the paper, either sCOIN or SCOIN.
+14. Figure 3A: In the Davidson and Wolpert (2004) paper, as far as I understand the post switch experiment length is 40 trials not 60. Can you elaborate on the difference?
+15. Figure 3 caption: in the 4’th line, Group -A instead of group A.
+16. In Figure 4C group 1.2, it is not clear why the posterior for the baseline context starts from 0.5 while in the other groups it starts with 1.
+17. Line 338: It would help if you explicitly explain what parts of the sCOIN model cause the increase in the probability of the baseline context in EC trials.
+18. Line 452: Base this prediction on the mechanisms of the model, beyond the explanation that it is allowed by the process of context inference.
+19. Line 542: use consistent notation: Either \delta or d; either c or \zeta.
+20. Code: No package requirement file is provided (instead only a dump of an environment suitable for Linux) making it difficult to run the project on other OS.
+21. Code: It is not clear how to run the code in the repository. Please specify the entry point/s and add other needed information about how to run the project to reproduce the simulation results presented in the paper.
+
+* Reviewer 2
+The effects of probabilistic context inference on motor adaptation
+Reviewer summary: Recently, computational models and Bayesian for motor adaptation have
+been introduced to demonstrate the effects of context inference on learning rates in various
+experiments. Cuevas Rivera, Darío and Kiebel built a simplified version of the recently
+introduced COIN model to demonstrate that the effects of context inference on motor adaptation
+and control extend even further than previously demonstrated. They used this model to simulate
+previous motor adaptation experiments and demonstrated that context inference, and how it is
+affected by the presence and reliability of feedback, affect a variety of behavioral phenomena
+which had previously required multiple hypothesized mechanisms. The authors suggest that the
+reliability of direct contextual information, as well as noisy sensory feedback, which is common
+in many experiments, cause measurable changes in switching-task behavior and action
+selection that are directly related to probabilistic context inference.
+I think the manuscript in its current state is a good starting point. The overall clarity of the writing
+needs improvement. However, I feel as though the authors lack a clear understanding of the
+behavioural phenomena they are attempting to model. Savings is not the absence of learning
+upon re-exposure to the same previously experienced perturbation, but faster relearning. Error
+clamps are not a zero force manipulation as in baseline trials. There is a matching of the force
+generated by participants and visually displayed to participants as zero error. Any previously
+learned perturbations will decay at this block of trials, rather than a learning of zero error.
+
+** Minor issues
+1. Lines 33-35 could add reference: Howard, I. S., Wolpert, D. M., & Franklin, D. W. (2013). The
+effect of contextual cues on the encoding of motor memories. Journal of neurophysiology,
+109(10), 2632-2644.
+2. Lines 40-41 add “upon re-exposure to the same perturbation”. The ability to recall previously learned skills upon re-exposure to the same perturbation,
+called savings;
+1. Line 47 - models don’t do the adapting. “Whereby after each iteration, the change in motor
+commands is related to the measure of error.”
+4. Line 47 The most well-studied models are ...”
+5. Lines 49-50 from “but Bayesian accounts have also been presented, providing an alternative
+explanation for savings and quick de-adaptation in the form of switching between forward
+models” to “while Bayesian models have been shown to provide an alternative explanation
+for savings and quick de-adaptation in the form of switching between forward models.”
+6. Lines 61-63, “Heald et al. (2021) formalized context inference as a process that
+operates independently from motor learning, but is informed by it, establishing a loop whereby context inference also informs motor learning.” but is informed by it - this is unclear
+7. Line 66 - in this work we show
+8. Line 70 - remove “so-called”
+9. Line 104 - add “s” to component
+10. Figure 1. How are motor commands “observable”?
+11. Lines 137-138. The robot motors exert a force on the handle of the robot, held by the
+participant. It does not exert force on the participant’s hand.
+12. Lines 154-157. More clearly stated as the output of the simulated data qualitatively matches the
+behavioural data observed in ..... <list of studies>
+13. Line 160 add “s” to provide
+14. Line 176-177 “in which the mechanical arm forces the participant to make straight-line movements” This is incorrect. The robot is programmed with spring and damping coefficients to match the force exerted by the participant and make it appear as though they are making a perfect trajectory from start position to target (i.e., the elimination of the visual error).
+15. Lines 182-183 “With repeated contexts (e.g. Oh & Schweighofer, 2019), an experiment can be described as O1. A1.O2”. This is unclear.
+16. Line 186 “without having to re-learn it.” They are learning in the second session of A, it is just that they are learning at a faster rate.
+17. Line 192. In the baseline condition there is nothing to learn (i.e., there is not perturbation). In this case there is a washout or decay of the learning of A.
+18. Line 195 and 199 replace “are” with “is”
+19. Did the simulated data represent the same number of subjects reported in the compared studies? This is unclear in the reading.
+20. Can the authors explain why their model predicts no savings upon the 4th presentation of the perturbation when the behavioural data to the right clearly shows savings. (From figure 2C). The learning rate of the model clearly lags behind the data.
+21. Line 249 replace “do” with “does”
+22. Line 348, had begun or began
+23. Lines 407 - 413 There is no mention of the decay happening in error clamps. “Instead, participants slowly reduce their adaptation, often displaying spontaneous recovery” FIrst you get rebound and then you get decay ... this statement is misleading.
+24 413-417 Participants are often unaware of the presence of error clamps. How can the authors account for this finding in relation to the literature? I.e., Scheidt, R. A., Reinkensmeyer, D. J., Conditt, M. A., Rymer, W. Z., & Mussa-Ivaldi, F. A. (2000). Persistence of motor adaptation during constrained, multi-joint, arm movements. Journal of neurophysiology, 84(2), 853-862..
+25. Experiments often interleave error clamp trials within the adaptation blocks. Can your sCOIN model account for the changes in behaviour during these trials, given that participants are often unaware they even occur?
+
+** Major issues
+26. Why are the simulations shown with SD and compared to participant data often using SEM?
+27. Introduction lacks a clear telling of the COIN model in its original form and an explanation for why it cannot account for various phenomena (i.e., which phenomena are not accounted for by the COIN model). This would open the discussion better to why changes made to the model would account for them.
+28. The interpretation of error clamps suggests a lack of understanding of what they are and how they are used in the motor adaptation, force field literature. See comments related to lines 413-417.
+29. Overall there lacks a clear and direct comparison (statistically between simulated outcomes and behavioural data). The comparisons are of a more qualitative nature. The authors could provide a regression metric.
+30. It would also be interesting to see not only the simulated data from the sCOIN model but also the COIN model to demonstrate where the COIN model fails to predict the data while the sCOIN improves the prediction.
+31. Rather than separate presentations of simulated model output and experimental data, these two learning curves could be overlaid in contrasting colors to highlight their similarities or differences.
+
+
+* Things to do
