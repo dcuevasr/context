@@ -41,27 +41,27 @@ Weaknesses:
 
 ** Detailed comments:
 
-1. Line 66: ungrammatical "In this work show that"
-2. Line 125: typo “alread-learned”.
-3. Line 136: provide more information on the "generic experiment". It would be easier to understand how contextual cues and sensory feedback are provided and noised. (Instead of just referring the reader to Davidson and Wolpert (2004))
-4. Figure 1: In panel A mention that this is the Schematic representation of the sCOIN model (rather than COIN Model).
-5. Figure 1: In the left figure of panel B, if the context changed at trial 20, It is not clear how the inferred state (force) does not change even in the high certainty and low noise setup? It may be due to the fact that I do not understand the experiment setup. Please clarify.
-6. Line 218: which one is the center panel in figure 2A? There are 4…
-7. Line 245: I am missing here the link between the observed data (both real and simulated) and the model. Which component/s of the model are responsible for the main observed phenomena? It would help the reader better understand the model workings and appreciate its ability to exhibit those behaviors (similar to how it was done later on in the paragraph starting from line 274.)
-8. Line 250: typo “ever” instead of “every”.
-9. Line 289: typo "O" instead of "0".
-10. Figure 2: How many agents/runs were included in the simulation and in the original experiment? How model/simulation parameters were set? Mention that it is detailed later on in the paper.
-11. Figure 2: What does the gray region around the black line in the third and fourth panels represent? Why there is no black line in the third column of 2A as opposed to the other experiments (2B and 2C).
-12. Figure 2: No blue lines in the figure. Do you mean orange?
-13. Figure 3: Use the model name consistently throughout the paper, either sCOIN or SCOIN.
-14. Figure 3A: In the Davidson and Wolpert (2004) paper, as far as I understand the post switch experiment length is 40 trials not 60. Can you elaborate on the difference?
-15. Figure 3 caption: in the 4’th line, Group -A instead of group A.
-16. In Figure 4C group 1.2, it is not clear why the posterior for the baseline context starts from 0.5 while in the other groups it starts with 1.
-17. Line 338: It would help if you explicitly explain what parts of the sCOIN model cause the increase in the probability of the baseline context in EC trials.
-18. Line 452: Base this prediction on the mechanisms of the model, beyond the explanation that it is allowed by the process of context inference.
-19. Line 542: use consistent notation: Either \delta or d; either c or \zeta.
-20. Code: No package requirement file is provided (instead only a dump of an environment suitable for Linux) making it difficult to run the project on other OS.
-21. Code: It is not clear how to run the code in the repository. Please specify the entry point/s and add other needed information about how to run the project to reproduce the simulation results presented in the paper.
+1. Line 66: ungrammatical "In this work show that" (DONE)
+2. Line 125: typo “alread-learned”. (DONE)
+3. Line 136: provide more information on the "generic experiment". It would be easier to understand how contextual cues and sensory feedback are provided and noised. (Instead of just referring the reader to Davidson and Wolpert (2004)) (below)
+4. Figure 1: In panel A mention that this is the Schematic representation of the sCOIN model (rather than COIN Model). (DONE)
+5. Figure 1: In the left figure of panel B, if the context changed at trial 20, It is not clear how the inferred state (force) does not change even in the high certainty and low noise setup? It may be due to the fact that I do not understand the experiment setup. Please clarify. (below)
+6. Line 218: which one is the center panel in figure 2A? There are 4… (done)
+7. Line 245: I am missing here the link between the observed data (both real and simulated) and the model. Which component/s of the model are responsible for the main observed phenomena? It would help the reader better understand the model workings and appreciate its ability to exhibit those behaviors (similar to how it was done later on in the paragraph starting from line 274.) (below)
+8. Line 250: typo “ever” instead of “every”. (done)
+9. Line 289: typo "O" instead of "0". (done)
+10. Figure 2: How many agents/runs were included in the simulation and in the original experiment? How model/simulation parameters were set? Mention that it is detailed later on in the paper. (below)
+11. Figure 2: What does the gray region around the black line in the third and fourth panels represent? Why there is no black line in the third column of 2A as opposed to the other experiments (2B and 2C). (below)
+12. Figure 2: No blue lines in the figure. Do you mean orange? (done)
+13. Figure 3: Use the model name consistently throughout the paper, either sCOIN or SCOIN. (done)
+14. Figure 3A: In the Davidson and Wolpert (2004) paper, as far as I understand the post switch experiment length is 40 trials not 60. Can you elaborate on the difference? (below)
+15. Figure 3 caption: in the 4’th line, Group -A instead of group A. (done)
+16. In Figure 4C group 1.2, it is not clear why the posterior for the baseline context starts from 0.5 while in the other groups it starts with 1. (done)
+17. Line 338: It would help if you explicitly explain what parts of the sCOIN model cause the increase in the probability of the baseline context in EC trials. (below)
+18. Line 452: Base this prediction on the mechanisms of the model, beyond the explanation that it is allowed by the process of context inference. (below)
+19. Line 542: use consistent notation: Either \delta or d; either c or \zeta. (below)
+20. Code: No package requirement file is provided (instead only a dump of an environment suitable for Linux) making it difficult to run the project on other OS. (below)
+21. Code: It is not clear how to run the code in the repository. Please specify the entry point/s and add other needed information about how to run the project to reproduce the simulation results presented in the paper. (below)
 
 * Reviewer 2
 The effects of probabilistic context inference on motor adaptation
@@ -87,47 +87,127 @@ learned perturbations will decay at this block of trials, rather than a learning
 ** Minor issues
 1. Lines 33-35 could add reference: Howard, I. S., Wolpert, D. M., & Franklin, D. W. (2013). The
 effect of contextual cues on the encoding of motor memories. Journal of neurophysiology,
-109(10), 2632-2644.
+109(10), 2632-2644. (below)
 2. Lines 40-41 add “upon re-exposure to the same perturbation”. The ability to recall previously learned skills upon re-exposure to the same perturbation,
-called savings;
+called savings; (done)
 1. Line 47 - models don’t do the adapting. “Whereby after each iteration, the change in motor
-commands is related to the measure of error.”
-4. Line 47 The most well-studied models are ...”
+commands is related to the measure of error.” (done)
+4. Line 47 The most well-studied models are ...” (done)
 5. Lines 49-50 from “but Bayesian accounts have also been presented, providing an alternative
 explanation for savings and quick de-adaptation in the form of switching between forward
 models” to “while Bayesian models have been shown to provide an alternative explanation
-for savings and quick de-adaptation in the form of switching between forward models.”
+for savings and quick de-adaptation in the form of switching between forward models.” (done)
 6. Lines 61-63, “Heald et al. (2021) formalized context inference as a process that
-operates independently from motor learning, but is informed by it, establishing a loop whereby context inference also informs motor learning.” but is informed by it - this is unclear
-7. Line 66 - in this work we show
-8. Line 70 - remove “so-called”
-9. Line 104 - add “s” to component
-10. Figure 1. How are motor commands “observable”?
+operates independently from motor learning, but is informed by it, establishing a loop whereby context inference also informs motor learning.” but is informed by it - this is unclear (done)
+7. Line 66 - in this work we show (done)
+8. Line 70 - remove “so-called” (done)
+9. Line 104 - add “s” to component (done)
+10. Figure 1. How are motor commands “observable”? (below)
 11. Lines 137-138. The robot motors exert a force on the handle of the robot, held by the
-participant. It does not exert force on the participant’s hand.
+participant. It does not exert force on the participant’s hand. (done)
 12. Lines 154-157. More clearly stated as the output of the simulated data qualitatively matches the
-behavioural data observed in ..... <list of studies>
-13. Line 160 add “s” to provide
-14. Line 176-177 “in which the mechanical arm forces the participant to make straight-line movements” This is incorrect. The robot is programmed with spring and damping coefficients to match the force exerted by the participant and make it appear as though they are making a perfect trajectory from start position to target (i.e., the elimination of the visual error).
-15. Lines 182-183 “With repeated contexts (e.g. Oh & Schweighofer, 2019), an experiment can be described as O1. A1.O2”. This is unclear.
-16. Line 186 “without having to re-learn it.” They are learning in the second session of A, it is just that they are learning at a faster rate.
-17. Line 192. In the baseline condition there is nothing to learn (i.e., there is not perturbation). In this case there is a washout or decay of the learning of A.
-18. Line 195 and 199 replace “are” with “is”
-19. Did the simulated data represent the same number of subjects reported in the compared studies? This is unclear in the reading.
-20. Can the authors explain why their model predicts no savings upon the 4th presentation of the perturbation when the behavioural data to the right clearly shows savings. (From figure 2C). The learning rate of the model clearly lags behind the data.
-21. Line 249 replace “do” with “does”
-22. Line 348, had begun or began
-23. Lines 407 - 413 There is no mention of the decay happening in error clamps. “Instead, participants slowly reduce their adaptation, often displaying spontaneous recovery” FIrst you get rebound and then you get decay ... this statement is misleading.
-24 413-417 Participants are often unaware of the presence of error clamps. How can the authors account for this finding in relation to the literature? I.e., Scheidt, R. A., Reinkensmeyer, D. J., Conditt, M. A., Rymer, W. Z., & Mussa-Ivaldi, F. A. (2000). Persistence of motor adaptation during constrained, multi-joint, arm movements. Journal of neurophysiology, 84(2), 853-862..
+behavioural data observed in ..... <list of studies> (done)
+13. Line 160 add “s” to provide (below)
+14. Line 176-177 “in which the mechanical arm forces the participant to make straight-line movements” This is incorrect. The robot is programmed with spring and damping coefficients to match the force exerted by the participant and make it appear as though they are making a perfect trajectory from start position to target (i.e., the elimination of the visual error). (below)
+15. Lines 182-183 “With repeated contexts (e.g. Oh & Schweighofer, 2019), an experiment can be described as O1. A1.O2”. This is unclear. (below)
+16. Line 186 “without having to re-learn it.” They are learning in the second session of A, it is just that they are learning at a faster rate. (below)
+17. Line 192. In the baseline condition there is nothing to learn (i.e., there is not perturbation). In this case there is a washout or decay of the learning of A. (below)
+18. Line 195 and 199 replace “are” with “is” (below)
+19. Did the simulated data represent the same number of subjects reported in the compared studies? This is unclear in the reading. (below)
+20. Can the authors explain why their model predicts no savings upon the 4th presentation of the perturbation when the behavioural data to the right clearly shows savings. (From figure 2C). The learning rate of the model clearly lags behind the data. (below)
+21. Line 249 replace “do” with “does” (below, same as 18)
+22. Line 348, had begun or began (done)
+23. Lines 407 - 413 There is no mention of the decay happening in error clamps. “Instead, participants slowly reduce their adaptation, often displaying spontaneous recovery” FIrst you get rebound and then you get decay ... this statement is misleading. (below)
+24 413-417 Participants are often unaware of the presence of error clamps. How can the authors account for this finding in relation to the literature? I.e., Scheidt, R. A., Reinkensmeyer, D. J., Conditt, M. A., Rymer, W. Z., & Mussa-Ivaldi, F. A. (2000). Persistence of motor adaptation during constrained, multi-joint, arm movements. Journal of neurophysiology, 84(2), 853-862.. (below)
 25. Experiments often interleave error clamp trials within the adaptation blocks. Can your sCOIN model account for the changes in behaviour during these trials, given that participants are often unaware they even occur?
 
 ** Major issues
-26. Why are the simulations shown with SD and compared to participant data often using SEM?
-27. Introduction lacks a clear telling of the COIN model in its original form and an explanation for why it cannot account for various phenomena (i.e., which phenomena are not accounted for by the COIN model). This would open the discussion better to why changes made to the model would account for them.
-28. The interpretation of error clamps suggests a lack of understanding of what they are and how they are used in the motor adaptation, force field literature. See comments related to lines 413-417.
-29. Overall there lacks a clear and direct comparison (statistically between simulated outcomes and behavioural data). The comparisons are of a more qualitative nature. The authors could provide a regression metric.
-30. It would also be interesting to see not only the simulated data from the sCOIN model but also the COIN model to demonstrate where the COIN model fails to predict the data while the sCOIN improves the prediction.
-31. Rather than separate presentations of simulated model output and experimental data, these two learning curves could be overlaid in contrasting colors to highlight their similarities or differences.
+26. Why are the simulations shown with SD and compared to participant data often using SEM?(below)
+27. Introduction lacks a clear telling of the COIN model in its original form and an explanation for why it cannot account for various phenomena (i.e., which phenomena are not accounted for by the COIN model). This would open the discussion better to why changes made to the model would account for them.(below)
+28. The interpretation of error clamps suggests a lack of understanding of what they are and how they are used in the motor adaptation, force field literature. See comments related to lines 413-417.(below)
+29. Overall there lacks a clear and direct comparison (statistically between simulated outcomes and behavioural data). The comparisons are of a more qualitative nature. The authors could provide a regression metric.(below)
+30. It would also be interesting to see not only the simulated data from the sCOIN model but also the COIN model to demonstrate where the COIN model fails to predict the data while the sCOIN improves the prediction. (below)
+31. Rather than separate presentations of simulated model output and experimental data, these two learning curves could be overlaid in contrasting colors to highlight their similarities or differences. (below)
 
 
 * Things to do
+Here are all the comments from reviewers that involve some extra work. Small typos and such were corrected without an entry here.
+** Reviewer 1
+*** DONE Make the paper be ABSOLUTELY CLEAR on the fact that the model is not the important part.
+*** TODO Add experimental figures for each experiment. Add information about number of participants and agents.
+*** TODO Add something in the discussion about why we don't fit to data (along the lines of "proof of concept")
+*** TODO Add something about the lack of quantitative comparisons
+*** DONE Provide more information on the generic experiment of figure 1, so people don't have to know Davidson
+*** TODO Clarify why the inferred state in Fig1b(left) doesn't change after trial 20 (the estimate doesn't get updated anymore)
+*** TODO The paragraph in starting in line 229 (To expand on these results...) needs a stronger connection between plots and model components.
+*** TODO Change the x-axis from 60 to 40 in Figure 3.
+*** TODO Check the simulations of figure 4 to see why group 1.2 starts with 0.5 priors on contexts.
+*** TODO Explain why the baseline context gains popularity in EC trials in figure 4.
+*** TODO Use model mechanisms as a base for the prediction that if EC is a known context, all weirdness goes away (instead of just context inference as an entity)
+*** TODO Check notation consistency: delta versus d, zeta versus c.
+*** TODO Work on the code: package requirements and how to run it (isn't the latter already done?)
+
+** Reviewer 2
+*** TODO Check the reference (and maybe add it to lines 33-35): Howard, I. S., Wolpert, D. M., & Franklin, D. W. (2013). The effect of contextual cues on the encoding of motor memories. Journal of neurophysiology.
+*** DONE Clarify what we mean by observable in Figure 1 caption
+*** DONE Dynamics are/is? (line 160) (No change was made to the manuscript)
+*** DONE Is it forcing a straight line? Lines 176-177.
+*** DONE Multiple contexts $A_i$.
+*** DONE Does 'savings' include 'switching'? Add discussion to "Cue- and sensory feedback...".
+*** TODO Add a discussion about why we have no decay. Related to "Line 192. In the...". Finish the response too.
+*** DONE No learning in A-O transitions. (no change was made to the manuscript).
+*** DONE Savings are/is.
+*** TODO Discuss number of participants and number of simulations
+*** TODO No savings during last block in figure 2c? (no changes needed)
+*** TODO Number 23 above. Need to describe what happens in EC better (lines 407-413)
+*** TODO Check the reference (Scheidt, Reinkensmeyer, ..., Mussa-Ivaldi 2000. Number 24 above.
+*** TODO Regarding 25 above, do interleaved EC trials make a difference? Check.
+*** DONE Change SD to SEM
+*** TODO Make it absofuckinglutely clear that COIN would also work.
+*** TODO How do I even respond to "ur so wrong lol"??? 28 above.
+*** TODO Explain why only qualitative. What would quantitative add? This isn't about the model.
+
+
+
+
+* Response (and things done)
+** Reviewer 1
+We appreciate the reviewer's attention to detail throughout the manuscript. All typos and other small mistakes pointed out by the reviewer have been corrected. Below, we list the more substantial changes or corrections we made to the manuscript in response to the reviewer's comments.
+
+In our responses below, all line numbers refer to the new manuscript; however, the reviewers' comments refer to the lines in the previous submission.
+
+** Line 136: provide more information on the "generic experiment". It would be easier to understand how contextual cues and sensory feedback are provided and noised. (Instead of just referring the reader to Davidson and Wolpert (2004))
+We added a brief description of the experiment in this section, which can be seen in lines XXX. More details on the Davidson and Wolpert (2004) experiment were also added in their corresponding section.
+
+
+** Reviewer 2
+We appreciate the reviewer's attention to detail throughout the manuscript. All typos and other small mistakes pointed out by the reviewer have been corrected. Below, we list the more substantial changes or corrections we made to the manuscript in response to the reviewer's comments.
+
+In our responses below, all line numbers refer to the new manuscript; however, the reviewers' comments refer to the lines in the previous submission.
+
+*** Lines 61-63, “Heald et al. (2021) formalized context inference as a process that operates independently from motor learning, but is informed by it, establishing a loop whereby context inference also informs motor learning.” but is informed by it - this is unclear
+We have rephrased this sentence to clarify the meaning.
+
+*** 10. Figure 1. How are motor commands “observable”?
+In this case, 'observable' refers to something to which the model and the brain have access to during movement and adaptation. It is not meant observable to experimenters. We have added clarification to the caption of Figure 1.
+
+*** Line 160 add “s” to provide
+We thank the reviewer for this comment. However, we believe that the plural matches the usage of dynamics in this context, as we refer not to the field of study but to the 'forces' causing the phenomena.
+
+*** Line 176-177 “in which the mechanical arm forces the participant to make straight-line movements” This is incorrect. The robot is programmed with spring and damping coefficients to match the force exerted by the participant and make it appear as though they are making a perfect trajectory from start position to target (i.e., the elimination of the visual error).
+We have addressed this comment by rephrasing the line.
+
+*** Lines 182-183 “With repeated contexts (e.g. Oh & Schweighofer, 2019), an experiment can be described as O1. A1.O2”. This is unclear.
+We rephrased this sentence and added more clarification.
+
+*** Line 186 “without having to re-learn it.” They are learning in the second session of A, it is just that they are learning at a faster rate.
+While it is almost universally observed that non-human primates show only accelerated learning on re-exposure to a known adaptation, many experiments with humans, especially those involving visuomotor rotations, have shown immediate recall of the previously learned adaptations. This can be seen, for example, in the experiments by Kim (2015), where learning "picks up where it left off" when a previous adaptation is encountered, and in the experiments by Oh and Schweighofer (2019). In cases where learning was already completed (i.e. motor error is close to zero under the new dynamics), the phenomenon is often called "switching", as we do throughout our manuscript.
+
+We have added this discussion to the manuscript.
+
+*** Line 192. In the baseline condition there is nothing to learn (i.e., there is not perturbation). In this case there is a washout or decay of the learning of A.
+We agree with the reviewer. However, because the baseline context holds no special place in the model (outside of having been learned for long enough that learning occurs very slowly, or not at all during an experiment), we wanted to emphasize that there was no need to re-learn anything in these transitions.
+
+*** Line 195 and 199 replace “are” with “is”
+The word 'savings' is, as per the dictionary, plural (even when referring to the savings from a single purchase, for example). Usages in published work on motor adaptation with grammar that allows for a distinction between plural and singular are mixed; for example, Oh and Schweighofer (2019) chose plural ("Savings were dominant in the large perturbation conditions..."), while Herzfeld et al. (2014) chose singular ("Savings refers to the..."). Given the ambiguity in usage, we prefer to follow the accepted dictionary entries (consistent across the dictionaries by Merriam-Webster, Oxford and Collins).
+

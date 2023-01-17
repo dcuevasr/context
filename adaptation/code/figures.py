@@ -327,9 +327,9 @@ def _one_oh(pandota, oh_reps, colors, context_color, adapt, axes):
     sns.lineplot(data=pandota, x='trial', y='adapt', ax=axes[2], color='black')
     for c_con, c_state, c_color in zip(ohcon, magmustr, colors):
         sns.lineplot(data=pandota, x='trial', y=c_con, color=c_color,
-                     ax=axes[0])
+                     ax=axes[0], errorbar='se')
         sns.lineplot(data=pandota, x='trial', y=c_state, color=c_color,
-                     ax=axes[1])
+                     ax=axes[1], errorbar='se')
     for axis in axes:
         axis.set_xlabel('Trial')
         axis.set_ylabel('')
@@ -468,25 +468,25 @@ def _davidson_trio(repeats, color_list, agent_pars, tasks, names, axes, labels,
     ymax = data.loc[data['trial'] > ran[0], 'pos(t)'].max()
     ymin = data.loc[data['trial'] > ran[0], 'pos(t)'].min()
     sns.lineplot(data=data, x='trial', y='pos(t)', ax=axes[0],
-                 hue='Group', palette=colors, ci='sd')
+                 hue='Group', palette=colors, errorbar='se')
     datum_a = data.query('Group == @names[0]')
     datum_b = data.query('Group == @names[1]')
     sns.lineplot(data=datum_a, x='trial', y='con0', ax=axes[1],
-                 color='black', label=labels[0][0])
+                 color='black', label=labels[0][0], errorbar='se')
     sns.lineplot(data=datum_a,
                  x='trial', y='con1', ax=axes[1], label=labels[0][1],
-                 color='tab:green')
+                 color='tab:green', errorbar='se')
     sns.lineplot(data=datum_a,
                  x='trial', y='con2', ax=axes[1], label=labels[0][2],
-                 color='tab:blue')
+                 color='tab:blue', errorbar='se')
     sns.lineplot(data=datum_b, x='trial', y='con0', ax=axes[2],
-                 color='black', label=labels[1][0])
+                 color='black', label=labels[1][0], errorbar='se')
     sns.lineplot(data=datum_b,
                  x='trial', y='con1', ax=axes[2], label=labels[1][1],
-                 color='tab:green')
+                 color='tab:green', errorbar='se')
     sns.lineplot(data=datum_b,
                  x='trial', y='con2', ax=axes[2], label=labels[1][2],
-                 color='tab:blue')
+                 color='tab:blue', errorbar='se')
     axes[1].legend(ncol=1, fontsize='x-small', handlelength=1)
     axes[2].legend(ncol=1, fontsize='x-small', handlelength=1)
 
@@ -599,7 +599,7 @@ def vaswani_2013(fignum=4, show=True, pandota=None):
     pandota_e.loc[:, 'trial'] -= 100
     sns.lineplot(x='trial', y='adaptation', hue='group',
                  palette=named_colors, data=pandota_e,
-                 ax=axes_sum[0], ci='sd')
+                 ax=axes_sum[0], ci='se')
     # labels = [name[-3:] for name in names[:-1]]
     # axes_sum[0].legend(ncol=3, labels=labels)
     y_range = axes_sum[0].get_ylim()
